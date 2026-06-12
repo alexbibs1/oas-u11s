@@ -226,11 +226,13 @@ export const submitRatings = createServerFn({ method: "POST" })
       for (const pid of playerIds) {
         const list = byPlayer.get(pid) ?? [];
         if (!list.length) continue;
-        const avg: Record<string, number> = {};
-        for (const skill of SKILLS) {
-          const sum = list.reduce((a, x) => a + Number(x[skill] ?? 0), 0);
-          avg[skill] = Math.round(sum / list.length);
-        }
+        const avg = {
+          tackling: Math.round(list.reduce((a, x) => a + Number(x.tackling ?? 0), 0) / list.length),
+          rucking: Math.round(list.reduce((a, x) => a + Number(x.rucking ?? 0), 0) / list.length),
+          kicking: Math.round(list.reduce((a, x) => a + Number(x.kicking ?? 0), 0) / list.length),
+          catching: Math.round(list.reduce((a, x) => a + Number(x.catching ?? 0), 0) / list.length),
+          iq: Math.round(list.reduce((a, x) => a + Number(x.iq ?? 0), 0) / list.length),
+        };
         await supabase.from("players").update(avg).eq("id", pid);
       }
     }
