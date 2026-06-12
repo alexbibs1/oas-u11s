@@ -5,6 +5,7 @@ import { getMyRole } from "@/lib/auth/roles.functions";
 import { listPlayers, addPlayer, removePlayer } from "@/lib/players/players.functions";
 import { listCoaches, addCoach, removeCoach } from "@/lib/coaches/coaches.functions";
 import { inviteUser } from "@/lib/admin/invite.functions";
+import { listBlocks, createSession } from "@/lib/sessions/sessions.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,10 +37,88 @@ function AdminPage() {
 
       <div className="space-y-8">
         <InviteSection />
+        <SessionsSection />
         <PlayersSection />
         <CoachesSection />
       </div>
     </main>
+  );
+}
+
+function SessionsSection() {
+  const qc = useQueryClient();
+  const { data: blocks = [] } = useQuery({ queryKey: ["blocks"], queryFn: () => listBlocks() });
+  const [blockId, setBlockId] = useState("");
+  const [date, setDate] = useState("");
+  const [type, setType] = useState<"training" | "match">("match");
+
+  const m = useMutation({
+    mutationFn: () =>
+      createSession({
+        data: { block_id: blockId, session_date: date, session_type: type },
+      }),
+    onSuccess: () => {
+      toast.success("Session created");
+      setDate("");
+      qc.invalidateQueries({ queryKey: ["match-sessions"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <section className="rounded-lg border bg-card p-5">
+      <h2 className="mb-4 text-sm font-semibold">Create session</h2>
+      <form
+        className="space-y-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (blockId && date) m.mutate();
+        }}
+      >
+        <div className="space-y-2">
+          <Label>Block</Label>
+          <Select value={blockId} onValueChange={setBlockId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select block…" />
+            </SelectTrigger>
+            <SelectContent>
+              {blocks.map((b: any) => (
+                <SelectItem key={b.id} value={b.id}>
+                  {b.name ?? `Block ${b.block_number}`} {b.is_active ? "(active)" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="session-date">Date</Label>
+            <Input
+              id="session-date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Type</Label>
+            <Select value={type} onValueChange={(v) => setType(v as any)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="match">Match</SelectItem>
+                <SelectItem value="training">Training</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <Button type="submit" disabled={m.isPending || !blockId || !date} className="w-full">
+          {m.isPending ? "Creating…" : "Create session"}
+        </Button>
+      </form>
+    </section>
   );
 }
 
