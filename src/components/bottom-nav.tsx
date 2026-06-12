@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Home, Users, Shield } from "lucide-react";
+import { Home, Users, Shield, ClipboardCheck } from "lucide-react";
 import { getMyRole } from "@/lib/auth/roles.functions";
 
 export function BottomNav() {
@@ -13,6 +13,7 @@ export function BottomNav() {
   const items = [
     { to: "/home", label: "Home", Icon: Home },
     { to: "/squad", label: "Squad", Icon: Users },
+    { to: "/match-day", label: "Match Day", Icon: ClipboardCheck },
     ...(me?.isBlockBuilder ? [{ to: "/admin", label: "Admin", Icon: Shield }] : []),
   ] as const;
 

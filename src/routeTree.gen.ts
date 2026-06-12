@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedMatchDayRouteImport } from './routes/_authenticated/match-day'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedSquadIndexRouteImport } from './routes/_authenticated/squad/index'
@@ -30,6 +31,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedMatchDayRoute = AuthenticatedMatchDayRouteImport.update({
+  id: '/match-day',
+  path: '/match-day',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
   id: '/home',
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/home': typeof AuthenticatedHomeRoute
+  '/match-day': typeof AuthenticatedMatchDayRoute
   '/squad/$playerId': typeof AuthenticatedSquadPlayerIdRoute
   '/squad/': typeof AuthenticatedSquadIndexRoute
 }
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/home': typeof AuthenticatedHomeRoute
+  '/match-day': typeof AuthenticatedMatchDayRoute
   '/squad/$playerId': typeof AuthenticatedSquadPlayerIdRoute
   '/squad': typeof AuthenticatedSquadIndexRoute
 }
@@ -76,14 +84,29 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
+  '/_authenticated/match-day': typeof AuthenticatedMatchDayRoute
   '/_authenticated/squad/$playerId': typeof AuthenticatedSquadPlayerIdRoute
   '/_authenticated/squad/': typeof AuthenticatedSquadIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/admin' | '/home' | '/squad/$playerId' | '/squad/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/admin'
+    | '/home'
+    | '/match-day'
+    | '/squad/$playerId'
+    | '/squad/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/admin' | '/home' | '/squad/$playerId' | '/squad'
+  to:
+    | '/'
+    | '/auth'
+    | '/admin'
+    | '/home'
+    | '/match-day'
+    | '/squad/$playerId'
+    | '/squad'
   id:
     | '__root__'
     | '/'
@@ -91,6 +114,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/admin'
     | '/_authenticated/home'
+    | '/_authenticated/match-day'
     | '/_authenticated/squad/$playerId'
     | '/_authenticated/squad/'
   fileRoutesById: FileRoutesById
@@ -123,6 +147,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/match-day': {
+      id: '/_authenticated/match-day'
+      path: '/match-day'
+      fullPath: '/match-day'
+      preLoaderRoute: typeof AuthenticatedMatchDayRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/home': {
       id: '/_authenticated/home'
@@ -158,6 +189,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
+  AuthenticatedMatchDayRoute: typeof AuthenticatedMatchDayRoute
   AuthenticatedSquadPlayerIdRoute: typeof AuthenticatedSquadPlayerIdRoute
   AuthenticatedSquadIndexRoute: typeof AuthenticatedSquadIndexRoute
 }
@@ -165,6 +197,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
+  AuthenticatedMatchDayRoute: AuthenticatedMatchDayRoute,
   AuthenticatedSquadPlayerIdRoute: AuthenticatedSquadPlayerIdRoute,
   AuthenticatedSquadIndexRoute: AuthenticatedSquadIndexRoute,
 }
