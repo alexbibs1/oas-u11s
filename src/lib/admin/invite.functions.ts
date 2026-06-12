@@ -22,8 +22,10 @@ export const inviteUser = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const username = data.email.split("@")[0];
     const { data: invite, error: inviteErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       data.email,
+      { data: { username } },
     );
     if (inviteErr) throw new Error(inviteErr.message);
     const newUserId = invite.user?.id;
