@@ -212,6 +212,70 @@ export type Database = {
           },
         ]
       }
+      match_ratings: {
+        Row: {
+          catching: number
+          created_at: string
+          group_id: string
+          id: string
+          iq: number
+          kicking: number
+          player_id: string
+          rated_by: string | null
+          rucking: number
+          session_id: string
+          tackling: number
+        }
+        Insert: {
+          catching: number
+          created_at?: string
+          group_id: string
+          id?: string
+          iq: number
+          kicking: number
+          player_id: string
+          rated_by?: string | null
+          rucking: number
+          session_id: string
+          tackling: number
+        }
+        Update: {
+          catching?: number
+          created_at?: string
+          group_id?: string
+          id?: string
+          iq?: number
+          kicking?: number
+          player_id?: string
+          rated_by?: string | null
+          rucking?: number
+          session_id?: string
+          tackling?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_ratings_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_ratings_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_ratings_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           catching: number
@@ -247,6 +311,55 @@ export type Database = {
           tackling?: number
         }
         Relationships: []
+      }
+      session_player_overrides: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          override_group_id: string | null
+          player_id: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          override_group_id?: string | null
+          player_id: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          override_group_id?: string | null
+          player_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_player_overrides_override_group_id_fkey"
+            columns: ["override_group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_player_overrides_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_player_overrides_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sessions: {
         Row: {
