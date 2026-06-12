@@ -12,7 +12,7 @@ function HomePage() {
   const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => getMyRole() });
 
   const nameFromEmail = me?.email
-    ? me.email.split("@")[0].split(/[._-]/)[0].replace(/^\w/, (c) => c.toUpperCase())
+    ? me.email.split("@")[0].split(/[._-]/)[0].replace(/^\w/, (c: string) => c.toUpperCase())
     : null;
   const displayName = me?.coachName ?? nameFromEmail ?? "Coach";
 
