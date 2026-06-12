@@ -15,9 +15,24 @@ export const getMyRole = createServerFn({ method: "GET" })
     const coachRow = (data ?? []).find((r: any) => r.coaches);
     const coachName = coachRow?.coaches?.coach_name ?? null;
 
+    const email: string | null = (claims as any).email ?? null;
+    const metaUsername: string | null =
+      (claims as any).user_metadata?.username ?? null;
+
+    let username = metaUsername;
+    if (!username && email) {
+      // Lazy backfill so existing users get a username without re-invite
+      username = email.split("@")[0];
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin.auth.admin.updateUserById(userId, {
+        user_metadata: { username },
+      });
+    }
+
     return {
       userId,
-      email: (claims as any).email ?? null,
+      email,
+      username,
       roles,
       isBlockBuilder: roles.includes("block_builder"),
       isCoach: roles.includes("coach"),
