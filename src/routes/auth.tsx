@@ -1,10 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { bootstrapFirstAdmin, bootstrapStatus } from "@/lib/admin/bootstrap.functions";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -21,23 +23,34 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [needsBootstrap, setNeedsBootstrap] = useState(false);
+
+  const checkStatus = useServerFn(bootstrapStatus);
+  const createFirstAdmin = useServerFn(bootstrapFirstAdmin);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/home", replace: true });
     });
-  }, [navigate]);
+    checkStatus().then((r) => setNeedsBootstrap(r.needsBootstrap)).catch(() => {});
+  }, [navigate, checkStatus]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      if (needsBootstrap) {
+        await createFirstAdmin({ data: { email, password } });
+        toast.success("Admin account created");
+      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      navigate({ to: "/home", replace: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
     }
-    navigate({ to: "/home", replace: true });
   }
 
   return (
@@ -52,6 +65,11 @@ function AuthPage() {
           <p className="mt-1 text-sm text-muted-foreground">Player development</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border bg-card p-6 shadow-sm">
+          {needsBootstrap && (
+            <div className="rounded-md border border-accent/40 bg-accent/10 p-3 text-xs text-foreground">
+              No accounts yet. Create the first admin (block builder) below.
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -68,18 +86,27 @@ function AuthPage() {
             <Input
               id="password"
               type="password"
-              autoComplete="current-password"
+              autoComplete={needsBootstrap ? "new-password" : "current-password"}
               required
+              minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
           <Button type="submit" disabled={loading} className="w-full">
-            {loading ? "Signing in…" : "Sign in"}
+            {loading
+              ? needsBootstrap
+                ? "Creating…"
+                : "Signing in…"
+              : needsBootstrap
+                ? "Create admin & sign in"
+                : "Sign in"}
           </Button>
-          <p className="text-center text-xs text-muted-foreground">
-            Accounts are created by invitation only.
-          </p>
+          {!needsBootstrap && (
+            <p className="text-center text-xs text-muted-foreground">
+              Accounts are created by invitation only.
+            </p>
+          )}
         </form>
       </div>
     </div>
