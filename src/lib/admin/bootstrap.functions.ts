@@ -21,10 +21,12 @@ export const bootstrapFirstAdmin = createServerFn({ method: "POST" })
       throw new Error("Bootstrap already complete. Ask an admin to invite you.");
     }
 
+    const username = data.email.split("@")[0];
     const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: data.password,
       email_confirm: true,
+      user_metadata: { username },
     });
     if (createErr) throw new Error(createErr.message);
     const userId = created.user?.id;
