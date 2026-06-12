@@ -11,10 +11,7 @@ export const Route = createFileRoute("/_authenticated/home")({
 function HomePage() {
   const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => getMyRole() });
 
-  const nameFromEmail = me?.email
-    ? me.email.split("@")[0].split(/[._-]/)[0].replace(/^\w/, (c: string) => c.toUpperCase())
-    : null;
-  const displayName = me?.coachName ?? nameFromEmail ?? "Coach";
+  const displayName = me?.coachName ?? me?.username ?? "Coach";
 
   return (
     <main className="mx-auto max-w-2xl px-5 pt-8">
