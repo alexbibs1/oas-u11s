@@ -58,7 +58,7 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
     if (movedInIds.length) {
       const { data: pl, error: e3 } = await supabase
         .from("players")
-        .select("id, player_name, tackling, rucking, kicking, catching, iq, speed")
+        .select("id, player_name, tackling, rucking, carrying, kicking, catching, iq, speed")
         .in("id", movedInIds);
       if (e3) throw new Error(e3.message);
       movedInPlayers = pl ?? [];
