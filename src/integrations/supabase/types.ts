@@ -214,6 +214,7 @@ export type Database = {
       }
       match_ratings: {
         Row: {
+          carrying: number | null
           catching: number
           created_at: string
           group_id: string
@@ -227,6 +228,7 @@ export type Database = {
           tackling: number
         }
         Insert: {
+          carrying?: number | null
           catching: number
           created_at?: string
           group_id: string
@@ -240,6 +242,7 @@ export type Database = {
           tackling: number
         }
         Update: {
+          carrying?: number | null
           catching?: number
           created_at?: string
           group_id?: string
@@ -278,6 +281,7 @@ export type Database = {
       }
       players: {
         Row: {
+          carrying: number
           catching: number
           created_at: string
           id: string
@@ -289,6 +293,7 @@ export type Database = {
           tackling: number
         }
         Insert: {
+          carrying?: number
           catching?: number
           created_at?: string
           id?: string
@@ -300,6 +305,7 @@ export type Database = {
           tackling?: number
         }
         Update: {
+          carrying?: number
           catching?: number
           created_at?: string
           id?: string
