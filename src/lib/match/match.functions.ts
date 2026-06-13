@@ -231,6 +231,7 @@ export const submitRatings = createServerFn({ method: "POST" })
         const avg = {
           tackling: Math.round(list.reduce((a, x) => a + Number(x.tackling ?? 0), 0) / list.length),
           rucking: Math.round(list.reduce((a, x) => a + Number(x.rucking ?? 0), 0) / list.length),
+          carrying: Math.round(list.reduce((a, x) => a + Number(x.carrying ?? 0), 0) / list.length),
           kicking: Math.round(list.reduce((a, x) => a + Number(x.kicking ?? 0), 0) / list.length),
           catching: Math.round(list.reduce((a, x) => a + Number(x.catching ?? 0), 0) / list.length),
           iq: Math.round(list.reduce((a, x) => a + Number(x.iq ?? 0), 0) / list.length),
