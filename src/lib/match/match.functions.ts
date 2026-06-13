@@ -228,15 +228,16 @@ export const submitRatings = createServerFn({ method: "POST" })
       for (const pid of playerIds) {
         const list = byPlayer.get(pid) ?? [];
         if (!list.length) continue;
-        const avg = {
-          tackling: Math.round(list.reduce((a, x) => a + Number(x.tackling ?? 0), 0) / list.length),
-          rucking: Math.round(list.reduce((a, x) => a + Number(x.rucking ?? 0), 0) / list.length),
-          carrying: Math.round(list.reduce((a, x) => a + Number(x.carrying ?? 0), 0) / list.length),
-          kicking: Math.round(list.reduce((a, x) => a + Number(x.kicking ?? 0), 0) / list.length),
-          catching: Math.round(list.reduce((a, x) => a + Number(x.catching ?? 0), 0) / list.length),
-          iq: Math.round(list.reduce((a, x) => a + Number(x.iq ?? 0), 0) / list.length),
+        const avgSkill = (key: string) => {
+          const vals = list.map((x) => x[key]).filter((v) => v != null).map(Number);
+          return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
         };
-        await supabase.from("players").update(avg).eq("id", pid);
+        const avg: Record<string, number> = {};
+        for (const k of ["tackling", "rucking", "carrying", "kicking", "catching", "iq"]) {
+          const v = avgSkill(k);
+          if (v != null) avg[k] = v;
+        }
+        if (Object.keys(avg).length) await supabase.from("players").update(avg).eq("id", pid);
       }
     }
 
