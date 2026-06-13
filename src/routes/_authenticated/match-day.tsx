@@ -441,6 +441,7 @@ function RateStep({
       init[p.id] = {
         tackling: ex?.tackling ?? p.tackling ?? 3,
         rucking: ex?.rucking ?? p.rucking ?? 3,
+        carrying: ex?.carrying ?? p.carrying ?? 3,
         kicking: ex?.kicking ?? p.kicking ?? 3,
         catching: ex?.catching ?? p.catching ?? 3,
         iq: ex?.iq ?? p.iq ?? 3,
