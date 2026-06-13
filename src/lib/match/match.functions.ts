@@ -237,7 +237,7 @@ export const submitRatings = createServerFn({ method: "POST" })
           const v = avgSkill(k);
           if (v != null) avg[k] = v;
         }
-        if (Object.keys(avg).length) await supabase.from("players").update(avg).eq("id", pid);
+        if (Object.keys(avg).length) await supabase.from("players").update(avg as any).eq("id", pid);
       }
     }
 
