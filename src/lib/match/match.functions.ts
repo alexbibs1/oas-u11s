@@ -192,6 +192,7 @@ export const submitRatings = createServerFn({ method: "POST" })
       player_id: r.player_id,
       tackling: r.tackling,
       rucking: r.rucking,
+      carrying: r.carrying,
       kicking: r.kicking,
       catching: r.catching,
       iq: r.iq,
