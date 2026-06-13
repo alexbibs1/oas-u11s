@@ -22,6 +22,7 @@ export const Route = createFileRoute("/_authenticated/squad/$playerId")({
 const skills = [
   { key: "tackling", label: "Tackling" },
   { key: "rucking", label: "Rucking" },
+  { key: "carrying", label: "Carrying" },
   { key: "kicking", label: "Kicking" },
   { key: "catching", label: "Catching" },
   { key: "iq", label: "Rugby IQ" },

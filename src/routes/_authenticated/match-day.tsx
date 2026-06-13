@@ -32,6 +32,7 @@ const DESCRIPTORS: Record<number, string> = {
 const SKILLS = [
   { key: "tackling", label: "Tackling" },
   { key: "rucking", label: "Rucking" },
+  { key: "carrying", label: "Carrying" },
   { key: "kicking", label: "Kicking" },
   { key: "catching", label: "Catching" },
   { key: "iq", label: "IQ" },
@@ -440,6 +441,7 @@ function RateStep({
       init[p.id] = {
         tackling: ex?.tackling ?? p.tackling ?? 3,
         rucking: ex?.rucking ?? p.rucking ?? 3,
+        carrying: ex?.carrying ?? p.carrying ?? 3,
         kicking: ex?.kicking ?? p.kicking ?? 3,
         catching: ex?.catching ?? p.catching ?? 3,
         iq: ex?.iq ?? p.iq ?? 3,

@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const SKILLS = ["tackling", "rucking", "kicking", "catching", "iq"] as const;
+const SKILLS = ["tackling", "rucking", "carrying", "kicking", "catching", "iq"] as const;
 
 export const listGroupsForBlock = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -38,7 +38,7 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
     // Default roster from group_players
     const { data: defaultRoster, error: e1 } = await supabase
       .from("group_players")
-      .select("player_id, players:player_id ( id, player_name, tackling, rucking, kicking, catching, iq, speed )")
+      .select("player_id, players:player_id ( id, player_name, tackling, rucking, carrying, kicking, catching, iq, speed )")
       .eq("group_id", data.group_id);
     if (e1) throw new Error(e1.message);
 
@@ -58,7 +58,7 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
     if (movedInIds.length) {
       const { data: pl, error: e3 } = await supabase
         .from("players")
-        .select("id, player_name, tackling, rucking, kicking, catching, iq, speed")
+        .select("id, player_name, tackling, rucking, carrying, kicking, catching, iq, speed")
         .in("id", movedInIds);
       if (e3) throw new Error(e3.message);
       movedInPlayers = pl ?? [];
@@ -175,6 +175,7 @@ export const submitRatings = createServerFn({ method: "POST" })
           player_id: z.string().uuid(),
           tackling: z.number().int().min(1).max(5),
           rucking: z.number().int().min(1).max(5),
+          carrying: z.number().int().min(1).max(5),
           kicking: z.number().int().min(1).max(5),
           catching: z.number().int().min(1).max(5),
           iq: z.number().int().min(1).max(5),
@@ -191,6 +192,7 @@ export const submitRatings = createServerFn({ method: "POST" })
       player_id: r.player_id,
       tackling: r.tackling,
       rucking: r.rucking,
+      carrying: r.carrying,
       kicking: r.kicking,
       catching: r.catching,
       iq: r.iq,
@@ -213,7 +215,7 @@ export const submitRatings = createServerFn({ method: "POST" })
     if (sessionIds.length && playerIds.length) {
       const { data: allRatings } = await supabase
         .from("match_ratings")
-        .select("player_id, tackling, rucking, kicking, catching, iq")
+        .select("player_id, tackling, rucking, carrying, kicking, catching, iq")
         .in("session_id", sessionIds)
         .in("player_id", playerIds);
 
@@ -226,14 +228,16 @@ export const submitRatings = createServerFn({ method: "POST" })
       for (const pid of playerIds) {
         const list = byPlayer.get(pid) ?? [];
         if (!list.length) continue;
-        const avg = {
-          tackling: Math.round(list.reduce((a, x) => a + Number(x.tackling ?? 0), 0) / list.length),
-          rucking: Math.round(list.reduce((a, x) => a + Number(x.rucking ?? 0), 0) / list.length),
-          kicking: Math.round(list.reduce((a, x) => a + Number(x.kicking ?? 0), 0) / list.length),
-          catching: Math.round(list.reduce((a, x) => a + Number(x.catching ?? 0), 0) / list.length),
-          iq: Math.round(list.reduce((a, x) => a + Number(x.iq ?? 0), 0) / list.length),
+        const avgSkill = (key: string) => {
+          const vals = list.map((x) => x[key]).filter((v) => v != null).map(Number);
+          return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
         };
-        await supabase.from("players").update(avg).eq("id", pid);
+        const avg: Record<string, number> = {};
+        for (const k of ["tackling", "rucking", "carrying", "kicking", "catching", "iq"]) {
+          const v = avgSkill(k);
+          if (v != null) avg[k] = v;
+        }
+        if (Object.keys(avg).length) await supabase.from("players").update(avg as any).eq("id", pid);
       }
     }
 
