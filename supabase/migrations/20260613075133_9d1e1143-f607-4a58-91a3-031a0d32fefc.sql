@@ -1,0 +1,1 @@
+ALTER TABLE public.sessions ADD COLUMN IF NOT EXISTS opponent text, ADD COLUMN IF NOT EXISTS venue text;
