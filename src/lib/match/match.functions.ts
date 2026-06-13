@@ -175,6 +175,7 @@ export const submitRatings = createServerFn({ method: "POST" })
           player_id: z.string().uuid(),
           tackling: z.number().int().min(1).max(5),
           rucking: z.number().int().min(1).max(5),
+          carrying: z.number().int().min(1).max(5),
           kicking: z.number().int().min(1).max(5),
           catching: z.number().int().min(1).max(5),
           iq: z.number().int().min(1).max(5),
