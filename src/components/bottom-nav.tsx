@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Home, Users, Shield, ClipboardCheck } from "lucide-react";
+import { Home, Users, Shield, ClipboardCheck, Calendar } from "lucide-react";
 import { getMyRole } from "@/lib/auth/roles.functions";
 
 export function BottomNav() {
@@ -12,8 +12,9 @@ export function BottomNav() {
 
   const items = [
     { to: "/home", label: "Home", Icon: Home },
-    { to: "/squad", label: "Squad", Icon: Users },
+    { to: "/calendar", label: "Calendar", Icon: Calendar },
     { to: "/match-day", label: "Match Day", Icon: ClipboardCheck },
+    { to: "/squad", label: "Squad", Icon: Users },
     ...(me?.isBlockBuilder ? [{ to: "/admin", label: "Admin", Icon: Shield }] : []),
   ] as const;
 
@@ -26,7 +27,7 @@ export function BottomNav() {
               to={to}
               activeProps={{ className: "text-primary" }}
               inactiveProps={{ className: "text-muted-foreground" }}
-              className="flex flex-col items-center gap-1 px-4 py-3 text-xs font-medium transition-colors hover:text-primary"
+              className="flex flex-col items-center gap-1 px-2 py-3 text-[11px] font-medium transition-colors hover:text-primary"
             >
               <Icon className="h-5 w-5" />
               <span>{label}</span>

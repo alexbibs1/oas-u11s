@@ -16,6 +16,9 @@ import { toast } from "sonner";
 import { ChevronLeft, Check, X, ArrowRightLeft, Lock } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/match-day")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    sessionId: typeof s.sessionId === "string" ? s.sessionId : undefined,
+  }),
   component: MatchDayPage,
 });
 
@@ -39,9 +42,26 @@ const SKILLS = [
 ] as const;
 
 function MatchDayPage() {
+  const { sessionId: preselectId } = Route.useSearch();
   const [step, setStep] = useState<Step>("session");
   const [session, setSession] = useState<any | null>(null);
   const [group, setGroup] = useState<any | null>(null);
+
+  const { data: preselectSessions } = useQuery({
+    queryKey: ["match-sessions"],
+    queryFn: () => listMatchSessions(),
+    enabled: !!preselectId,
+  });
+
+  useEffect(() => {
+    if (preselectId && !session && preselectSessions?.length) {
+      const found = preselectSessions.find((s: any) => s.id === preselectId);
+      if (found && found.block_is_active) {
+        setSession(found);
+        setStep("group");
+      }
+    }
+  }, [preselectId, preselectSessions, session]);
 
   const back = () => {
     if (step === "group") {

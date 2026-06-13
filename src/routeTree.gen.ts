@@ -14,9 +14,12 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedMatchDayRouteImport } from './routes/_authenticated/match-day'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
+import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedSquadIndexRouteImport } from './routes/_authenticated/squad/index'
 import { Route as AuthenticatedSquadPlayerIdRouteImport } from './routes/_authenticated/squad/$playerId'
+import { Route as AuthenticatedSessionInfoSessionIdRouteImport } from './routes/_authenticated/session-info/$sessionId'
+import { Route as AuthenticatedMatchSummarySessionIdRouteImport } from './routes/_authenticated/match-summary/$sessionId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -42,6 +45,11 @@ const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
   path: '/home',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -58,13 +66,28 @@ const AuthenticatedSquadPlayerIdRoute =
     path: '/squad/$playerId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSessionInfoSessionIdRoute =
+  AuthenticatedSessionInfoSessionIdRouteImport.update({
+    id: '/session-info/$sessionId',
+    path: '/session-info/$sessionId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMatchSummarySessionIdRoute =
+  AuthenticatedMatchSummarySessionIdRouteImport.update({
+    id: '/match-summary/$sessionId',
+    path: '/match-summary/$sessionId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/calendar': typeof AuthenticatedCalendarRoute
   '/home': typeof AuthenticatedHomeRoute
   '/match-day': typeof AuthenticatedMatchDayRoute
+  '/match-summary/$sessionId': typeof AuthenticatedMatchSummarySessionIdRoute
+  '/session-info/$sessionId': typeof AuthenticatedSessionInfoSessionIdRoute
   '/squad/$playerId': typeof AuthenticatedSquadPlayerIdRoute
   '/squad/': typeof AuthenticatedSquadIndexRoute
 }
@@ -72,8 +95,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/calendar': typeof AuthenticatedCalendarRoute
   '/home': typeof AuthenticatedHomeRoute
   '/match-day': typeof AuthenticatedMatchDayRoute
+  '/match-summary/$sessionId': typeof AuthenticatedMatchSummarySessionIdRoute
+  '/session-info/$sessionId': typeof AuthenticatedSessionInfoSessionIdRoute
   '/squad/$playerId': typeof AuthenticatedSquadPlayerIdRoute
   '/squad': typeof AuthenticatedSquadIndexRoute
 }
@@ -83,8 +109,11 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/match-day': typeof AuthenticatedMatchDayRoute
+  '/_authenticated/match-summary/$sessionId': typeof AuthenticatedMatchSummarySessionIdRoute
+  '/_authenticated/session-info/$sessionId': typeof AuthenticatedSessionInfoSessionIdRoute
   '/_authenticated/squad/$playerId': typeof AuthenticatedSquadPlayerIdRoute
   '/_authenticated/squad/': typeof AuthenticatedSquadIndexRoute
 }
@@ -94,8 +123,11 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/admin'
+    | '/calendar'
     | '/home'
     | '/match-day'
+    | '/match-summary/$sessionId'
+    | '/session-info/$sessionId'
     | '/squad/$playerId'
     | '/squad/'
   fileRoutesByTo: FileRoutesByTo
@@ -103,8 +135,11 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/admin'
+    | '/calendar'
     | '/home'
     | '/match-day'
+    | '/match-summary/$sessionId'
+    | '/session-info/$sessionId'
     | '/squad/$playerId'
     | '/squad'
   id:
@@ -113,8 +148,11 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/admin'
+    | '/_authenticated/calendar'
     | '/_authenticated/home'
     | '/_authenticated/match-day'
+    | '/_authenticated/match-summary/$sessionId'
+    | '/_authenticated/session-info/$sessionId'
     | '/_authenticated/squad/$playerId'
     | '/_authenticated/squad/'
   fileRoutesById: FileRoutesById
@@ -162,6 +200,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHomeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/calendar': {
+      id: '/_authenticated/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof AuthenticatedCalendarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -183,21 +228,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSquadPlayerIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/session-info/$sessionId': {
+      id: '/_authenticated/session-info/$sessionId'
+      path: '/session-info/$sessionId'
+      fullPath: '/session-info/$sessionId'
+      preLoaderRoute: typeof AuthenticatedSessionInfoSessionIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/match-summary/$sessionId': {
+      id: '/_authenticated/match-summary/$sessionId'
+      path: '/match-summary/$sessionId'
+      fullPath: '/match-summary/$sessionId'
+      preLoaderRoute: typeof AuthenticatedMatchSummarySessionIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedMatchDayRoute: typeof AuthenticatedMatchDayRoute
+  AuthenticatedMatchSummarySessionIdRoute: typeof AuthenticatedMatchSummarySessionIdRoute
+  AuthenticatedSessionInfoSessionIdRoute: typeof AuthenticatedSessionInfoSessionIdRoute
   AuthenticatedSquadPlayerIdRoute: typeof AuthenticatedSquadPlayerIdRoute
   AuthenticatedSquadIndexRoute: typeof AuthenticatedSquadIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedMatchDayRoute: AuthenticatedMatchDayRoute,
+  AuthenticatedMatchSummarySessionIdRoute:
+    AuthenticatedMatchSummarySessionIdRoute,
+  AuthenticatedSessionInfoSessionIdRoute:
+    AuthenticatedSessionInfoSessionIdRoute,
   AuthenticatedSquadPlayerIdRoute: AuthenticatedSquadPlayerIdRoute,
   AuthenticatedSquadIndexRoute: AuthenticatedSquadIndexRoute,
 }

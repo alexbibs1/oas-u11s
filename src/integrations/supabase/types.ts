@@ -372,24 +372,30 @@ export type Database = {
           block_id: string
           created_at: string
           id: string
+          opponent: string | null
           session_date: string
           session_type: string
+          venue: string | null
           week_number: number | null
         }
         Insert: {
           block_id: string
           created_at?: string
           id?: string
+          opponent?: string | null
           session_date: string
           session_type: string
+          venue?: string | null
           week_number?: number | null
         }
         Update: {
           block_id?: string
           created_at?: string
           id?: string
+          opponent?: string | null
           session_date?: string
           session_type?: string
+          venue?: string | null
           week_number?: number | null
         }
         Relationships: [
