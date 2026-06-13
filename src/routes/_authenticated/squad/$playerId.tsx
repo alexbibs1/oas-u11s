@@ -1,7 +1,17 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import { getPlayer } from "@/lib/players/players.functions";
-import { ChevronLeft } from "lucide-react";
+import {
+  listPlayerNotes,
+  createPlayerNote,
+  updatePlayerNote,
+  deletePlayerNote,
+} from "@/lib/feed/feed.functions";
+import { ChevronLeft, Pencil, Trash2, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 const playerQuery = (id: string) => ({
   queryKey: ["player", id],
@@ -32,9 +42,44 @@ const skills = [
 function PlayerProfile() {
   const { playerId } = Route.useParams();
   const { data: player } = useSuspenseQuery(playerQuery(playerId));
+  const qc = useQueryClient();
+
+  const listFn = useServerFn(listPlayerNotes);
+  const createFn = useServerFn(createPlayerNote);
+  const updateFn = useServerFn(updatePlayerNote);
+  const deleteFn = useServerFn(deletePlayerNote);
+
+  const { data: notes = [] } = useQuery({
+    queryKey: ["player-notes", playerId],
+    queryFn: () => listFn({ data: { player_id: playerId } }),
+  });
+
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState("");
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["player-notes", playerId] });
+    qc.invalidateQueries({ queryKey: ["feed"] });
+    qc.invalidateQueries({ queryKey: ["home-summary"] });
+  };
+
+  const addM = useMutation({
+    mutationFn: (note: string) => createFn({ data: { player_id: playerId, note } }),
+    onSuccess: () => { setDraft(""); setAdding(false); invalidate(); },
+  });
+  const updateM = useMutation({
+    mutationFn: (v: { id: string; note: string }) => updateFn({ data: v }),
+    onSuccess: () => { setEditingId(null); invalidate(); },
+  });
+  const deleteM = useMutation({
+    mutationFn: (id: string) => deleteFn({ data: { id } }),
+    onSuccess: invalidate,
+  });
 
   return (
-    <main className="mx-auto max-w-2xl px-5 pt-8">
+    <main className="mx-auto max-w-2xl px-5 pt-8 pb-32">
       <Link
         to="/squad"
         className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -77,10 +122,96 @@ function PlayerProfile() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Notes</h2>
-        <div className="rounded-lg border border-dashed bg-card/50 p-5 text-sm text-muted-foreground">
-          Notes will appear here.
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-muted-foreground">Notes</h2>
+          {!adding && (
+            <Button size="sm" variant="outline" onClick={() => setAdding(true)}>
+              <Plus className="mr-1 h-4 w-4" /> Add Note
+            </Button>
+          )}
         </div>
+
+        {adding && (
+          <div className="mb-4 space-y-2 rounded-lg border bg-card p-4">
+            <Textarea
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Write a note about this player…"
+              rows={4}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" size="sm" onClick={() => { setAdding(false); setDraft(""); }}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                disabled={!draft.trim() || addM.isPending}
+                onClick={() => addM.mutate(draft.trim())}
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {notes.length === 0 && !adding && (
+          <div className="rounded-lg border border-dashed bg-card/50 p-5 text-sm text-muted-foreground">
+            No notes yet.
+          </div>
+        )}
+
+        <ul className="space-y-3">
+          {notes.map((n: any) => (
+            <li key={n.id} className="rounded-lg border bg-card p-4">
+              <div className="mb-2 flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-primary">{n.coach_name ?? "Coach"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(n.created_at).toLocaleString()}
+                  </p>
+                </div>
+                {n.canEdit && editingId !== n.id && (
+                  <div className="flex gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => { setEditingId(n.id); setEditDraft(n.note); }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => { if (confirm("Delete this note?")) deleteM.mutate(n.id); }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+              {editingId === n.id ? (
+                <div className="space-y-2">
+                  <Textarea value={editDraft} onChange={(e) => setEditDraft(e.target.value)} rows={4} />
+                  <div className="flex justify-end gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={!editDraft.trim() || updateM.isPending}
+                      onClick={() => updateM.mutate({ id: n.id, note: editDraft.trim() })}
+                    >
+                      Save
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="whitespace-pre-wrap text-sm">{n.note}</p>
+              )}
+            </li>
+          ))}
+        </ul>
       </section>
     </main>
   );
