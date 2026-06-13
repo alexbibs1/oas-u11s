@@ -18,6 +18,7 @@ import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedSquadIndexRouteImport } from './routes/_authenticated/squad/index'
 import { Route as AuthenticatedSquadPlayerIdRouteImport } from './routes/_authenticated/squad/$playerId'
+import { Route as AuthenticatedMatchSummarySessionIdRouteImport } from './routes/_authenticated/match-summary/$sessionId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -64,6 +65,12 @@ const AuthenticatedSquadPlayerIdRoute =
     path: '/squad/$playerId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMatchSummarySessionIdRoute =
+  AuthenticatedMatchSummarySessionIdRouteImport.update({
+    id: '/match-summary/$sessionId',
+    path: '/match-summary/$sessionId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/calendar': typeof AuthenticatedCalendarRoute
   '/home': typeof AuthenticatedHomeRoute
   '/match-day': typeof AuthenticatedMatchDayRoute
+  '/match-summary/$sessionId': typeof AuthenticatedMatchSummarySessionIdRoute
   '/squad/$playerId': typeof AuthenticatedSquadPlayerIdRoute
   '/squad/': typeof AuthenticatedSquadIndexRoute
 }
@@ -82,6 +90,7 @@ export interface FileRoutesByTo {
   '/calendar': typeof AuthenticatedCalendarRoute
   '/home': typeof AuthenticatedHomeRoute
   '/match-day': typeof AuthenticatedMatchDayRoute
+  '/match-summary/$sessionId': typeof AuthenticatedMatchSummarySessionIdRoute
   '/squad/$playerId': typeof AuthenticatedSquadPlayerIdRoute
   '/squad': typeof AuthenticatedSquadIndexRoute
 }
@@ -94,6 +103,7 @@ export interface FileRoutesById {
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/match-day': typeof AuthenticatedMatchDayRoute
+  '/_authenticated/match-summary/$sessionId': typeof AuthenticatedMatchSummarySessionIdRoute
   '/_authenticated/squad/$playerId': typeof AuthenticatedSquadPlayerIdRoute
   '/_authenticated/squad/': typeof AuthenticatedSquadIndexRoute
 }
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/home'
     | '/match-day'
+    | '/match-summary/$sessionId'
     | '/squad/$playerId'
     | '/squad/'
   fileRoutesByTo: FileRoutesByTo
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/home'
     | '/match-day'
+    | '/match-summary/$sessionId'
     | '/squad/$playerId'
     | '/squad'
   id:
@@ -127,6 +139,7 @@ export interface FileRouteTypes {
     | '/_authenticated/calendar'
     | '/_authenticated/home'
     | '/_authenticated/match-day'
+    | '/_authenticated/match-summary/$sessionId'
     | '/_authenticated/squad/$playerId'
     | '/_authenticated/squad/'
   fileRoutesById: FileRoutesById
@@ -202,6 +215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSquadPlayerIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/match-summary/$sessionId': {
+      id: '/_authenticated/match-summary/$sessionId'
+      path: '/match-summary/$sessionId'
+      fullPath: '/match-summary/$sessionId'
+      preLoaderRoute: typeof AuthenticatedMatchSummarySessionIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -210,6 +230,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedMatchDayRoute: typeof AuthenticatedMatchDayRoute
+  AuthenticatedMatchSummarySessionIdRoute: typeof AuthenticatedMatchSummarySessionIdRoute
   AuthenticatedSquadPlayerIdRoute: typeof AuthenticatedSquadPlayerIdRoute
   AuthenticatedSquadIndexRoute: typeof AuthenticatedSquadIndexRoute
 }
@@ -219,6 +240,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedMatchDayRoute: AuthenticatedMatchDayRoute,
+  AuthenticatedMatchSummarySessionIdRoute:
+    AuthenticatedMatchSummarySessionIdRoute,
   AuthenticatedSquadPlayerIdRoute: AuthenticatedSquadPlayerIdRoute,
   AuthenticatedSquadIndexRoute: AuthenticatedSquadIndexRoute,
 }
