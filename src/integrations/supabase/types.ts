@@ -111,6 +111,57 @@ export type Database = {
         }
         Relationships: []
       }
+      feed_posts: {
+        Row: {
+          coach_name: string | null
+          content: string
+          created_at: string
+          id: string
+          is_player_note: boolean
+          player_id: string | null
+          source_note_id: string | null
+          updated_at: string
+          written_by: string | null
+        }
+        Insert: {
+          coach_name?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          is_player_note?: boolean
+          player_id?: string | null
+          source_note_id?: string | null
+          updated_at?: string
+          written_by?: string | null
+        }
+        Update: {
+          coach_name?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_player_note?: boolean
+          player_id?: string | null
+          source_note_id?: string | null
+          updated_at?: string
+          written_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_posts_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feed_posts_source_note_id_fkey"
+            columns: ["source_note_id"]
+            isOneToOne: false
+            referencedRelation: "player_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_coaches: {
         Row: {
           coach_id: string
@@ -275,6 +326,44 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_notes: {
+        Row: {
+          coach_name: string | null
+          created_at: string
+          id: string
+          note: string
+          player_id: string
+          updated_at: string
+          written_by: string | null
+        }
+        Insert: {
+          coach_name?: string | null
+          created_at?: string
+          id?: string
+          note: string
+          player_id: string
+          updated_at?: string
+          written_by?: string | null
+        }
+        Update: {
+          coach_name?: string | null
+          created_at?: string
+          id?: string
+          note?: string
+          player_id?: string
+          updated_at?: string
+          written_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_notes_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
             referencedColumns: ["id"]
           },
         ]
