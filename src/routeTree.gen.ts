@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedMatchDayRouteImport } from './routes/_authenticated/match-day'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
+import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedSquadIndexRouteImport } from './routes/_authenticated/squad/index'
@@ -43,6 +44,11 @@ const AuthenticatedMatchDayRoute = AuthenticatedMatchDayRouteImport.update({
 const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
   id: '/home',
   path: '/home',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFeedRoute = AuthenticatedFeedRouteImport.update({
+  id: '/feed',
+  path: '/feed',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/calendar': typeof AuthenticatedCalendarRoute
+  '/feed': typeof AuthenticatedFeedRoute
   '/home': typeof AuthenticatedHomeRoute
   '/match-day': typeof AuthenticatedMatchDayRoute
   '/match-summary/$sessionId': typeof AuthenticatedMatchSummarySessionIdRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/calendar': typeof AuthenticatedCalendarRoute
+  '/feed': typeof AuthenticatedFeedRoute
   '/home': typeof AuthenticatedHomeRoute
   '/match-day': typeof AuthenticatedMatchDayRoute
   '/match-summary/$sessionId': typeof AuthenticatedMatchSummarySessionIdRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
+  '/_authenticated/feed': typeof AuthenticatedFeedRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/match-day': typeof AuthenticatedMatchDayRoute
   '/_authenticated/match-summary/$sessionId': typeof AuthenticatedMatchSummarySessionIdRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin'
     | '/calendar'
+    | '/feed'
     | '/home'
     | '/match-day'
     | '/match-summary/$sessionId'
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin'
     | '/calendar'
+    | '/feed'
     | '/home'
     | '/match-day'
     | '/match-summary/$sessionId'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/admin'
     | '/_authenticated/calendar'
+    | '/_authenticated/feed'
     | '/_authenticated/home'
     | '/_authenticated/match-day'
     | '/_authenticated/match-summary/$sessionId'
@@ -200,6 +212,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHomeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/feed': {
+      id: '/_authenticated/feed'
+      path: '/feed'
+      fullPath: '/feed'
+      preLoaderRoute: typeof AuthenticatedFeedRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/calendar': {
       id: '/_authenticated/calendar'
       path: '/calendar'
@@ -248,6 +267,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
+  AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedMatchDayRoute: typeof AuthenticatedMatchDayRoute
   AuthenticatedMatchSummarySessionIdRoute: typeof AuthenticatedMatchSummarySessionIdRoute
@@ -259,6 +279,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
+  AuthenticatedFeedRoute: AuthenticatedFeedRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedMatchDayRoute: AuthenticatedMatchDayRoute,
   AuthenticatedMatchSummarySessionIdRoute:
