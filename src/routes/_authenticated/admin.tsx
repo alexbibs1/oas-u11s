@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { getMyRole } from "@/lib/auth/roles.functions";
@@ -34,6 +34,19 @@ function AdminPage() {
         <p className="text-xs font-semibold uppercase tracking-widest text-accent">Admin</p>
         <h1 className="mt-1 text-2xl font-bold text-primary">Manage</h1>
       </header>
+
+      <Link
+        to="/block-builder"
+        className="mb-6 flex items-center justify-between rounded-lg border bg-card p-4 hover:bg-secondary"
+      >
+        <div>
+          <p className="text-sm font-semibold">Block Builder</p>
+          <p className="text-xs text-muted-foreground">
+            Configure blocks, groups and assignments
+          </p>
+        </div>
+        <span className="text-xs text-muted-foreground">Open →</span>
+      </Link>
 
       <div className="space-y-8">
         <InviteSection />
