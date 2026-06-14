@@ -16,6 +16,7 @@ import { Route as AuthenticatedMatchDayRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
+import { Route as AuthenticatedBlockBuilderRouteImport } from './routes/_authenticated/block-builder'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedSquadIndexRouteImport } from './routes/_authenticated/squad/index'
 import { Route as AuthenticatedSquadPlayerIdRouteImport } from './routes/_authenticated/squad/$playerId'
@@ -56,6 +57,12 @@ const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBlockBuilderRoute =
+  AuthenticatedBlockBuilderRouteImport.update({
+    id: '/block-builder',
+    path: '/block-builder',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -89,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/block-builder': typeof AuthenticatedBlockBuilderRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/feed': typeof AuthenticatedFeedRoute
   '/home': typeof AuthenticatedHomeRoute
@@ -102,6 +110,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/block-builder': typeof AuthenticatedBlockBuilderRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/feed': typeof AuthenticatedFeedRoute
   '/home': typeof AuthenticatedHomeRoute
@@ -117,6 +126,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/block-builder': typeof AuthenticatedBlockBuilderRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/feed': typeof AuthenticatedFeedRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/admin'
+    | '/block-builder'
     | '/calendar'
     | '/feed'
     | '/home'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/admin'
+    | '/block-builder'
     | '/calendar'
     | '/feed'
     | '/home'
@@ -159,6 +171,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/admin'
+    | '/_authenticated/block-builder'
     | '/_authenticated/calendar'
     | '/_authenticated/feed'
     | '/_authenticated/home'
@@ -226,6 +239,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCalendarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/block-builder': {
+      id: '/_authenticated/block-builder'
+      path: '/block-builder'
+      fullPath: '/block-builder'
+      preLoaderRoute: typeof AuthenticatedBlockBuilderRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -266,6 +286,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedBlockBuilderRoute: typeof AuthenticatedBlockBuilderRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
@@ -278,6 +299,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedBlockBuilderRoute: AuthenticatedBlockBuilderRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedFeedRoute: AuthenticatedFeedRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
