@@ -8,14 +8,7 @@ export const Route = createFileRoute("/_authenticated/match-summary/$sessionId")
   component: MatchSummaryPage,
 });
 
-const SKILLS = [
-  { key: "tackling", label: "Tac" },
-  { key: "rucking", label: "Ruc" },
-  { key: "carrying", label: "Car" },
-  { key: "kicking", label: "Kic" },
-  { key: "catching", label: "Cat" },
-  { key: "iq", label: "IQ" },
-] as const;
+import { SKILLS } from "@/lib/skills";
 
 function MatchSummaryPage() {
   const { sessionId } = Route.useParams();
@@ -93,7 +86,7 @@ function MatchSummaryPage() {
                             <th className="text-left font-normal py-1 pr-2">Player</th>
                             {SKILLS.map((s) => (
                               <th key={s.key} className="font-normal py-1 px-1 text-center">
-                                {s.label}
+                                {s.short}
                               </th>
                             ))}
                           </tr>

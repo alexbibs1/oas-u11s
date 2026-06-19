@@ -2,10 +2,16 @@ import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { getMyRole } from "@/lib/auth/roles.functions";
-import { listPlayers, addPlayer, removePlayer } from "@/lib/players/players.functions";
+import {
+  listPlayers,
+  addPlayer,
+  removePlayer,
+  updatePlayerAttribute,
+} from "@/lib/players/players.functions";
 import { listCoaches, addCoach, removeCoach } from "@/lib/coaches/coaches.functions";
 import { inviteUser } from "@/lib/admin/invite.functions";
 import { listBlocks, createSession } from "@/lib/sessions/sessions.functions";
+import { ATTRIBUTES, REPEATABILITY_DESCRIPTORS } from "@/lib/skills";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,6 +57,7 @@ function AdminPage() {
       <div className="space-y-8">
         <InviteSection />
         <SessionsSection />
+        <AttributesSection />
         <PlayersSection />
         <CoachesSection />
       </div>
@@ -326,6 +333,99 @@ function CoachesSection() {
             >
               <Trash2 className="h-4 w-4 text-destructive" />
             </Button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function AttributesSection() {
+  const qc = useQueryClient();
+  const { data: players = [] } = useQuery({
+    queryKey: ["players"],
+    queryFn: () => listPlayers(),
+  });
+  const [openDescriptor, setOpenDescriptor] = useState<string | null>(null);
+
+  const update = useMutation({
+    mutationFn: (v: { id: string; attribute: "speed" | "strength" | "repeatability"; value: number }) =>
+      updatePlayerAttribute({ data: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["players"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <section className="rounded-lg border bg-card p-5">
+      <div className="mb-1 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Attributes</h2>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          Updated infrequently
+        </span>
+      </div>
+      <p className="mb-4 text-xs text-muted-foreground">
+        Physical / conditioning measures. Saved instantly.
+      </p>
+      <ul className="space-y-3">
+        {players.map((p: any) => (
+          <li key={p.id} className="rounded-md border bg-background p-3">
+            <p className="mb-2 text-sm font-medium">{p.player_name}</p>
+            <div className="space-y-2">
+              {ATTRIBUTES.map((a) => {
+                const current = p[a.key] as number | undefined;
+                const descId = `${p.id}-${a.key}`;
+                const showDescriptor =
+                  a.key === "repeatability" && openDescriptor?.startsWith(`${descId}-`);
+                return (
+                  <div key={a.key} className="flex items-center justify-between gap-2">
+                    <span className="w-28 text-xs text-muted-foreground">{a.label}</span>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((n) => {
+                        const active = current === n;
+                        return (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() => {
+                              update.mutate({ id: p.id, attribute: a.key as any, value: n });
+                              if (a.key === "repeatability") {
+                                const id = `${descId}-${n}`;
+                                setOpenDescriptor(id);
+                                setTimeout(
+                                  () =>
+                                    setOpenDescriptor((cur) =>
+                                      cur === id ? null : cur,
+                                    ),
+                                  2200,
+                                );
+                              }
+                            }}
+                            className={`h-7 w-7 rounded-md border text-xs font-semibold transition ${
+                              active
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "bg-background hover:border-primary/50"
+                            }`}
+                          >
+                            {n}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+              {openDescriptor?.startsWith(`${p.id}-repeatability-`) && (
+                <p className="text-right text-[11px] italic text-accent">
+                  {
+                    REPEATABILITY_DESCRIPTORS[
+                      Number(openDescriptor.split("-").pop())
+                    ]
+                  }
+                </p>
+              )}
+            </div>
           </li>
         ))}
       </ul>

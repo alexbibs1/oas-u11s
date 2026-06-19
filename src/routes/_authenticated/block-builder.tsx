@@ -133,16 +133,13 @@ function BlockList({
   );
 }
 
-const SKILLS = ["tackling", "rucking", "carrying", "kicking", "catching", "iq"] as const;
-type SkillKey = (typeof SKILLS)[number];
-const SKILL_LABELS: Record<SkillKey, string> = {
-  tackling: "Tac",
-  rucking: "Ruc",
-  carrying: "Car",
-  kicking: "Kic",
-  catching: "Cat",
-  iq: "IQ",
-};
+import { SKILLS as SKILL_DEFS, ATTRIBUTES as ATTR_DEFS, SKILL_KEYS } from "@/lib/skills";
+
+const SKILLS = SKILL_KEYS;
+type SkillKey = (typeof SKILL_KEYS)[number];
+const SKILL_LABELS: Record<SkillKey, string> = Object.fromEntries(
+  SKILL_DEFS.map((s) => [s.key, s.short]),
+) as Record<SkillKey, string>;
 
 type SortKey = "name" | "attendance" | SkillKey;
 
@@ -505,16 +502,35 @@ function PlayerCard({
             {player.attendance_pct === null ? "—" : `${player.attendance_pct}%`}
           </span>
         </div>
-        <div className="mt-1 flex flex-wrap gap-1">
-          {SKILLS.map((s) => (
-            <span
-              key={s}
-              className="rounded bg-secondary px-1 py-0.5 text-[10px] font-semibold"
-              title={s}
-            >
-              {SKILL_LABELS[s]} {player[s]}
-            </span>
-          ))}
+        <div className="mt-1">
+          <p className="text-[8px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            Skills
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {SKILLS.map((s) => (
+              <span
+                key={s}
+                className="rounded bg-secondary px-1 py-0.5 text-[10px] font-semibold"
+                title={s}
+              >
+                {SKILL_LABELS[s]} {player[s]}
+              </span>
+            ))}
+          </div>
+          <p className="mt-1 text-[8px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            Attributes
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {ATTR_DEFS.map((a) => (
+              <span
+                key={a.key}
+                className="rounded border border-dashed border-muted-foreground/30 px-1 py-0.5 text-[9px] text-muted-foreground"
+                title={a.label}
+              >
+                {a.short} {player[a.key] ?? "—"}
+              </span>
+            ))}
+          </div>
         </div>
         {showPrev && player.previous_group != null && (
           <p className="mt-1 text-[10px] text-muted-foreground">
@@ -630,6 +646,16 @@ function GroupColumn({
                     className="rounded bg-secondary px-1 text-[9px] font-semibold"
                   >
                     {SKILL_LABELS[s]} {p[s]}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-0.5 flex flex-wrap gap-1">
+                {ATTR_DEFS.map((a) => (
+                  <span
+                    key={a.key}
+                    className="rounded border border-dashed border-muted-foreground/30 px-1 text-[8px] text-muted-foreground"
+                  >
+                    {a.short} {p[a.key] ?? "—"}
                   </span>
                 ))}
               </div>

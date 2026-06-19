@@ -29,15 +29,7 @@ export const Route = createFileRoute("/_authenticated/squad/$playerId")({
   component: PlayerProfile,
 });
 
-const skills = [
-  { key: "tackling", label: "Tackling" },
-  { key: "rucking", label: "Rucking" },
-  { key: "carrying", label: "Carrying" },
-  { key: "kicking", label: "Kicking" },
-  { key: "catching", label: "Catching" },
-  { key: "iq", label: "Rugby IQ" },
-  { key: "speed", label: "Speed" },
-] as const;
+import { SKILLS, ATTRIBUTES } from "@/lib/skills";
 
 function PlayerProfile() {
   const { playerId } = Route.useParams();
@@ -96,7 +88,7 @@ function PlayerProfile() {
       <section className="mb-6">
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Skills</h2>
         <div className="grid grid-cols-2 gap-3">
-          {skills.map((s) => {
+          {SKILLS.map((s) => {
             const value = (player as any)[s.key] as number;
             return (
               <div key={s.key} className="rounded-lg border bg-card p-4">
@@ -120,6 +112,32 @@ function PlayerProfile() {
           })}
         </div>
       </section>
+
+      <section className="mb-6">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
+          Attributes
+        </h2>
+        <div className="grid grid-cols-3 gap-2">
+          {ATTRIBUTES.map((a) => {
+            const value = (player as any)[a.key] as number;
+            return (
+              <div
+                key={a.key}
+                className="rounded-md border border-dashed bg-card/60 p-3"
+              >
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {a.label}
+                </p>
+                <p className="mt-1 text-lg font-semibold tabular-nums text-foreground/90">
+                  {value}
+                  <span className="ml-1 text-[10px] font-normal text-muted-foreground">/ 5</span>
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
 
       <section>
         <div className="mb-3 flex items-center justify-between">

@@ -24,22 +24,7 @@ export const Route = createFileRoute("/_authenticated/match-day")({
 
 type Step = "session" | "group" | "register" | "rate" | "done";
 
-const DESCRIPTORS: Record<number, string> = {
-  1: "Not yet engaging",
-  2: "Developing, needs support",
-  3: "Exactly where we expect",
-  4: "Above expectations, consistently good",
-  5: "Top 5 in the squad",
-};
-
-const SKILLS = [
-  { key: "tackling", label: "Tackling" },
-  { key: "rucking", label: "Rucking" },
-  { key: "carrying", label: "Carrying" },
-  { key: "kicking", label: "Kicking" },
-  { key: "catching", label: "Catching" },
-  { key: "iq", label: "IQ" },
-] as const;
+import { SKILLS, SKILL_DESCRIPTORS as DESCRIPTORS } from "@/lib/skills";
 
 function MatchDayPage() {
   const { sessionId: preselectId } = Route.useSearch();
@@ -458,14 +443,11 @@ function RateStep({
     );
     for (const p of presentPlayers) {
       const ex = existingByPid.get(p.id);
-      init[p.id] = {
-        tackling: ex?.tackling ?? p.tackling ?? 3,
-        rucking: ex?.rucking ?? p.rucking ?? 3,
-        carrying: ex?.carrying ?? p.carrying ?? 3,
-        kicking: ex?.kicking ?? p.kicking ?? 3,
-        catching: ex?.catching ?? p.catching ?? 3,
-        iq: ex?.iq ?? p.iq ?? 3,
-      };
+      const entry: any = {};
+      for (const s of SKILLS) {
+        entry[s.key] = ex?.[s.key] ?? p[s.key] ?? 3;
+      }
+      init[p.id] = entry;
     }
     setScores(init);
   }, [ctx, presentPlayers]);
