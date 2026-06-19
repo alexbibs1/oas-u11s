@@ -47,3 +47,26 @@ export const removePlayer = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const updatePlayerAttribute = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      id: z.string().uuid(),
+      attribute: z.enum(["speed", "strength", "repeatability"]),
+      value: z.number().int().min(1).max(5),
+    }),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "block_builder",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+    const { error } = await context.supabase
+      .from("players")
+      .update({ [data.attribute]: data.value } as any)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
