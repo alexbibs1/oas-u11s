@@ -2,10 +2,16 @@ import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { getMyRole } from "@/lib/auth/roles.functions";
-import { listPlayers, addPlayer, removePlayer } from "@/lib/players/players.functions";
+import {
+  listPlayers,
+  addPlayer,
+  removePlayer,
+  updatePlayerAttribute,
+} from "@/lib/players/players.functions";
 import { listCoaches, addCoach, removeCoach } from "@/lib/coaches/coaches.functions";
 import { inviteUser } from "@/lib/admin/invite.functions";
 import { listBlocks, createSession } from "@/lib/sessions/sessions.functions";
+import { ATTRIBUTES, REPEATABILITY_DESCRIPTORS } from "@/lib/skills";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
