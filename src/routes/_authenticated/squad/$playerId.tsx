@@ -29,15 +29,7 @@ export const Route = createFileRoute("/_authenticated/squad/$playerId")({
   component: PlayerProfile,
 });
 
-const skills = [
-  { key: "tackling", label: "Tackling" },
-  { key: "rucking", label: "Rucking" },
-  { key: "carrying", label: "Carrying" },
-  { key: "kicking", label: "Kicking" },
-  { key: "catching", label: "Catching" },
-  { key: "iq", label: "Rugby IQ" },
-  { key: "speed", label: "Speed" },
-] as const;
+import { SKILLS, ATTRIBUTES } from "@/lib/skills";
 
 function PlayerProfile() {
   const { playerId } = Route.useParams();
