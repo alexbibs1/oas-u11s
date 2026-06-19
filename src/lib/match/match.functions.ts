@@ -237,7 +237,7 @@ export const submitRatings = createServerFn({ method: "POST" })
           return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
         };
         const avg: Record<string, number> = {};
-        for (const k of ["tackling", "rucking", "carrying", "kicking", "catching", "iq"]) {
+        for (const k of SKILL_KEYS) {
           const v = avgSkill(k);
           if (v != null) avg[k] = v;
         }
