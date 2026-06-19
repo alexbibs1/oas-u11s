@@ -133,16 +133,13 @@ function BlockList({
   );
 }
 
-const SKILLS = ["tackling", "rucking", "carrying", "kicking", "catching", "iq"] as const;
-type SkillKey = (typeof SKILLS)[number];
-const SKILL_LABELS: Record<SkillKey, string> = {
-  tackling: "Tac",
-  rucking: "Ruc",
-  carrying: "Car",
-  kicking: "Kic",
-  catching: "Cat",
-  iq: "IQ",
-};
+import { SKILLS as SKILL_DEFS, ATTRIBUTES as ATTR_DEFS, SKILL_KEYS } from "@/lib/skills";
+
+const SKILLS = SKILL_KEYS;
+type SkillKey = (typeof SKILL_KEYS)[number];
+const SKILL_LABELS: Record<SkillKey, string> = Object.fromEntries(
+  SKILL_DEFS.map((s) => [s.key, s.short]),
+) as Record<SkillKey, string>;
 
 type SortKey = "name" | "attendance" | SkillKey;
 
