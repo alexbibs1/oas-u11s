@@ -13,15 +13,7 @@ export const Route = createFileRoute("/_authenticated/squad/")({
   component: SquadPage,
 });
 
-const skills = [
-  { key: "tackling", label: "Tac" },
-  { key: "rucking", label: "Ruc" },
-  { key: "carrying", label: "Car" },
-  { key: "kicking", label: "Kic" },
-  { key: "catching", label: "Cat" },
-  { key: "iq", label: "IQ" },
-  { key: "speed", label: "Spd" },
-] as const;
+import { SKILLS, ATTRIBUTES } from "@/lib/skills";
 
 function SquadPage() {
   const { data: players } = useSuspenseQuery(playersQuery);
