@@ -88,7 +88,7 @@ function MatchSummaryPage() {
                             <th className="text-left font-normal py-1 pr-2">Player</th>
                             {SKILLS.map((s) => (
                               <th key={s.key} className="font-normal py-1 px-1 text-center">
-                                {s.label}
+                                {s.short}
                               </th>
                             ))}
                           </tr>
