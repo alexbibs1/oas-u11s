@@ -219,7 +219,7 @@ export const submitRatings = createServerFn({ method: "POST" })
     if (sessionIds.length && playerIds.length) {
       const { data: allRatings } = await supabase
         .from("match_ratings")
-        .select(`player_id, ${SKILL_SELECT}`)
+        .select("player_id, tackling, rucking, carrying, handling, kicking, catching, iq")
         .in("session_id", sessionIds)
         .in("player_id", playerIds);
 
