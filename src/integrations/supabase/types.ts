@@ -265,10 +265,11 @@ export type Database = {
       }
       match_ratings: {
         Row: {
-          carrying: number | null
+          carrying: number
           catching: number
           created_at: string
           group_id: string
+          handling: number
           id: string
           iq: number
           kicking: number
@@ -279,10 +280,11 @@ export type Database = {
           tackling: number
         }
         Insert: {
-          carrying?: number | null
+          carrying?: number
           catching: number
           created_at?: string
           group_id: string
+          handling?: number
           id?: string
           iq: number
           kicking: number
@@ -293,10 +295,11 @@ export type Database = {
           tackling: number
         }
         Update: {
-          carrying?: number | null
+          carrying?: number
           catching?: number
           created_at?: string
           group_id?: string
+          handling?: number
           id?: string
           iq?: number
           kicking?: number
@@ -373,36 +376,45 @@ export type Database = {
           carrying: number
           catching: number
           created_at: string
+          handling: number
           id: string
           iq: number
           kicking: number
           player_name: string
+          repeatability: number
           rucking: number
           speed: number
+          strength: number
           tackling: number
         }
         Insert: {
           carrying?: number
           catching?: number
           created_at?: string
+          handling?: number
           id?: string
           iq?: number
           kicking?: number
           player_name: string
+          repeatability?: number
           rucking?: number
           speed?: number
+          strength?: number
           tackling?: number
         }
         Update: {
           carrying?: number
           catching?: number
           created_at?: string
+          handling?: number
           id?: string
           iq?: number
           kicking?: number
           player_name?: string
+          repeatability?: number
           rucking?: number
           speed?: number
+          strength?: number
           tackling?: number
         }
         Relationships: []
