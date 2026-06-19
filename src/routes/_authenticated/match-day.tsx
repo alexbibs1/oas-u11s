@@ -443,14 +443,11 @@ function RateStep({
     );
     for (const p of presentPlayers) {
       const ex = existingByPid.get(p.id);
-      init[p.id] = {
-        tackling: ex?.tackling ?? p.tackling ?? 3,
-        rucking: ex?.rucking ?? p.rucking ?? 3,
-        carrying: ex?.carrying ?? p.carrying ?? 3,
-        kicking: ex?.kicking ?? p.kicking ?? 3,
-        catching: ex?.catching ?? p.catching ?? 3,
-        iq: ex?.iq ?? p.iq ?? 3,
-      };
+      const entry: any = {};
+      for (const s of SKILLS) {
+        entry[s.key] = ex?.[s.key] ?? p[s.key] ?? 3;
+      }
+      init[p.id] = entry;
     }
     setScores(init);
   }, [ctx, presentPlayers]);
