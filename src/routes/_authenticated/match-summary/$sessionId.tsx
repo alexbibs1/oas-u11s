@@ -10,8 +10,6 @@ export const Route = createFileRoute("/_authenticated/match-summary/$sessionId")
 
 import { SKILLS } from "@/lib/skills";
 
-const COLS = SKILLS.map((s) => ({ key: s.key, label: s.short }));
-
 function MatchSummaryPage() {
   const { sessionId } = Route.useParams();
   const { data, isLoading } = useQuery({
