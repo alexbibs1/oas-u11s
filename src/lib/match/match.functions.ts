@@ -2,7 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const SKILLS = ["tackling", "rucking", "carrying", "kicking", "catching", "iq"] as const;
+import { SKILL_KEYS } from "@/lib/skills";
+
+const SKILL_SELECT = SKILL_KEYS.join(", ");
 
 export const listGroupsForBlock = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
