@@ -649,6 +649,16 @@ function GroupColumn({
                   </span>
                 ))}
               </div>
+              <div className="mt-0.5 flex flex-wrap gap-1">
+                {ATTR_DEFS.map((a) => (
+                  <span
+                    key={a.key}
+                    className="rounded border border-dashed border-muted-foreground/30 px-1 text-[8px] text-muted-foreground"
+                  >
+                    {a.short} {p[a.key] ?? "—"}
+                  </span>
+                ))}
+              </div>
             </div>
           </li>
         ))}
