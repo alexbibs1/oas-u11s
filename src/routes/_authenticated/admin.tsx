@@ -57,6 +57,7 @@ function AdminPage() {
       <div className="space-y-8">
         <InviteSection />
         <SessionsSection />
+        <AttributesSection />
         <PlayersSection />
         <CoachesSection />
       </div>
