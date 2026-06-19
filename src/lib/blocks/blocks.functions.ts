@@ -39,7 +39,7 @@ export const getBlockBuilderData = createServerFn({ method: "GET" })
 
     const { data: players } = await sb
       .from("players")
-      .select("id, player_name, tackling, rucking, carrying, kicking, catching, iq")
+      .select("id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability")
       .order("player_name", { ascending: true });
 
     // Attendance reliability across all sessions
