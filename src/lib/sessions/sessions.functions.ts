@@ -181,7 +181,7 @@ export const getMatchSummary = createServerFn({ method: "GET" })
 
     const { data: ratings } = await sb
       .from("match_ratings")
-      .select("player_id, group_id, tackling, rucking, carrying, kicking, catching, iq")
+      .select("player_id, group_id, tackling, rucking, carrying, handling, kicking, catching, iq")
       .eq("session_id", data.session_id);
 
     const playerIds = new Set<string>();
