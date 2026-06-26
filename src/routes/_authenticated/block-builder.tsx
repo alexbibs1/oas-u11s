@@ -1,6 +1,6 @@
 import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { getMyRole } from "@/lib/auth/roles.functions";
 import {
@@ -147,7 +147,6 @@ type GroupState = { coach_ids: string[]; player_ids: string[] };
 
 function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () => void }) {
   const qc = useQueryClient();
-  const navigate = useNavigate();
   const { data, isLoading } = useQuery({
     queryKey: ["block-builder", blockId],
     queryFn: () => getBlockBuilderData({ data: { block_id: blockId } }),
@@ -166,15 +165,23 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
   ]);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("name");
-  const [initialized, setInitialized] = useState(false);
+  const [initializedFor, setInitializedFor] = useState<string | null>(null);
 
-  // Initialize once
-  if (data && !initialized) {
+  useEffect(() => {
+    if (!data) return;
+    const key = data.block?.id ?? "new-block";
+    if (initializedFor === key) return;
+
     if (data.block) {
       setName(data.block.name ?? "");
       setStartDate(data.block.start_date ?? "");
       setEndDate(data.block.end_date ?? "");
       setIsActive(!!data.block.is_active);
+    } else {
+      setName("");
+      setStartDate("");
+      setEndDate("");
+      setIsActive(false);
     }
     const base: GroupState[] = [1, 2, 3, 4].map((n) => {
       const g = data.groups.find((x) => x.group_number === n);
@@ -183,7 +190,21 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
         : { coach_ids: [], player_ids: [] };
     });
     setGroups(base);
-    setInitialized(true);
+    setSelectedPlayer(null);
+    setSortKey("name");
+    setStep(1);
+    setInitializedFor(key);
+  }, [data, initializedFor]);
+
+  const detailsComplete = name.trim().length > 0 && startDate.length > 0 && endDate.length > 0;
+
+  function goToAssignments() {
+    if (!detailsComplete) {
+      toast.error("Add a block name, start date and end date first");
+      return;
+    }
+    setStep(2);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   const assignedIds = useMemo(
@@ -341,9 +362,9 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
             <Switch id="bb-active" checked={isActive} onCheckedChange={setIsActive} />
           </div>
           <Button
+            type="button"
             className="w-full"
-            disabled={!name || !startDate || !endDate}
-            onClick={() => setStep(2)}
+            onClick={goToAssignments}
           >
             Next
           </Button>
