@@ -1,6 +1,6 @@
 import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { getMyRole } from "@/lib/auth/roles.functions";
 import {
@@ -156,6 +156,9 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const nameRef = useRef<HTMLInputElement>(null);
+  const startDateRef = useRef<HTMLInputElement>(null);
+  const endDateRef = useRef<HTMLInputElement>(null);
   const [isActive, setIsActive] = useState(false);
   const [groups, setGroups] = useState<GroupState[]>([
     { coach_ids: [], player_ids: [] },
@@ -199,7 +202,14 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
   const detailsComplete = name.trim().length > 0 && startDate.length > 0 && endDate.length > 0;
 
   function goToAssignments() {
-    if (!detailsComplete) {
+    const nextName = nameRef.current?.value ?? name;
+    const nextStartDate = startDateRef.current?.value ?? startDate;
+    const nextEndDate = endDateRef.current?.value ?? endDate;
+    setName(nextName);
+    setStartDate(nextStartDate);
+    setEndDate(nextEndDate);
+
+    if (!nextName.trim() || !nextStartDate || !nextEndDate) {
       toast.error("Add a block name, start date and end date first");
       return;
     }
@@ -332,8 +342,10 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
             <Label htmlFor="bb-name">Block name</Label>
             <Input
               id="bb-name"
+              ref={nameRef}
               value={name}
               onChange={(e) => setName(e.target.value)}
+              onInput={(e) => setName(e.currentTarget.value)}
               placeholder="Block 1"
             />
           </div>
@@ -342,18 +354,22 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
               <Label htmlFor="bb-start">Start date</Label>
               <Input
                 id="bb-start"
+                ref={startDateRef}
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
+                onInput={(e) => setStartDate(e.currentTarget.value)}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="bb-end">End date</Label>
               <Input
                 id="bb-end"
+                ref={endDateRef}
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
+                onInput={(e) => setEndDate(e.currentTarget.value)}
               />
             </div>
           </div>
