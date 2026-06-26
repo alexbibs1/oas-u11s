@@ -199,8 +199,6 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
     setInitializedFor(key);
   }, [data, initializedFor]);
 
-  const detailsComplete = name.trim().length > 0 && startDate.length > 0 && endDate.length > 0;
-
   function goToAssignments() {
     const nextName = nameRef.current?.value ?? name;
     const nextStartDate = startDateRef.current?.value ?? startDate;

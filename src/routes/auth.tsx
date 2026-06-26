@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { bootstrapFirstAdmin, bootstrapStatus } from "@/lib/admin/bootstrap.functions";
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Sign in — OA Rugby" },
