@@ -164,7 +164,10 @@ function SessionStep({ onPick }: { onPick: (s: any) => void }) {
             >
               <div>
                 <p className="text-sm font-semibold">{formatDateLong(s.session_date)}</p>
-                <p className="text-xs text-muted-foreground">{s.block_name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {s.opponent ? `vs ${s.opponent}` : "Match"}
+                  {s.venue ? `, ${s.venue}` : ""}
+                </p>
               </div>
               {!selectable && <span className="text-xs text-muted-foreground">Closed</span>}
             </button>
