@@ -86,7 +86,8 @@ export const updatePlayerAttribute = createServerFn({ method: "POST" })
       .update({ [data.attribute]: data.value } as any)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
-    await context.supabase.from("audit_log").insert({
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("audit_log").insert({
       changed_by: context.userId,
       table_name: "players",
       record_id: data.id,
