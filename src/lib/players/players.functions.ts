@@ -53,7 +53,18 @@ export const updatePlayerAttribute = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
       id: z.string().uuid(),
-      attribute: z.enum(["speed", "strength", "repeatability"]),
+      attribute: z.enum([
+        "speed",
+        "strength",
+        "repeatability",
+        "carrying",
+        "handling",
+        "tackling",
+        "rucking",
+        "kicking",
+        "catching",
+        "iq",
+      ]),
       value: z.number().int().min(1).max(5),
     }),
   )
