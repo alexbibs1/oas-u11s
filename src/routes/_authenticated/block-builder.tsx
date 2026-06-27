@@ -193,7 +193,7 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
         : { coach_ids: [], player_ids: [] };
     });
     setGroups(base);
-    setSelectedPlayer(null);
+    setSelectedPlayers(new Set());
     setSortKey("name");
     setStep(1);
     setInitializedFor(key);
@@ -239,20 +239,29 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
     return m;
   }, [data]);
 
-  function assignToGroup(groupIdx: number) {
-    if (!selectedPlayer) return;
+  function togglePlayer(id: string) {
+    setSelectedPlayers((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function assignSelectedToGroup(groupIdx: number) {
+    if (selectedPlayers.size === 0) return;
+    const ids = Array.from(selectedPlayers);
     setGroups((prev) => {
       const next = prev.map((g) => ({
         ...g,
-        player_ids: g.player_ids.filter((id) => id !== selectedPlayer),
+        player_ids: g.player_ids.filter((id) => !selectedPlayers.has(id)),
       }));
       next[groupIdx] = {
         ...next[groupIdx],
-        player_ids: [...next[groupIdx].player_ids, selectedPlayer],
+        player_ids: [...next[groupIdx].player_ids, ...ids],
       };
       return next;
     });
-    setSelectedPlayer(null);
+    setSelectedPlayers(new Set());
   }
 
   function unassign(playerId: string) {
@@ -262,7 +271,6 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
         player_ids: g.player_ids.filter((id) => id !== playerId),
       })),
     );
-    setSelectedPlayer(null);
   }
 
   function toggleCoach(groupIdx: number, coachId: string) {
