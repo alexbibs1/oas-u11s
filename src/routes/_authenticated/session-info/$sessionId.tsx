@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getSession } from "@/lib/sessions/sessions.functions";
 import { listGroupsForBlock } from "@/lib/match/match.functions";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatDateLong } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/session-info/$sessionId")({
   component: SessionInfoPage,
@@ -11,6 +12,7 @@ export const Route = createFileRoute("/_authenticated/session-info/$sessionId")(
 
 function SessionInfoPage() {
   const { sessionId } = Route.useParams();
+  const router = useRouter();
   const { data: session } = useQuery({
     queryKey: ["session", sessionId],
     queryFn: () => getSession({ data: { id: sessionId } }),
@@ -21,26 +23,30 @@ function SessionInfoPage() {
     enabled: !!session?.block_id,
   });
 
+  const goBack = () => {
+    if (window.history.length > 1) router.history.back();
+    else router.navigate({ to: "/calendar" });
+  };
+
   return (
     <main className="mx-auto max-w-2xl px-5 pt-8 pb-24">
       <header className="mb-6 flex items-center gap-3">
-        <Button asChild variant="ghost" size="icon">
-          <Link to="/calendar">
-            <ChevronLeft className="h-5 w-5" />
-          </Link>
+        <Button variant="ghost" size="icon" onClick={goBack} aria-label="Back">
+          <ChevronLeft className="h-5 w-5" />
         </Button>
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-accent">
             Training Session
           </p>
           <h1 className="mt-1 text-2xl font-bold text-primary">
-            {session?.session_date ?? "…"}
+            {session ? formatDateLong(session.session_date) : "…"}
           </h1>
           {session && (
             <p className="text-xs text-muted-foreground">{session.block_name}</p>
           )}
         </div>
       </header>
+
 
       <section className="rounded-lg border bg-card p-5">
         <h2 className="mb-3 text-sm font-semibold text-primary">Active groups</h2>
