@@ -166,7 +166,7 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
     { coach_ids: [], player_ids: [] },
     { coach_ids: [], player_ids: [] },
   ]);
-  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+  const [selectedPlayers, setSelectedPlayers] = useState<Set<string>>(new Set());
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [initializedFor, setInitializedFor] = useState<string | null>(null);
 
