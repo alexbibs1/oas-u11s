@@ -84,6 +84,29 @@ function HomePage() {
           )}
         </div>
 
+        {summary?.otherGroups && summary.otherGroups.length > 0 && (
+          <div className="rounded-lg border bg-card p-5">
+            <h2 className="text-sm font-semibold text-muted-foreground">
+              Other groups this block
+            </h2>
+            <ul className="mt-3 space-y-3">
+              {summary.otherGroups.map((g: any) => (
+                <li key={g.id} className="border-t pt-3 first:border-t-0 first:pt-0">
+                  <p className="text-sm font-semibold text-primary">
+                    Group {g.group_number}
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      · {g.player_count} player{g.player_count === 1 ? "" : "s"}
+                    </span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {g.coach_names.length ? g.coach_names.join(", ") : "No coach assigned"}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {next ? (
           <Link
             to={
