@@ -644,10 +644,10 @@ function AuditLogSection() {
       ) : (
         <ul className="max-h-80 space-y-2 overflow-auto text-xs">
           {rows.map((r: any) => {
-            const attr = r.metadata?.attribute as string | undefined;
             const playerName = r.metadata?.player_name as string | undefined;
-            const oldV = attr ? r.old_values?.[attr] : null;
-            const newV = attr ? r.new_values?.[attr] : null;
+            const isSkillRatings = r.table_name === "skill_ratings";
+            const changed = (r.metadata?.changed_fields as string[] | undefined) ?? null;
+            const attr = r.metadata?.attribute as string | undefined;
             return (
               <li
                 key={r.id}
@@ -655,21 +655,35 @@ function AuditLogSection() {
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-semibold">
-                    {playerName ?? r.table_name} · {attr ?? r.operation}
+                    {playerName ?? r.table_name}
+                    {isSkillRatings
+                      ? ` · Week ${r.metadata?.week_number ?? "?"} · Group ${r.metadata?.group_number ?? "?"}`
+                      : ` · ${attr ?? r.operation}`}
                   </span>
                   <span className="text-muted-foreground">
                     {new Date(r.created_at).toLocaleString()}
                   </span>
                 </div>
-                {attr && (
+                {isSkillRatings && changed ? (
+                  <ul className="mt-0.5 space-y-0.5 text-muted-foreground">
+                    {changed.map((k) => (
+                      <li key={k}>
+                        {k}: {r.old_values?.[k] ?? "—"} →{" "}
+                        <span className="font-semibold text-primary">{r.new_values?.[k]}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : attr ? (
                   <p className="mt-0.5 text-muted-foreground">
-                    {oldV ?? "—"} → <span className="font-semibold text-primary">{newV}</span>
+                    {r.old_values?.[attr] ?? "—"} →{" "}
+                    <span className="font-semibold text-primary">{r.new_values?.[attr]}</span>
                   </p>
-                )}
+                ) : null}
               </li>
             );
           })}
         </ul>
+
       )}
     </div>
   );
