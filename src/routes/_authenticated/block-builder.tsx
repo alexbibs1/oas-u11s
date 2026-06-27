@@ -614,23 +614,15 @@ function GroupColumn({
   group,
   coaches,
   playerMap,
-  onAssign,
-  canAssign,
   onUnassign,
   onToggleCoach,
-  onSelect,
-  selectedPlayer,
 }: {
   index: number;
   group: GroupState;
   coaches: any[];
   playerMap: Map<string, any>;
-  onAssign: () => void;
-  canAssign: boolean;
   onUnassign: (id: string) => void;
   onToggleCoach: (id: string) => void;
-  onSelect: (id: string) => void;
-  selectedPlayer: string | null;
 }) {
   const groupPlayers = group.player_ids
     .map((id) => playerMap.get(id))
@@ -651,14 +643,9 @@ function GroupColumn({
     <div className="flex flex-col rounded-lg border bg-card p-3">
       <div className="mb-2 flex items-center justify-between">
         <h4 className="font-semibold">Group {index + 1}</h4>
-        <button
-          type="button"
-          onClick={onAssign}
-          disabled={!canAssign}
-          className="rounded bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground disabled:opacity-30"
-        >
-          + Assign
-        </button>
+        <span className="text-[10px] text-muted-foreground">
+          {groupPlayers.length} player{groupPlayers.length === 1 ? "" : "s"}
+        </span>
       </div>
       <div className="mb-2">
         <p className="mb-1 text-[10px] font-semibold uppercase text-muted-foreground">Coaches</p>
@@ -685,19 +672,9 @@ function GroupColumn({
       <ul className="flex-1 space-y-1">
         {groupPlayers.map((p: any) => (
           <li key={p.id}>
-            <div
-              className={`rounded-md border px-2 py-1 ${
-                selectedPlayer === p.id ? "border-primary bg-primary/10" : "border-border"
-              }`}
-            >
+            <div className="rounded-md border border-border px-2 py-1">
               <div className="flex items-center justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={() => onSelect(p.id)}
-                  className="truncate text-left text-xs font-medium"
-                >
-                  {p.player_name}
-                </button>
+                <span className="truncate text-xs font-medium">{p.player_name}</span>
                 <button
                   type="button"
                   onClick={() => onUnassign(p.id)}
@@ -716,6 +693,7 @@ function GroupColumn({
                   </span>
                 ))}
               </div>
+
               <div className="mt-0.5 flex flex-wrap gap-1">
                 {ATTR_DEFS.map((a) => (
                   <span
