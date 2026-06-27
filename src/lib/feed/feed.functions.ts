@@ -220,30 +220,58 @@ export const getHomeSummary = createServerFn({ method: "GET" })
       .maybeSingle();
 
     let myGroup: { id: string; group_number: number; coach_names: string[] } | null = null;
+    let otherGroups: Array<{
+      id: string;
+      group_number: number;
+      coach_names: string[];
+      player_count: number;
+    }> = [];
     let myCoachId: string | null = null;
     const { data: roleRow } = await sb
       .from("user_roles")
       .select("coach_id")
       .eq("user_id", context.userId);
     myCoachId = (roleRow ?? []).find((r: any) => r.coach_id)?.coach_id ?? null;
-    if (block && myCoachId) {
-      const { data: gc } = await sb
-        .from("group_coaches")
-        .select("groups:group_id ( id, group_number, block_id )")
-        .eq("coach_id", myCoachId);
-      const g = (gc ?? [])
-        .map((x: any) => x.groups)
-        .find((g: any) => g?.block_id === (block as any).id);
-      if (g) {
-        const { data: coachRows } = await sb
-          .from("group_coaches")
-          .select("coaches:coach_id ( coach_name )")
-          .eq("group_id", g.id);
-        const coach_names = (coachRows ?? [])
-          .map((r: any) => r.coaches?.coach_name)
-          .filter(Boolean) as string[];
-        myGroup = { id: g.id, group_number: g.group_number, coach_names };
+
+    if (block) {
+      const { data: blockGroups } = await sb
+        .from("groups")
+        .select(
+          "id, group_number, group_coaches:group_coaches ( coach_id, coaches:coach_id ( coach_name ) ), group_players:group_players ( player_id )",
+        )
+        .eq("block_id", (block as any).id)
+        .order("group_number", { ascending: true });
+
+      const enriched = (blockGroups ?? []).map((g: any) => ({
+        id: g.id,
+        group_number: g.group_number,
+        coach_ids: (g.group_coaches ?? [])
+          .map((gc: any) => gc.coach_id)
+          .filter(Boolean) as string[],
+        coach_names: (g.group_coaches ?? [])
+          .map((gc: any) => gc.coaches?.coach_name)
+          .filter(Boolean) as string[],
+        player_count: (g.group_players ?? []).length,
+      }));
+
+      const mine = myCoachId
+        ? enriched.find((g) => g.coach_ids.includes(myCoachId!))
+        : null;
+      if (mine) {
+        myGroup = {
+          id: mine.id,
+          group_number: mine.group_number,
+          coach_names: mine.coach_names,
+        };
       }
+      otherGroups = enriched
+        .filter((g) => g.id !== mine?.id)
+        .map((g) => ({
+          id: g.id,
+          group_number: g.group_number,
+          coach_names: g.coach_names,
+          player_count: g.player_count,
+        }));
     }
 
     const { data: nextSess } = await sb
