@@ -388,7 +388,17 @@ function CoachesSection() {
   );
 }
 
-type AttrKey = "speed" | "strength" | "repeatability";
+type AttrKey =
+  | "speed"
+  | "strength"
+  | "repeatability"
+  | "carrying"
+  | "handling"
+  | "tackling"
+  | "rucking"
+  | "kicking"
+  | "catching"
+  | "iq";
 type PendingAttr = {
   playerId: string;
   playerName: string;
@@ -410,7 +420,7 @@ function AttributesSection() {
     mutationFn: (v: { id: string; attribute: AttrKey; value: number }) =>
       updatePlayerAttribute({ data: v }),
     onSuccess: () => {
-      toast.success("Attribute updated");
+      toast.success("Baseline updated");
       qc.invalidateQueries({ queryKey: ["players"] });
       qc.invalidateQueries({ queryKey: ["audit-log"] });
       setPending(null);
@@ -418,60 +428,69 @@ function AttributesSection() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const renderRow = (p: any, def: { key: string; label: string }) => {
+    const current = p[def.key] as number | undefined;
+    return (
+      <div key={def.key} className="flex items-center justify-between gap-2">
+        <span className="w-24 text-xs text-muted-foreground">{def.label}</span>
+        <div className="flex gap-1">
+          {[1, 2, 3, 4, 5].map((n) => {
+            const active = current === n;
+            return (
+              <button
+                key={n}
+                type="button"
+                onClick={() => {
+                  if (active) return;
+                  setPending({
+                    playerId: p.id,
+                    playerName: p.player_name,
+                    attribute: def.key as AttrKey,
+                    attributeLabel: def.label,
+                    oldValue: current ?? null,
+                    newValue: n,
+                  });
+                }}
+                className={`h-7 w-7 rounded-md border text-xs font-semibold transition ${
+                  active
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "bg-background hover:border-primary/50"
+                }`}
+              >
+                {n}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="rounded-lg border bg-card p-5">
       <div className="mb-1 flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Attributes</h3>
+        <h3 className="text-sm font-semibold">Baselines</h3>
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
           Confirmation required
         </span>
       </div>
       <p className="mb-4 text-xs text-muted-foreground">
-        Physical / conditioning measures. Each change is confirmed and audited.
+        Periodic baseline adjustment by admins. Every change is confirmed and audited.
       </p>
       <ul className="space-y-3">
         {players.map((p: any) => (
           <li key={p.id} className="rounded-md border bg-background p-3">
             <p className="mb-2 text-sm font-medium">{p.player_name}</p>
-            <div className="space-y-2">
-              {ATTRIBUTES.map((a) => {
-                const current = p[a.key] as number | undefined;
-                return (
-                  <div key={a.key} className="flex items-center justify-between gap-2">
-                    <span className="w-28 text-xs text-muted-foreground">{a.label}</span>
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map((n) => {
-                        const active = current === n;
-                        return (
-                          <button
-                            key={n}
-                            type="button"
-                            onClick={() => {
-                              if (active) return;
-                              setPending({
-                                playerId: p.id,
-                                playerName: p.player_name,
-                                attribute: a.key as AttrKey,
-                                attributeLabel: a.label,
-                                oldValue: current ?? null,
-                                newValue: n,
-                              });
-                            }}
-                            className={`h-7 w-7 rounded-md border text-xs font-semibold transition ${
-                              active
-                                ? "border-primary bg-primary text-primary-foreground"
-                                : "bg-background hover:border-primary/50"
-                            }`}
-                          >
-                            {n}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Skills
+            </p>
+            <div className="space-y-2">{SKILLS.map((s) => renderRow(p, s))}</div>
+
+            <p className="mb-1 mt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Attributes
+            </p>
+            <div className="space-y-2">{ATTRIBUTES.map((a) => renderRow(p, a))}</div>
           </li>
         ))}
       </ul>
@@ -479,7 +498,7 @@ function AttributesSection() {
       <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm attribute change</AlertDialogTitle>
+            <AlertDialogTitle>Confirm baseline change</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-sm">
                 <p>
@@ -488,17 +507,18 @@ function AttributesSection() {
                 </p>
                 <p>
                   From{" "}
-                  <span className="font-semibold">
-                    {pending?.oldValue ?? "—"}
-                  </span>{" "}
+                  <span className="font-semibold">{pending?.oldValue ?? "—"}</span>{" "}
                   to{" "}
-                  <span className="font-semibold text-primary">
-                    {pending?.newValue}
-                  </span>
+                  <span className="font-semibold text-primary">{pending?.newValue}</span>
                 </p>
                 {pending?.attribute === "repeatability" && pending && (
                   <p className="text-xs italic text-muted-foreground">
                     {REPEATABILITY_DESCRIPTORS[pending.newValue]}
+                  </p>
+                )}
+                {pending && SKILLS.some((s) => s.key === pending.attribute) && (
+                  <p className="text-xs italic text-muted-foreground">
+                    {SKILL_DESCRIPTORS[pending.newValue]}
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground">
@@ -529,6 +549,79 @@ function AttributesSection() {
     </div>
   );
 }
+
+function CompletionTrackerSection() {
+  const { data: weeks } = useQuery({
+    queryKey: ["match-weeks"],
+    queryFn: () => listMatchWeeks(),
+  });
+  const [selected, setSelected] = useState<string | null>(null);
+  const activeId = selected ?? weeks?.weeks?.[0]?.id ?? null;
+  const { data: tracker } = useQuery({
+    queryKey: ["week-completion", activeId],
+    queryFn: () => getWeekCompletion({ data: { session_id: activeId! } }),
+    enabled: !!activeId,
+  });
+  return (
+    <div className="rounded-lg border bg-card p-5">
+      <h3 className="mb-1 text-sm font-semibold">Weekly rating completion</h3>
+      <p className="mb-3 text-xs text-muted-foreground">
+        Per-group status for a selected match week.
+      </p>
+      {weeks?.weeks?.length ? (
+        <select
+          value={activeId ?? ""}
+          onChange={(e) => setSelected(e.target.value)}
+          className="mb-4 w-full rounded-md border bg-background px-2 py-1 text-sm"
+        >
+          {weeks.weeks.map((w: any) => (
+            <option key={w.id} value={w.id}>
+              Week {w.week_number ?? "—"} · {w.session_date}
+              {w.opponent ? ` · ${w.opponent}` : ""}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <p className="text-xs text-muted-foreground">No match weeks yet.</p>
+      )}
+      {tracker && (
+        <ul className="space-y-2">
+          {tracker.groups.map((g: any) => {
+            const palette =
+              g.status === "submitted"
+                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                : g.status === "partial"
+                  ? "bg-amber-100 text-amber-800 border-amber-300"
+                  : "bg-slate-100 text-slate-700 border-slate-300";
+            const label =
+              g.status === "submitted"
+                ? "Submitted"
+                : g.status === "partial"
+                  ? `Partial (${g.rated}/${g.expected})`
+                  : "Not started";
+            return (
+              <li
+                key={g.group_id}
+                className="flex items-center justify-between rounded-md border bg-background p-3"
+              >
+                <div>
+                  <p className="text-sm font-semibold">Group {g.group_number}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {g.coaches.length ? g.coaches.join(", ") : "No coaches"}
+                  </p>
+                </div>
+                <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${palette}`}>
+                  {label}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 
 function AuditLogSection() {
   const { data: rows = [] } = useQuery({
