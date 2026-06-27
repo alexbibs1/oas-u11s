@@ -132,13 +132,8 @@ export const getGroupRosterForWeek = createServerFn({ method: "GET" })
       extra = ex ?? [];
     }
 
-    // Existing skill_ratings for this session/group
-    const { data: existing } = await sb
-      .from("skill_ratings")
-      .select(`id, player_id, ${SKILL_FIELDS}, coach_names, entered_by_name, updated_at`)
-      .eq("session_id", data.session_id)
-      .eq("group_id" as any, data.group_id as any); // group_id not a column; ignore
-    // ^ skill_ratings has no group_id column; filter by player ids in this group instead
+    // Existing skill_ratings for the players in this group/session
+
     const ids = [...players, ...extra].map((p: any) => p.id);
     const { data: existingByPlayer } = ids.length
       ? await sb
