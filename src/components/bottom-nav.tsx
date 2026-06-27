@@ -15,6 +15,7 @@ export function BottomNav() {
     { to: "/feed", label: "Feed", Icon: Newspaper },
     { to: "/calendar", label: "Calendar", Icon: Calendar },
     { to: "/match-day", label: "Match Day", Icon: ClipboardCheck },
+    { to: "/ratings", label: "Ratings", Icon: Star },
     { to: "/squad", label: "Squad", Icon: Users },
     ...(me?.isBlockBuilder ? [{ to: "/admin", label: "Admin", Icon: Shield }] : []),
   ] as const;
