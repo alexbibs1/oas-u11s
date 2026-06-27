@@ -447,16 +447,6 @@ function SessionDialog({
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label>Week number</Label>
-            <Input
-              type="number"
-              min={1}
-              value={weekNumber}
-              onChange={(e) => setWeekNumber(e.target.value)}
-              placeholder="Auto"
-            />
-          </div>
           {type === "match" && (
             <>
               <div className="space-y-2">
