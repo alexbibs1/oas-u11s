@@ -30,6 +30,7 @@ import { SKILLS, SKILL_DESCRIPTORS as DESCRIPTORS } from "@/lib/skills";
 
 function MatchDayPage() {
   const { sessionId: preselectId } = Route.useSearch();
+  const router = useRouter();
   const [step, setStep] = useState<Step>("session");
   const [session, setSession] = useState<any | null>(null);
   const [group, setGroup] = useState<any | null>(null);
@@ -51,6 +52,11 @@ function MatchDayPage() {
   }, [preselectId, preselectSessions, session]);
 
   const back = () => {
+    if (step === "session") {
+      if (window.history.length > 1) router.history.back();
+      else router.navigate({ to: "/calendar" });
+      return;
+    }
     if (step === "group") {
       setStep("session");
       setGroup(null);
@@ -66,11 +72,9 @@ function MatchDayPage() {
   return (
     <main className="mx-auto max-w-2xl px-5 pt-8">
       <header className="mb-6 flex items-center gap-3">
-        {step !== "session" && (
-          <Button variant="ghost" size="icon" onClick={back}>
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-        )}
+        <Button variant="ghost" size="icon" onClick={back} aria-label="Back">
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-accent">Match Day</p>
           <h1 className="mt-1 text-2xl font-bold text-primary">
@@ -82,12 +86,13 @@ function MatchDayPage() {
           </h1>
           {session && step !== "session" && (
             <p className="text-xs text-muted-foreground">
-              {session.block_name} • {session.session_date}
+              {session.block_name} • {formatDateLong(session.session_date)}
               {group ? ` • Group ${group.group_number}` : ""}
             </p>
           )}
         </div>
       </header>
+
 
       {step === "session" && (
         <SessionStep
