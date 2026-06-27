@@ -168,6 +168,10 @@ function PlayerProfile() {
         </div>
       </section>
 
+      <WeeklyHistory playerId={playerId} />
+
+
+
 
       <section>
         <div className="mb-3 flex items-center justify-between">
