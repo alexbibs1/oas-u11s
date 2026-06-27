@@ -268,3 +268,56 @@ function PlayerProfile() {
     </main>
   );
 }
+
+function WeeklyHistory({ playerId }: { playerId: string }) {
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ["player-skill-ratings", playerId],
+    queryFn: () => listPlayerSkillRatings({ data: { player_id: playerId } }),
+  });
+  if (isLoading) return null;
+  return (
+    <section className="mb-6">
+      <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Weekly score history</h2>
+      {rows.length === 0 ? (
+        <div className="rounded-lg border border-dashed bg-card/50 p-5 text-sm text-muted-foreground">
+          No weekly ratings yet.
+        </div>
+      ) : (
+        <div className="max-h-[28rem] overflow-auto rounded-lg border bg-card">
+          <ul className="divide-y">
+            {rows.map((r: any) => (
+              <li key={r.id} className="p-3">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-primary">
+                    Week {r.week_number ?? "—"}
+                    {r.session_date ? ` · ${r.session_date}` : ""}
+                  </p>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Group {r.group_number}
+                  </span>
+                </div>
+                <p className="mb-2 text-xs text-muted-foreground">
+                  {(r.coach_names ?? []).length
+                    ? (r.coach_names as string[]).join(", ")
+                    : "—"}
+                  {r.entered_by_name ? ` · entered by ${r.entered_by_name}` : ""}
+                </p>
+                <div className="grid grid-cols-7 gap-1 text-center text-xs">
+                  {SKILLS.map((s) => (
+                    <div key={s.key} className="rounded border bg-background p-1">
+                      <p className="text-[9px] uppercase tracking-wide text-muted-foreground">
+                        {s.short}
+                      </p>
+                      <p className="text-sm font-semibold tabular-nums">{r[s.key]}</p>
+                    </div>
+                  ))}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
+
