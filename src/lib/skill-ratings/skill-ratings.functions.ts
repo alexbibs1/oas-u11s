@@ -294,7 +294,8 @@ export const upsertWeekRatings = createServerFn({ method: "POST" })
         oldVals[k] = (u.old as any)[k];
         newVals[k] = (u.row as any)[k];
       }
-      await sb.from("audit_log").insert({
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin.from("audit_log").insert({
         changed_by: context.userId,
         table_name: "skill_ratings",
         record_id: u.row.id,
@@ -309,6 +310,7 @@ export const upsertWeekRatings = createServerFn({ method: "POST" })
         },
       });
     }
+
 
     return { ok: true, inserted: inserts.length, updated: updates.length };
   });
