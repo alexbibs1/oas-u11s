@@ -272,7 +272,7 @@ function SessionSlot({
       >
         <div className="flex items-center justify-between">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {label} • {fmtDay(session.session_date)}
+            {formatDateShort(session.session_date)}
           </div>
           <span
             className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white"
