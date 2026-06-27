@@ -394,7 +394,7 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
       )}
 
       {step === 2 && (
-        <section className="grid gap-4 lg:grid-cols-[280px_1fr]">
+        <section className="grid gap-4 pb-24 lg:grid-cols-[280px_1fr]">
           {/* Pool */}
           <div className="rounded-lg border bg-card p-3">
             <div className="mb-2 flex items-center justify-between">
@@ -421,10 +421,8 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
                 <PlayerCard
                   key={p.id}
                   player={p}
-                  selected={selectedPlayer === p.id}
-                  onClick={() =>
-                    setSelectedPlayer((cur) => (cur === p.id ? null : p.id))
-                  }
+                  selected={selectedPlayers.has(p.id)}
+                  onClick={() => togglePlayer(p.id)}
                   showPrev
                 />
               ))}
@@ -440,12 +438,8 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
                 group={g}
                 coaches={data.coaches}
                 playerMap={playerMap}
-                onAssign={() => assignToGroup(i)}
-                canAssign={!!selectedPlayer}
                 onUnassign={unassign}
                 onToggleCoach={(cid) => toggleCoach(i, cid)}
-                onSelect={(pid) => setSelectedPlayer((cur) => (cur === pid ? null : pid))}
-                selectedPlayer={selectedPlayer}
               />
             ))}
           </div>
@@ -456,6 +450,36 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
             </Button>
             <Button onClick={() => setStep(3)}>Review</Button>
           </div>
+
+          {/* Sticky selection bar */}
+          {selectedPlayers.size > 0 && (
+            <div className="fixed bottom-20 left-1/2 z-40 w-[min(95vw,640px)] -translate-x-1/2 rounded-xl border border-primary bg-card p-3 shadow-lg">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold">
+                  {selectedPlayers.size} player{selectedPlayers.size === 1 ? "" : "s"} selected
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlayers(new Set())}
+                  className="text-xs text-muted-foreground hover:underline"
+                >
+                  Clear
+                </button>
+              </div>
+              <div className="mt-2 grid grid-cols-4 gap-2">
+                {[0, 1, 2, 3].map((i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => assignSelectedToGroup(i)}
+                    className="rounded-md bg-primary px-2 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                  >
+                    → Group {i + 1}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
       )}
 
