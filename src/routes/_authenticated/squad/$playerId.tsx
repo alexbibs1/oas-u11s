@@ -3,6 +3,7 @@ import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tansta
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { getPlayer, getPlayerCurrentBlock } from "@/lib/players/players.functions";
+import { listPlayerSkillRatings } from "@/lib/skill-ratings/skill-ratings.functions";
 import {
   listPlayerNotes,
   createPlayerNote,
