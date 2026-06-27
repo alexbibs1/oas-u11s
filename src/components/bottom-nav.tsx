@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Home, Users, Shield, ClipboardCheck, Calendar, Newspaper } from "lucide-react";
+import { Home, Users, Shield, ClipboardCheck, Calendar, Newspaper, Star } from "lucide-react";
 import { getMyRole } from "@/lib/auth/roles.functions";
 
 export function BottomNav() {
