@@ -198,26 +198,39 @@ export const upsertWeekRatings = createServerFn({ method: "POST" })
     const { data: group, error: gErr } = await sb
       .from("groups")
       .select(
-        "id, group_number, group_coaches:group_coaches ( coaches:coach_id ( coach_name ) )",
+        "id, group_number, group_coaches:group_coaches ( coach_id, coaches:coach_id ( coach_name ) )",
       )
       .eq("id", data.group_id)
       .single();
     if (gErr) throw new Error(gErr.message);
+    const coachIds = ((group as any).group_coaches ?? [])
+      .map((gc: any) => gc.coach_id)
+      .filter(Boolean) as string[];
     const coachNames = ((group as any).group_coaches ?? [])
       .map((gc: any) => gc.coaches?.coach_name)
       .filter(Boolean) as string[];
     const groupNumber = (group as any).group_number as number;
 
-    // Caller info
+    // Caller info + authorization: must be admin OR a coach assigned to this group
+    const { data: isAdmin } = await sb.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "block_builder",
+    });
     const { data: myRole } = await sb
       .from("user_roles")
       .select("coach_id, coaches:coach_id ( coach_name )")
       .eq("user_id", context.userId)
       .maybeSingle();
+    const myCoachId = (myRole as any)?.coach_id as string | null | undefined;
+    const isAssignedCoach = !!myCoachId && coachIds.includes(myCoachId);
+    if (!isAdmin && !isAssignedCoach) {
+      throw new Error("Forbidden: you are not a coach for this group");
+    }
     const myName =
       ((myRole as any)?.coaches?.coach_name as string | undefined) ??
       ((context as any).claims?.email as string | undefined) ??
       null;
+
 
     // Player names + existing rows
     const pIds = data.ratings.map((r) => r.player_id);
