@@ -69,17 +69,41 @@ function HomePage() {
         <div className="rounded-lg border bg-card p-5">
           <h2 className="text-sm font-semibold text-muted-foreground">Your group this block</h2>
           {summary?.myGroup ? (
-            <p className="mt-2 text-base font-semibold text-primary">
-              Group {summary.myGroup.group_number}
-            </p>
+            <>
+              <p className="mt-2 text-base font-semibold text-primary">
+                Group {summary.myGroup.group_number}
+              </p>
+              {summary.myGroup.coach_names && summary.myGroup.coach_names.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Coach {summary.myGroup.coach_names.join(", ")}
+                </p>
+              )}
+            </>
           ) : (
             <p className="mt-2 text-sm text-muted-foreground">Not assigned to a group.</p>
           )}
         </div>
 
-        <div className="rounded-lg border bg-card p-5">
-          <h2 className="text-sm font-semibold text-muted-foreground">Next session</h2>
-          {next ? (
+        {next ? (
+          <Link
+            to={
+              (next as any).session_type === "match"
+                ? "/match-day"
+                : "/session-info/$sessionId"
+            }
+            search={
+              (next as any).session_type === "match"
+                ? ({ sessionId: (next as any).id } as any)
+                : undefined
+            }
+            params={
+              (next as any).session_type === "match"
+                ? undefined
+                : { sessionId: (next as any).id }
+            }
+            className="block rounded-lg border bg-card p-5 hover:bg-secondary"
+          >
+            <h2 className="text-sm font-semibold text-muted-foreground">Next session</h2>
             <div className="mt-2">
               <p className="text-base font-semibold text-primary">
                 {fmtDate((next as any).session_date)} ·{" "}
@@ -92,10 +116,13 @@ function HomePage() {
                 </p>
               )}
             </div>
-          ) : (
+          </Link>
+        ) : (
+          <div className="rounded-lg border bg-card p-5">
+            <h2 className="text-sm font-semibold text-muted-foreground">Next session</h2>
             <p className="mt-2 text-sm text-muted-foreground">Nothing scheduled.</p>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="rounded-lg border bg-card p-5">
           <div className="flex items-center justify-between">

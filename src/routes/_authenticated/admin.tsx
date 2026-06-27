@@ -7,6 +7,7 @@ import {
   addPlayer,
   removePlayer,
   updatePlayerAttribute,
+  listAuditLog,
 } from "@/lib/players/players.functions";
 import { listCoaches, addCoach, removeCoach } from "@/lib/coaches/coaches.functions";
 import { inviteUser } from "@/lib/admin/invite.functions";
@@ -22,6 +23,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,34 +44,70 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
+function SectionHeading({ label, title }: { label: string; title: string }) {
+  return (
+    <div className="mb-3">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-accent">{label}</p>
+      <h2 className="text-lg font-bold text-primary">{title}</h2>
+    </div>
+  );
+}
+
 function AdminPage() {
   return (
-    <main className="mx-auto max-w-2xl px-5 pt-8">
+    <main className="mx-auto max-w-2xl px-5 pt-8 pb-32">
       <header className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-accent">Admin</p>
         <h1 className="mt-1 text-2xl font-bold text-primary">Manage</h1>
       </header>
 
-      <Link
-        to="/block-builder"
-        className="mb-6 flex items-center justify-between rounded-lg border bg-card p-4 hover:bg-secondary"
-      >
+      {/* 1. People */}
+      <section className="mb-8">
+        <SectionHeading label="1 · People" title="People" />
+        <InviteSection />
+      </section>
+
+      {/* 2. Structure */}
+      <section className="mb-8">
+        <SectionHeading label="2 · Structure" title="Structure" />
+        <Link
+          to="/block-builder"
+          className="flex items-center justify-between rounded-lg border bg-card p-4 hover:bg-secondary"
+        >
+          <div>
+            <p className="text-sm font-semibold">Block Builder</p>
+            <p className="text-xs text-muted-foreground">
+              Configure blocks, groups and assignments
+            </p>
+          </div>
+          <span className="text-xs text-muted-foreground">Open →</span>
+        </Link>
+      </section>
+
+      {/* 3. Sessions */}
+      <section className="mb-10">
+        <SectionHeading label="3 · Sessions" title="Sessions" />
+        <SessionsSection />
+      </section>
+
+      {/* 4. Player Data */}
+      <div className="my-8 border-t-2 border-dashed border-accent/40" />
+
+      <section className="space-y-5 rounded-xl border-2 border-accent/30 bg-accent/5 p-5">
         <div>
-          <p className="text-sm font-semibold">Block Builder</p>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-accent">
+            4 · Player Data
+          </p>
+          <h2 className="text-lg font-bold text-primary">Player Data</h2>
           <p className="text-xs text-muted-foreground">
-            Configure blocks, groups and assignments
+            Edits here change permanent player records.
           </p>
         </div>
-        <span className="text-xs text-muted-foreground">Open →</span>
-      </Link>
-
-      <div className="space-y-8">
-        <InviteSection />
-        <SessionsSection />
         <AttributesSection />
         <PlayersSection />
         <CoachesSection />
-      </div>
+        <AuditLogSection />
+      </section>
     </main>
   );
 }
@@ -86,8 +133,8 @@ function SessionsSection() {
   });
 
   return (
-    <section className="rounded-lg border bg-card p-5">
-      <h2 className="mb-4 text-sm font-semibold">Create session</h2>
+    <div className="rounded-lg border bg-card p-5">
+      <h3 className="mb-4 text-sm font-semibold">Create session</h3>
       <form
         className="space-y-3"
         onSubmit={(e) => {
@@ -138,7 +185,7 @@ function SessionsSection() {
           {m.isPending ? "Creating…" : "Create session"}
         </Button>
       </form>
-    </section>
+    </div>
   );
 }
 
@@ -162,8 +209,8 @@ function InviteSection() {
   });
 
   return (
-    <section className="rounded-lg border bg-card p-5">
-      <h2 className="mb-4 text-sm font-semibold">Invite user</h2>
+    <div className="rounded-lg border bg-card p-5">
+      <h3 className="mb-4 text-sm font-semibold">Invite user</h3>
       <form
         className="space-y-3"
         onSubmit={(e) => {
@@ -216,7 +263,7 @@ function InviteSection() {
           {m.isPending ? "Sending…" : "Send invite"}
         </Button>
       </form>
-    </section>
+    </div>
   );
 }
 
@@ -241,8 +288,8 @@ function PlayersSection() {
   });
 
   return (
-    <section className="rounded-lg border bg-card p-5">
-      <h2 className="mb-4 text-sm font-semibold">Players ({players.length})</h2>
+    <div className="rounded-lg border bg-card p-5">
+      <h3 className="mb-4 text-sm font-semibold">Players ({players.length})</h3>
       <form
         className="mb-4 flex gap-2"
         onSubmit={(e) => {
@@ -276,7 +323,7 @@ function PlayersSection() {
           </li>
         ))}
       </ul>
-    </section>
+    </div>
   );
 }
 
@@ -301,8 +348,8 @@ function CoachesSection() {
   });
 
   return (
-    <section className="rounded-lg border bg-card p-5">
-      <h2 className="mb-4 text-sm font-semibold">Coaches ({coaches.length})</h2>
+    <div className="rounded-lg border bg-card p-5">
+      <h3 className="mb-4 text-sm font-semibold">Coaches ({coaches.length})</h3>
       <form
         className="mb-4 flex gap-2"
         onSubmit={(e) => {
@@ -336,9 +383,19 @@ function CoachesSection() {
           </li>
         ))}
       </ul>
-    </section>
+    </div>
   );
 }
+
+type AttrKey = "speed" | "strength" | "repeatability";
+type PendingAttr = {
+  playerId: string;
+  playerName: string;
+  attribute: AttrKey;
+  attributeLabel: string;
+  oldValue: number | null;
+  newValue: number;
+};
 
 function AttributesSection() {
   const qc = useQueryClient();
@@ -346,27 +403,30 @@ function AttributesSection() {
     queryKey: ["players"],
     queryFn: () => listPlayers(),
   });
-  const [openDescriptor, setOpenDescriptor] = useState<string | null>(null);
+  const [pending, setPending] = useState<PendingAttr | null>(null);
 
   const update = useMutation({
-    mutationFn: (v: { id: string; attribute: "speed" | "strength" | "repeatability"; value: number }) =>
+    mutationFn: (v: { id: string; attribute: AttrKey; value: number }) =>
       updatePlayerAttribute({ data: v }),
     onSuccess: () => {
+      toast.success("Attribute updated");
       qc.invalidateQueries({ queryKey: ["players"] });
+      qc.invalidateQueries({ queryKey: ["audit-log"] });
+      setPending(null);
     },
     onError: (e: any) => toast.error(e.message),
   });
 
   return (
-    <section className="rounded-lg border bg-card p-5">
+    <div className="rounded-lg border bg-card p-5">
       <div className="mb-1 flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Attributes</h2>
+        <h3 className="text-sm font-semibold">Attributes</h3>
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          Updated infrequently
+          Confirmation required
         </span>
       </div>
       <p className="mb-4 text-xs text-muted-foreground">
-        Physical / conditioning measures. Saved instantly.
+        Physical / conditioning measures. Each change is confirmed and audited.
       </p>
       <ul className="space-y-3">
         {players.map((p: any) => (
@@ -375,9 +435,6 @@ function AttributesSection() {
             <div className="space-y-2">
               {ATTRIBUTES.map((a) => {
                 const current = p[a.key] as number | undefined;
-                const descId = `${p.id}-${a.key}`;
-                const showDescriptor =
-                  a.key === "repeatability" && openDescriptor?.startsWith(`${descId}-`);
                 return (
                   <div key={a.key} className="flex items-center justify-between gap-2">
                     <span className="w-28 text-xs text-muted-foreground">{a.label}</span>
@@ -389,18 +446,15 @@ function AttributesSection() {
                             key={n}
                             type="button"
                             onClick={() => {
-                              update.mutate({ id: p.id, attribute: a.key as any, value: n });
-                              if (a.key === "repeatability") {
-                                const id = `${descId}-${n}`;
-                                setOpenDescriptor(id);
-                                setTimeout(
-                                  () =>
-                                    setOpenDescriptor((cur) =>
-                                      cur === id ? null : cur,
-                                    ),
-                                  2200,
-                                );
-                              }
+                              if (active) return;
+                              setPending({
+                                playerId: p.id,
+                                playerName: p.player_name,
+                                attribute: a.key as AttrKey,
+                                attributeLabel: a.label,
+                                oldValue: current ?? null,
+                                newValue: n,
+                              });
                             }}
                             className={`h-7 w-7 rounded-md border text-xs font-semibold transition ${
                               active
@@ -416,19 +470,109 @@ function AttributesSection() {
                   </div>
                 );
               })}
-              {openDescriptor?.startsWith(`${p.id}-repeatability-`) && (
-                <p className="text-right text-[11px] italic text-accent">
-                  {
-                    REPEATABILITY_DESCRIPTORS[
-                      Number(openDescriptor.split("-").pop())
-                    ]
-                  }
-                </p>
-              )}
             </div>
           </li>
         ))}
       </ul>
-    </section>
+
+      <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm attribute change</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>
+                  <span className="font-semibold">{pending?.playerName}</span> ·{" "}
+                  {pending?.attributeLabel}
+                </p>
+                <p>
+                  From{" "}
+                  <span className="font-semibold">
+                    {pending?.oldValue ?? "—"}
+                  </span>{" "}
+                  to{" "}
+                  <span className="font-semibold text-primary">
+                    {pending?.newValue}
+                  </span>
+                </p>
+                {pending?.attribute === "repeatability" && pending && (
+                  <p className="text-xs italic text-muted-foreground">
+                    {REPEATABILITY_DESCRIPTORS[pending.newValue]}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  This change will be recorded in the audit log.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={update.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={update.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (!pending) return;
+                update.mutate({
+                  id: pending.playerId,
+                  attribute: pending.attribute,
+                  value: pending.newValue,
+                });
+              }}
+            >
+              {update.isPending ? "Saving…" : "Confirm"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+function AuditLogSection() {
+  const { data: rows = [] } = useQuery({
+    queryKey: ["audit-log"],
+    queryFn: () => listAuditLog({ data: { limit: 50 } }),
+  });
+
+  return (
+    <div className="rounded-lg border bg-card p-5">
+      <h3 className="mb-1 text-sm font-semibold">Audit log</h3>
+      <p className="mb-4 text-xs text-muted-foreground">
+        Most recent 50 changes to permanent player records.
+      </p>
+      {rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No audit entries yet.</p>
+      ) : (
+        <ul className="max-h-80 space-y-2 overflow-auto text-xs">
+          {rows.map((r: any) => {
+            const attr = r.metadata?.attribute as string | undefined;
+            const playerName = r.metadata?.player_name as string | undefined;
+            const oldV = attr ? r.old_values?.[attr] : null;
+            const newV = attr ? r.new_values?.[attr] : null;
+            return (
+              <li
+                key={r.id}
+                className="rounded-md border bg-background px-3 py-2"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold">
+                    {playerName ?? r.table_name} · {attr ?? r.operation}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {new Date(r.created_at).toLocaleString()}
+                  </span>
+                </div>
+                {attr && (
+                  <p className="mt-0.5 text-muted-foreground">
+                    {oldV ?? "—"} → <span className="font-semibold text-primary">{newV}</span>
+                  </p>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }

@@ -166,7 +166,7 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
     { coach_ids: [], player_ids: [] },
     { coach_ids: [], player_ids: [] },
   ]);
-  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+  const [selectedPlayers, setSelectedPlayers] = useState<Set<string>>(new Set());
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [initializedFor, setInitializedFor] = useState<string | null>(null);
 
@@ -193,7 +193,7 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
         : { coach_ids: [], player_ids: [] };
     });
     setGroups(base);
-    setSelectedPlayer(null);
+    setSelectedPlayers(new Set());
     setSortKey("name");
     setStep(1);
     setInitializedFor(key);
@@ -239,20 +239,29 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
     return m;
   }, [data]);
 
-  function assignToGroup(groupIdx: number) {
-    if (!selectedPlayer) return;
+  function togglePlayer(id: string) {
+    setSelectedPlayers((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function assignSelectedToGroup(groupIdx: number) {
+    if (selectedPlayers.size === 0) return;
+    const ids = Array.from(selectedPlayers);
     setGroups((prev) => {
       const next = prev.map((g) => ({
         ...g,
-        player_ids: g.player_ids.filter((id) => id !== selectedPlayer),
+        player_ids: g.player_ids.filter((id) => !selectedPlayers.has(id)),
       }));
       next[groupIdx] = {
         ...next[groupIdx],
-        player_ids: [...next[groupIdx].player_ids, selectedPlayer],
+        player_ids: [...next[groupIdx].player_ids, ...ids],
       };
       return next;
     });
-    setSelectedPlayer(null);
+    setSelectedPlayers(new Set());
   }
 
   function unassign(playerId: string) {
@@ -262,7 +271,6 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
         player_ids: g.player_ids.filter((id) => id !== playerId),
       })),
     );
-    setSelectedPlayer(null);
   }
 
   function toggleCoach(groupIdx: number, coachId: string) {
@@ -386,7 +394,7 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
       )}
 
       {step === 2 && (
-        <section className="grid gap-4 lg:grid-cols-[280px_1fr]">
+        <section className="grid gap-4 pb-24 lg:grid-cols-[280px_1fr]">
           {/* Pool */}
           <div className="rounded-lg border bg-card p-3">
             <div className="mb-2 flex items-center justify-between">
@@ -413,10 +421,8 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
                 <PlayerCard
                   key={p.id}
                   player={p}
-                  selected={selectedPlayer === p.id}
-                  onClick={() =>
-                    setSelectedPlayer((cur) => (cur === p.id ? null : p.id))
-                  }
+                  selected={selectedPlayers.has(p.id)}
+                  onClick={() => togglePlayer(p.id)}
                   showPrev
                 />
               ))}
@@ -432,12 +438,8 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
                 group={g}
                 coaches={data.coaches}
                 playerMap={playerMap}
-                onAssign={() => assignToGroup(i)}
-                canAssign={!!selectedPlayer}
                 onUnassign={unassign}
                 onToggleCoach={(cid) => toggleCoach(i, cid)}
-                onSelect={(pid) => setSelectedPlayer((cur) => (cur === pid ? null : pid))}
-                selectedPlayer={selectedPlayer}
               />
             ))}
           </div>
@@ -448,6 +450,36 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
             </Button>
             <Button onClick={() => setStep(3)}>Review</Button>
           </div>
+
+          {/* Sticky selection bar */}
+          {selectedPlayers.size > 0 && (
+            <div className="fixed bottom-20 left-1/2 z-40 w-[min(95vw,640px)] -translate-x-1/2 rounded-xl border border-primary bg-card p-3 shadow-lg">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold">
+                  {selectedPlayers.size} player{selectedPlayers.size === 1 ? "" : "s"} selected
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlayers(new Set())}
+                  className="text-xs text-muted-foreground hover:underline"
+                >
+                  Clear
+                </button>
+              </div>
+              <div className="mt-2 grid grid-cols-4 gap-2">
+                {[0, 1, 2, 3].map((i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => assignSelectedToGroup(i)}
+                    className="rounded-md bg-primary px-2 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                  >
+                    → Group {i + 1}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
       )}
 
@@ -582,23 +614,15 @@ function GroupColumn({
   group,
   coaches,
   playerMap,
-  onAssign,
-  canAssign,
   onUnassign,
   onToggleCoach,
-  onSelect,
-  selectedPlayer,
 }: {
   index: number;
   group: GroupState;
   coaches: any[];
   playerMap: Map<string, any>;
-  onAssign: () => void;
-  canAssign: boolean;
   onUnassign: (id: string) => void;
   onToggleCoach: (id: string) => void;
-  onSelect: (id: string) => void;
-  selectedPlayer: string | null;
 }) {
   const groupPlayers = group.player_ids
     .map((id) => playerMap.get(id))
@@ -619,14 +643,9 @@ function GroupColumn({
     <div className="flex flex-col rounded-lg border bg-card p-3">
       <div className="mb-2 flex items-center justify-between">
         <h4 className="font-semibold">Group {index + 1}</h4>
-        <button
-          type="button"
-          onClick={onAssign}
-          disabled={!canAssign}
-          className="rounded bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground disabled:opacity-30"
-        >
-          + Assign
-        </button>
+        <span className="text-[10px] text-muted-foreground">
+          {groupPlayers.length} player{groupPlayers.length === 1 ? "" : "s"}
+        </span>
       </div>
       <div className="mb-2">
         <p className="mb-1 text-[10px] font-semibold uppercase text-muted-foreground">Coaches</p>
@@ -653,19 +672,9 @@ function GroupColumn({
       <ul className="flex-1 space-y-1">
         {groupPlayers.map((p: any) => (
           <li key={p.id}>
-            <div
-              className={`rounded-md border px-2 py-1 ${
-                selectedPlayer === p.id ? "border-primary bg-primary/10" : "border-border"
-              }`}
-            >
+            <div className="rounded-md border border-border px-2 py-1">
               <div className="flex items-center justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={() => onSelect(p.id)}
-                  className="truncate text-left text-xs font-medium"
-                >
-                  {p.player_name}
-                </button>
+                <span className="truncate text-xs font-medium">{p.player_name}</span>
                 <button
                   type="button"
                   onClick={() => onUnassign(p.id)}
@@ -684,6 +693,7 @@ function GroupColumn({
                   </span>
                 ))}
               </div>
+
               <div className="mt-0.5 flex flex-wrap gap-1">
                 {ATTR_DEFS.map((a) => (
                   <span

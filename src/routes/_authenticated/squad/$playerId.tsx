@@ -2,7 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { getPlayer } from "@/lib/players/players.functions";
+import { getPlayer, getPlayerCurrentBlock } from "@/lib/players/players.functions";
 import {
   listPlayerNotes,
   createPlayerNote,
@@ -34,6 +34,10 @@ import { SKILLS, ATTRIBUTES } from "@/lib/skills";
 function PlayerProfile() {
   const { playerId } = Route.useParams();
   const { data: player } = useSuspenseQuery(playerQuery(playerId));
+  const { data: currentBlock } = useQuery({
+    queryKey: ["player-current-block", playerId],
+    queryFn: () => getPlayerCurrentBlock({ data: { player_id: playerId } }),
+  });
   const qc = useQueryClient();
 
   const listFn = useServerFn(listPlayerNotes);
@@ -84,6 +88,31 @@ function PlayerProfile() {
         <p className="text-xs font-semibold uppercase tracking-widest text-accent">Player</p>
         <h1 className="mt-1 text-3xl font-bold text-primary">{(player as any).player_name}</h1>
       </header>
+
+      <section className="mb-6 rounded-lg border bg-card p-4">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Current block
+        </h2>
+        {currentBlock?.block ? (
+          <div className="mt-1">
+            <p className="text-sm font-semibold text-primary">
+              {(currentBlock.block as any).name ?? `Block ${(currentBlock.block as any).block_number}`}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {currentBlock.group
+                ? `Group ${currentBlock.group.group_number}${
+                    currentBlock.coaches.length
+                      ? ` · Coach ${currentBlock.coaches.join(", ")}`
+                      : ""
+                  }`
+                : "Not assigned to a group"}
+            </p>
+          </div>
+        ) : (
+          <p className="mt-1 text-sm text-muted-foreground">No active block.</p>
+        )}
+      </section>
+
 
       <section className="mb-6">
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Skills</h2>

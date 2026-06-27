@@ -219,7 +219,7 @@ export const getHomeSummary = createServerFn({ method: "GET" })
       .limit(1)
       .maybeSingle();
 
-    let myGroup: { id: string; group_number: number } | null = null;
+    let myGroup: { id: string; group_number: number; coach_names: string[] } | null = null;
     let myCoachId: string | null = null;
     const { data: roleRow } = await sb
       .from("user_roles")
@@ -234,7 +234,16 @@ export const getHomeSummary = createServerFn({ method: "GET" })
       const g = (gc ?? [])
         .map((x: any) => x.groups)
         .find((g: any) => g?.block_id === (block as any).id);
-      if (g) myGroup = { id: g.id, group_number: g.group_number };
+      if (g) {
+        const { data: coachRows } = await sb
+          .from("group_coaches")
+          .select("coaches:coach_id ( coach_name )")
+          .eq("group_id", g.id);
+        const coach_names = (coachRows ?? [])
+          .map((r: any) => r.coaches?.coach_name)
+          .filter(Boolean) as string[];
+        myGroup = { id: g.id, group_number: g.group_number, coach_names };
+      }
     }
 
     const { data: nextSess } = await sb
