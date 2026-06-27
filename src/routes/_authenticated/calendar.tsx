@@ -60,10 +60,7 @@ function startOfWeekMon(d: Date) {
   return x;
 }
 
-function fmtDay(date: string) {
-  const d = new Date(date + "T00:00:00");
-  return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
-}
+import { formatDateShort } from "@/lib/dates";
 
 function CalendarPage() {
   const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => getMyRole() });
