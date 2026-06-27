@@ -1,8 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getMatchSummary } from "@/lib/sessions/sessions.functions";
 import { ChevronLeft, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatDateLong } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/match-summary/$sessionId")({
   component: MatchSummaryPage,
@@ -12,18 +13,22 @@ import { SKILLS } from "@/lib/skills";
 
 function MatchSummaryPage() {
   const { sessionId } = Route.useParams();
+  const router = useRouter();
   const { data, isLoading } = useQuery({
     queryKey: ["match-summary", sessionId],
     queryFn: () => getMatchSummary({ data: { session_id: sessionId } }),
   });
 
+  const goBack = () => {
+    if (window.history.length > 1) router.history.back();
+    else router.navigate({ to: "/calendar" });
+  };
+
   return (
     <main className="mx-auto max-w-2xl px-5 pt-8">
       <header className="mb-6 flex items-center gap-3">
-        <Button asChild variant="ghost" size="icon">
-          <Link to="/calendar">
-            <ChevronLeft className="h-5 w-5" />
-          </Link>
+        <Button variant="ghost" size="icon" onClick={goBack} aria-label="Back">
+          <ChevronLeft className="h-5 w-5" />
         </Button>
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-accent">
@@ -34,7 +39,7 @@ function MatchSummaryPage() {
           </h1>
           {data && (
             <p className="text-xs text-muted-foreground">
-              {data.session.session_date}
+              {formatDateLong(data.session.session_date)}
               {data.session.venue ? (
                 <span className="inline-flex items-center gap-1 ml-2">
                   <MapPin className="h-3 w-3" />
@@ -47,6 +52,7 @@ function MatchSummaryPage() {
           )}
         </div>
       </header>
+
 
       {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
 
