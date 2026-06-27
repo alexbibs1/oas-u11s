@@ -1,0 +1,2 @@
+UPDATE public.user_roles SET coach_id = '3b062e25-53db-468d-af09-62367aaa6c02' WHERE user_id = '6de94ead-2800-44b3-8eef-69a601758129' AND role = 'block_builder';
+INSERT INTO public.user_roles (user_id, role, coach_id) VALUES ('6de94ead-2800-44b3-8eef-69a601758129', 'coach', '3b062e25-53db-468d-af09-62367aaa6c02') ON CONFLICT (user_id, role) DO UPDATE SET coach_id = EXCLUDED.coach_id;
