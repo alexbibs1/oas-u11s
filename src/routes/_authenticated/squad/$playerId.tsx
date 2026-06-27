@@ -2,7 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { getPlayer } from "@/lib/players/players.functions";
+import { getPlayer, getPlayerCurrentBlock } from "@/lib/players/players.functions";
 import {
   listPlayerNotes,
   createPlayerNote,
