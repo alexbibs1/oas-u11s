@@ -170,7 +170,7 @@ function RatingsEntry({
       const ex = existingMap.get(p.id);
       init[p.id] = {};
       for (const s of SKILLS) {
-        init[p.id][s.key] = ex ? (ex as any)[s.key] : 3;
+        init[p.id][s.key] = ex ? (ex as any)[s.key] : (p as any)[s.key] ?? 3;
       }
     }
     setScores(init);

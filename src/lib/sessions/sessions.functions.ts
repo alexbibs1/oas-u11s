@@ -11,7 +11,7 @@ export const listMatchSessions = createServerFn({ method: "GET" })
         "id, session_date, session_type, week_number, block_id, opponent, venue, blocks:block_id ( id, name, block_number, is_active )",
       )
       .eq("session_type", "match")
-      .order("session_date", { ascending: false });
+      .order("session_date", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []).map((s: any) => ({
       id: s.id,
