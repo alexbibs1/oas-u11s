@@ -291,6 +291,7 @@ export const getHomeSummary = createServerFn({ method: "GET" })
     return {
       block: block ?? null,
       myGroup,
+      otherGroups,
       nextSession: nextSess ?? null,
       feed: (feed ?? []).map((r: any) => ({
         id: r.id,
