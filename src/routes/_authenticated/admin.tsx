@@ -88,8 +88,12 @@ function AdminPage() {
       {/* 3. Sessions */}
       <section className="mb-10">
         <SectionHeading label="3 · Sessions" title="Sessions" />
-        <SessionsSection />
+        <div className="space-y-5">
+          <SessionsSection />
+          <CompletionTrackerSection />
+        </div>
       </section>
+
 
       {/* 4. Player Data */}
       <div className="my-8 border-t-2 border-dashed border-accent/40" />
