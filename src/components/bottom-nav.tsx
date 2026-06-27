@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Home, Users, Shield, ClipboardCheck, Calendar, Newspaper } from "lucide-react";
+import { Home, Users, Shield, ClipboardCheck, Calendar, Newspaper, Star } from "lucide-react";
 import { getMyRole } from "@/lib/auth/roles.functions";
 
 export function BottomNav() {
@@ -15,6 +15,7 @@ export function BottomNav() {
     { to: "/feed", label: "Feed", Icon: Newspaper },
     { to: "/calendar", label: "Calendar", Icon: Calendar },
     { to: "/match-day", label: "Match Day", Icon: ClipboardCheck },
+    { to: "/ratings", label: "Ratings", Icon: Star },
     { to: "/squad", label: "Squad", Icon: Users },
     ...(me?.isBlockBuilder ? [{ to: "/admin", label: "Admin", Icon: Shield }] : []),
   ] as const;

@@ -545,6 +545,94 @@ export type Database = {
           },
         ]
       }
+      skill_ratings: {
+        Row: {
+          block_id: string
+          carrying: number
+          catching: number
+          coach_names: string[]
+          created_at: string
+          entered_by: string | null
+          entered_by_name: string | null
+          group_number: number
+          handling: number
+          id: string
+          iq: number
+          kicking: number
+          player_id: string
+          player_name: string
+          rucking: number
+          session_id: string
+          tackling: number
+          updated_at: string
+          week_number: number | null
+        }
+        Insert: {
+          block_id: string
+          carrying: number
+          catching: number
+          coach_names?: string[]
+          created_at?: string
+          entered_by?: string | null
+          entered_by_name?: string | null
+          group_number: number
+          handling: number
+          id?: string
+          iq: number
+          kicking: number
+          player_id: string
+          player_name: string
+          rucking: number
+          session_id: string
+          tackling: number
+          updated_at?: string
+          week_number?: number | null
+        }
+        Update: {
+          block_id?: string
+          carrying?: number
+          catching?: number
+          coach_names?: string[]
+          created_at?: string
+          entered_by?: string | null
+          entered_by_name?: string | null
+          group_number?: number
+          handling?: number
+          id?: string
+          iq?: number
+          kicking?: number
+          player_id?: string
+          player_name?: string
+          rucking?: number
+          session_id?: string
+          tackling?: number
+          updated_at?: string
+          week_number?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skill_ratings_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_ratings_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_ratings_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           coach_id: string | null
