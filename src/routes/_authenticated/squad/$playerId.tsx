@@ -89,6 +89,31 @@ function PlayerProfile() {
         <h1 className="mt-1 text-3xl font-bold text-primary">{(player as any).player_name}</h1>
       </header>
 
+      <section className="mb-6 rounded-lg border bg-card p-4">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Current block
+        </h2>
+        {currentBlock?.block ? (
+          <div className="mt-1">
+            <p className="text-sm font-semibold text-primary">
+              {(currentBlock.block as any).name ?? `Block ${(currentBlock.block as any).block_number}`}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {currentBlock.group
+                ? `Group ${currentBlock.group.group_number}${
+                    currentBlock.coaches.length
+                      ? ` · Coach ${currentBlock.coaches.join(", ")}`
+                      : ""
+                  }`
+                : "Not assigned to a group"}
+            </p>
+          </div>
+        ) : (
+          <p className="mt-1 text-sm text-muted-foreground">No active block.</p>
+        )}
+      </section>
+
+
       <section className="mb-6">
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Skills</h2>
         <div className="grid grid-cols-2 gap-3">
