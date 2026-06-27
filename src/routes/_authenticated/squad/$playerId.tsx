@@ -34,6 +34,10 @@ import { SKILLS, ATTRIBUTES } from "@/lib/skills";
 function PlayerProfile() {
   const { playerId } = Route.useParams();
   const { data: player } = useSuspenseQuery(playerQuery(playerId));
+  const { data: currentBlock } = useQuery({
+    queryKey: ["player-current-block", playerId],
+    queryFn: () => getPlayerCurrentBlock({ data: { player_id: playerId } }),
+  });
   const qc = useQueryClient();
 
   const listFn = useServerFn(listPlayerNotes);
