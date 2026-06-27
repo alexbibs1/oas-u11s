@@ -60,10 +60,7 @@ function startOfWeekMon(d: Date) {
   return x;
 }
 
-function fmtDay(date: string) {
-  const d = new Date(date + "T00:00:00");
-  return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
-}
+import { formatDateShort } from "@/lib/dates";
 
 function CalendarPage() {
   const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => getMyRole() });
@@ -275,7 +272,7 @@ function SessionSlot({
       >
         <div className="flex items-center justify-between">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {label} • {fmtDay(session.session_date)}
+            {formatDateShort(session.session_date)}
           </div>
           <span
             className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white"
@@ -449,16 +446,6 @@ function SessionDialog({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Week number</Label>
-            <Input
-              type="number"
-              min={1}
-              value={weekNumber}
-              onChange={(e) => setWeekNumber(e.target.value)}
-              placeholder="Auto"
-            />
           </div>
           {type === "match" && (
             <>
