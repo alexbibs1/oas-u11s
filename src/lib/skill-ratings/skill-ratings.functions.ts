@@ -88,7 +88,7 @@ export const getMyGroupsForWeek = createServerFn({ method: "GET" })
 
     const visible = isAdmin
       ? mapped
-      : mapped.filter((g) => g.coaches.some((c) => myCoachIds.includes(c.id)));
+      : mapped.filter((g) => g.coaches.some((c: any) => myCoachIds.includes(c.id)));
 
     return {
       groups: visible,
