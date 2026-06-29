@@ -153,12 +153,12 @@ function PlayerProfile() {
             return (
               <div
                 key={a.key}
-                className="rounded-md border border-dashed bg-card/60 p-3"
+                className="rounded-md border border-dashed bg-card/60 p-4"
               >
                 <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                   {a.label}
                 </p>
-                <p className="mt-1 text-lg font-semibold tabular-nums text-foreground/90">
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground/90">
                   {value}
                   <span className="ml-1 text-[10px] font-normal text-muted-foreground">/ 5</span>
                 </p>
