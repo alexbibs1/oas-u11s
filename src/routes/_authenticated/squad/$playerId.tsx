@@ -117,13 +117,13 @@ function PlayerProfile() {
 
       <section className="mb-6">
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Skills</h2>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {SKILLS.map((s) => {
             const value = (player as any)[s.key] as number;
             return (
               <div key={s.key} className="rounded-lg border bg-card p-4">
                 <p className="text-xs text-muted-foreground">{s.label}</p>
-                <div className="mt-2 flex items-baseline gap-2">
+                <div className="mt-1 flex items-baseline gap-2">
                   <span className="text-2xl font-bold tabular-nums text-primary">{value}</span>
                   <span className="text-xs text-muted-foreground">/ 5</span>
                 </div>
@@ -131,7 +131,7 @@ function PlayerProfile() {
                   {[1, 2, 3, 4, 5].map((n) => (
                     <span
                       key={n}
-                      className={`h-1.5 flex-1 rounded-full ${
+                      className={`h-2 flex-1 rounded-full ${
                         n <= value ? "bg-accent" : "bg-muted"
                       }`}
                     />
