@@ -39,15 +39,15 @@ export const getBlockBuilderData = createServerFn({ method: "GET" })
 
     const { data: players } = await sb
       .from("players")
-      .select(
-        "id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability",
-      )
+      .select("id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability")
       .order("player_name", { ascending: true });
 
     // Attendance reliability across all sessions
     const { data: sessions } = await sb.from("sessions").select("id");
     const totalSessions = (sessions ?? []).length;
-    const { data: att } = await sb.from("attendance").select("player_id, present");
+    const { data: att } = await sb
+      .from("attendance")
+      .select("player_id, present");
     const presentMap = new Map<string, number>();
     (att ?? []).forEach((a: any) => {
       if (a.present) presentMap.set(a.player_id, (presentMap.get(a.player_id) ?? 0) + 1);
@@ -59,7 +59,7 @@ export const getBlockBuilderData = createServerFn({ method: "GET" })
       .select("id, block_number")
       .order("block_number", { ascending: false });
     const prevBlock = (allBlocks ?? []).find((b: any) => b.id !== data.block_id);
-    const prevGroupByPlayer = new Map<string, number>();
+    let prevGroupByPlayer = new Map<string, number>();
     if (prevBlock) {
       const { data: prevGroups } = await sb
         .from("groups")
@@ -105,9 +105,7 @@ export const getBlockBuilderData = createServerFn({ method: "GET" })
     const enrichedPlayers = (players ?? []).map((p: any) => ({
       ...p,
       attendance_pct:
-        totalSessions === 0
-          ? null
-          : Math.round(((presentMap.get(p.id) ?? 0) / totalSessions) * 100),
+        totalSessions === 0 ? null : Math.round(((presentMap.get(p.id) ?? 0) / totalSessions) * 100),
       previous_group: prevGroupByPlayer.get(p.id) ?? null,
     }));
 
@@ -151,10 +149,7 @@ export const saveBlock = createServerFn({ method: "POST" })
 
     if (data.is_active) {
       // Deactivate any active blocks first
-      await sb
-        .from("blocks")
-        .update({ is_active: false })
-        .neq("id", blockId ?? "00000000-0000-0000-0000-000000000000");
+      await sb.from("blocks").update({ is_active: false }).neq("id", blockId ?? "00000000-0000-0000-0000-000000000000");
     }
 
     if (!blockId) {

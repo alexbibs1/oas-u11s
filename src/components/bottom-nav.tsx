@@ -2,11 +2,10 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Home, Users, Shield, ClipboardCheck, Calendar, Newspaper, Star } from "lucide-react";
 import { getMyRole } from "@/lib/auth/roles.functions";
-import { qk } from "@/lib/query-keys";
 
 export function BottomNav() {
   const { data: me } = useQuery({
-    queryKey: qk.me,
+    queryKey: ["me"],
     queryFn: () => getMyRole(),
     staleTime: 60_000,
   });

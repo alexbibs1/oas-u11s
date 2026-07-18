@@ -9,10 +9,7 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
-    // 30s: preloaded data is considered stale after 30s, so rapid back/forward
-    // navigation reuses cached data instead of refetching every server fn on
-    // every nav. Bump higher for less churn, lower for fresher data.
-    defaultPreloadStaleTime: 30_000,
+    defaultPreloadStaleTime: 0,
   });
 
   return router;

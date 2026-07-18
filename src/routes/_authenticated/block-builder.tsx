@@ -9,7 +9,6 @@ import {
   saveBlock,
   setActiveBlock,
 } from "@/lib/blocks/blocks.functions";
-import { qk } from "@/lib/query-keys";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,7 +24,9 @@ export const Route = createFileRoute("/_authenticated/block-builder")({
   component: BlockBuilderPage,
 });
 
-type Mode = { kind: "list" } | { kind: "edit"; blockId: string | null };
+type Mode =
+  | { kind: "list" }
+  | { kind: "edit"; blockId: string | null };
 
 function BlockBuilderPage() {
   const [mode, setMode] = useState<Mode>({ kind: "list" });
@@ -38,16 +39,25 @@ function BlockBuilderPage() {
           onEdit={(id) => setMode({ kind: "edit", blockId: id })}
         />
       ) : (
-        <BlockEditor blockId={mode.blockId} onDone={() => setMode({ kind: "list" })} />
+        <BlockEditor
+          blockId={mode.blockId}
+          onDone={() => setMode({ kind: "list" })}
+        />
       )}
     </main>
   );
 }
 
-function BlockList({ onCreate, onEdit }: { onCreate: () => void; onEdit: (id: string) => void }) {
+function BlockList({
+  onCreate,
+  onEdit,
+}: {
+  onCreate: () => void;
+  onEdit: (id: string) => void;
+}) {
   const qc = useQueryClient();
   const { data: blocks = [], isLoading } = useQuery({
-    queryKey: qk.blocks.meta,
+    queryKey: ["blocks-meta"],
     queryFn: () => listBlocksWithMeta(),
   });
 
@@ -55,12 +65,8 @@ function BlockList({ onCreate, onEdit }: { onCreate: () => void; onEdit: (id: st
     mutationFn: (id: string) => setActiveBlock({ data: { id } }),
     onSuccess: () => {
       toast.success("Block set active");
-      // Block activation affects: which block shows as active in lists,
-      // which block the home page treats as current, and match-day's
-      // default selection. Invalidate all of those.
-      qc.invalidateQueries({ queryKey: qk.blocks.all });
-      qc.invalidateQueries({ queryKey: qk.feed.homeSummary });
-      qc.invalidateQueries({ queryKey: qk.sessions.matchWeeks });
+      qc.invalidateQueries({ queryKey: ["blocks-meta"] });
+      qc.invalidateQueries({ queryKey: ["blocks"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -95,7 +101,9 @@ function BlockList({ onCreate, onEdit }: { onCreate: () => void; onEdit: (id: st
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h3 className="truncate font-semibold">{b.name ?? `Block ${b.block_number}`}</h3>
+                  <h3 className="truncate font-semibold">
+                    {b.name ?? `Block ${b.block_number}`}
+                  </h3>
                   {b.is_active && <Badge>Active</Badge>}
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -140,7 +148,7 @@ type GroupState = { coach_ids: string[]; player_ids: string[] };
 function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () => void }) {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({
-    queryKey: qk.blocks.detail(blockId),
+    queryKey: ["block-builder", blockId],
     queryFn: () => getBlockBuilderData({ data: { block_id: blockId } }),
   });
 
@@ -207,7 +215,10 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  const assignedIds = useMemo(() => new Set(groups.flatMap((g) => g.player_ids)), [groups]);
+  const assignedIds = useMemo(
+    () => new Set(groups.flatMap((g) => g.player_ids)),
+    [groups],
+  );
 
   const pool = useMemo(() => {
     if (!data) return [];
@@ -231,8 +242,7 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
   function togglePlayer(id: string) {
     setSelectedPlayers((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   }
@@ -295,12 +305,8 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
       }),
     onSuccess: () => {
       toast.success("Block saved");
-      // Previously this invalidated blocks-meta + blocks but NOT the
-      // block-builder detail query, so the editor kept showing stale data
-      // after save. Now we invalidate the whole blocks namespace, which
-      // covers meta, list, AND detail (including the editor's own key).
-      qc.invalidateQueries({ queryKey: qk.blocks.all });
-      qc.invalidateQueries({ queryKey: qk.feed.homeSummary });
+      qc.invalidateQueries({ queryKey: ["blocks-meta"] });
+      qc.invalidateQueries({ queryKey: ["blocks"] });
       onDone();
     },
     onError: (e: any) => toast.error(e.message),
@@ -313,7 +319,10 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
   return (
     <>
       <header className="mb-6">
-        <button className="text-xs text-muted-foreground hover:underline" onClick={onDone}>
+        <button
+          className="text-xs text-muted-foreground hover:underline"
+          onClick={onDone}
+        >
           <ChevronLeft className="inline h-3 w-3" /> Back to blocks
         </button>
         <h1 className="mt-1 text-2xl font-bold text-primary">
@@ -374,7 +383,11 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
             <Label htmlFor="bb-active">Active</Label>
             <Switch id="bb-active" checked={isActive} onCheckedChange={setIsActive} />
           </div>
-          <Button type="button" className="w-full" onClick={goToAssignments}>
+          <Button
+            type="button"
+            className="w-full"
+            onClick={goToAssignments}
+          >
             Next
           </Button>
         </section>
@@ -388,11 +401,7 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
               <h3 className="text-sm font-semibold">Pool ({pool.length})</h3>
             </div>
             <div className="mb-3 flex flex-wrap gap-1">
-              <SortBtn
-                label="Name"
-                active={sortKey === "name"}
-                onClick={() => setSortKey("name")}
-              />
+              <SortBtn label="Name" active={sortKey === "name"} onClick={() => setSortKey("name")} />
               <SortBtn
                 label="Att%"
                 active={sortKey === "attendance"}
@@ -615,7 +624,9 @@ function GroupColumn({
   onUnassign: (id: string) => void;
   onToggleCoach: (id: string) => void;
 }) {
-  const groupPlayers = group.player_ids.map((id) => playerMap.get(id)).filter(Boolean);
+  const groupPlayers = group.player_ids
+    .map((id) => playerMap.get(id))
+    .filter(Boolean);
   const avgSkill =
     groupPlayers.length === 0
       ? 0
@@ -647,7 +658,9 @@ function GroupColumn({
                 type="button"
                 onClick={() => onToggleCoach(c.id)}
                 className={`rounded-full px-2 py-0.5 text-[10px] ${
-                  sel ? "bg-accent text-accent-foreground" : "bg-secondary text-foreground"
+                  sel
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-secondary text-foreground"
                 }`}
               >
                 {c.coach_name}
@@ -672,7 +685,10 @@ function GroupColumn({
               </div>
               <div className="mt-0.5 flex flex-wrap gap-1">
                 {SKILLS.map((s) => (
-                  <span key={s} className="rounded bg-secondary px-1 text-[9px] font-semibold">
+                  <span
+                    key={s}
+                    className="rounded bg-secondary px-1 text-[9px] font-semibold"
+                  >
                     {SKILL_LABELS[s]} {p[s]}
                   </span>
                 ))}
@@ -713,7 +729,9 @@ function GroupSummary({
   coaches: any[];
   playerMap: Map<string, any>;
 }) {
-  const groupPlayers = group.player_ids.map((id) => playerMap.get(id)).filter(Boolean);
+  const groupPlayers = group.player_ids
+    .map((id) => playerMap.get(id))
+    .filter(Boolean);
   const coachNames = group.coach_ids
     .map((id) => coaches.find((c: any) => c.id === id)?.coach_name)
     .filter(Boolean) as string[];

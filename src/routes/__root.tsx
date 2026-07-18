@@ -81,16 +81,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:title", content: "OA Rugby" },
       { property: "og:description", content: "OA Rugby player development app" },
       { name: "twitter:description", content: "OA Rugby player development app" },
-      {
-        property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ae1ca9b0-603f-476e-8e82-7d90c8527314/id-preview-0e255cc6--df3fb248-295e-4c83-893b-7cb1fa2f11bb.lovable.app-1782238083395.png",
-      },
-      {
-        name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ae1ca9b0-603f-476e-8e82-7d90c8527314/id-preview-0e255cc6--df3fb248-295e-4c83-893b-7cb1fa2f11bb.lovable.app-1782238083395.png",
-      },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ae1ca9b0-603f-476e-8e82-7d90c8527314/id-preview-0e255cc6--df3fb248-295e-4c83-893b-7cb1fa2f11bb.lovable.app-1782238083395.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ae1ca9b0-603f-476e-8e82-7d90c8527314/id-preview-0e255cc6--df3fb248-295e-4c83-893b-7cb1fa2f11bb.lovable.app-1782238083395.png" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
     ],

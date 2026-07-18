@@ -9,9 +9,6 @@ import {
   deleteSession,
 } from "@/lib/sessions/sessions.functions";
 import { getMyRole } from "@/lib/auth/roles.functions";
-import { qk } from "@/lib/query-keys";
-import { formatDateShort } from "@/lib/dates";
-import { useConfirm } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -63,10 +60,12 @@ function startOfWeekMon(d: Date) {
   return x;
 }
 
+import { formatDateShort } from "@/lib/dates";
+
 function CalendarPage() {
-  const { data: me } = useQuery({ queryKey: qk.me, queryFn: () => getMyRole() });
+  const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => getMyRole() });
   const { data: sessions = [], isLoading } = useQuery({
-    queryKey: qk.sessions.list,
+    queryKey: ["all-sessions"],
     queryFn: () => listAllSessions(),
   });
 
@@ -103,25 +102,22 @@ function CalendarPage() {
         map.set(key, row);
       }
       const dow = d.getDay();
-      if (dow === 0)
-        row.sun = s; // Sunday
-      else if (dow === 3)
-        row.wed = s; // Wednesday
+      if (dow === 0) row.sun = s; // Sunday
+      else if (dow === 3) row.wed = s; // Wednesday
       else {
         // Non-Wed/Sun: put on whichever slot is empty (treat as Wed pref)
         if (!row.wed) row.wed = s;
         else if (!row.sun) row.sun = s;
       }
     }
-    return Array.from(map.values()).sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime());
+    return Array.from(map.values()).sort(
+      (a, b) => a.weekStart.getTime() - b.weekStart.getTime(),
+    );
   }, [sessions]);
 
   // Group rows by block for sectioned display
   const byBlock = useMemo(() => {
-    const m = new Map<
-      string,
-      { block_name: string; block_number: number | null; rows: typeof grouped }
-    >();
+    const m = new Map<string, { block_name: string; block_number: number | null; rows: typeof grouped }>();
     for (const r of grouped) {
       let b = m.get(r.block_id);
       if (!b) {
@@ -176,7 +172,11 @@ function CalendarPage() {
                     style={{ borderLeft: `4px solid ${color}` }}
                   >
                     <div className="px-4 pt-3 pb-1 text-[11px] uppercase tracking-wider text-muted-foreground">
-                      Week of {formatDateShort(r.weekStart)}
+                      Week of{" "}
+                      {r.weekStart.toLocaleDateString(undefined, {
+                        day: "numeric",
+                        month: "short",
+                      })}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-border/40">
                       <SessionSlot
@@ -205,10 +205,18 @@ function CalendarPage() {
       <div className="h-24" />
 
       {creating && (
-        <SessionDialog open={creating} onClose={() => setCreating(false)} session={null} />
+        <SessionDialog
+          open={creating}
+          onClose={() => setCreating(false)}
+          session={null}
+        />
       )}
       {editing && (
-        <SessionDialog open={!!editing} onClose={() => setEditing(null)} session={editing} />
+        <SessionDialog
+          open={!!editing}
+          onClose={() => setEditing(null)}
+          session={editing}
+        />
       )}
     </main>
   );
@@ -275,7 +283,9 @@ function SessionSlot({
         </div>
         {isMatch && (session.opponent || session.venue) && (
           <div className="mt-2 flex items-center gap-2 text-sm">
-            <span className="font-semibold text-primary">vs {session.opponent || "TBC"}</span>
+            <span className="font-semibold text-primary">
+              vs {session.opponent || "TBC"}
+            </span>
             {session.venue && (
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                 <MapPin className="h-3 w-3" />
@@ -311,14 +321,15 @@ function SessionDialog({
   session: Session | null;
 }) {
   const qc = useQueryClient();
-  const { confirm, dialog: confirmDialog } = useConfirm();
-  const { data: blocks = [] } = useQuery({ queryKey: qk.blocks.list, queryFn: () => listBlocks() });
+  const { data: blocks = [] } = useQuery({ queryKey: ["blocks"], queryFn: () => listBlocks() });
 
   const [blockId, setBlockId] = useState(session?.block_id ?? "");
   const [date, setDate] = useState(session?.session_date ?? "");
   const [type, setType] = useState<"training" | "match">(session?.session_type ?? "match");
   const [opponent, setOpponent] = useState(session?.opponent ?? "");
-  const [venue, setVenue] = useState<"Home" | "Away" | "">((session?.venue as any) ?? "");
+  const [venue, setVenue] = useState<"Home" | "Away" | "">(
+    (session?.venue as any) ?? "",
+  );
   const [weekNumber, setWeekNumber] = useState<string>(
     session?.week_number ? String(session.week_number) : "",
   );
@@ -351,8 +362,8 @@ function SessionDialog({
       }),
     onSuccess: () => {
       toast.success("Session added");
-      qc.invalidateQueries({ queryKey: qk.sessions.list });
-      qc.invalidateQueries({ queryKey: qk.sessions.matchList });
+      qc.invalidateQueries({ queryKey: ["all-sessions"] });
+      qc.invalidateQueries({ queryKey: ["match-sessions"] });
       onClose();
     },
     onError: (e: any) => toast.error(e.message),
@@ -373,8 +384,8 @@ function SessionDialog({
       }),
     onSuccess: () => {
       toast.success("Session updated");
-      qc.invalidateQueries({ queryKey: qk.sessions.list });
-      qc.invalidateQueries({ queryKey: qk.sessions.matchList });
+      qc.invalidateQueries({ queryKey: ["all-sessions"] });
+      qc.invalidateQueries({ queryKey: ["match-sessions"] });
       onClose();
     },
     onError: (e: any) => toast.error(e.message),
@@ -384,8 +395,8 @@ function SessionDialog({
     mutationFn: () => deleteSession({ data: { id: session!.id } }),
     onSuccess: () => {
       toast.success("Session deleted");
-      qc.invalidateQueries({ queryKey: qk.sessions.list });
-      qc.invalidateQueries({ queryKey: qk.sessions.matchList });
+      qc.invalidateQueries({ queryKey: ["all-sessions"] });
+      qc.invalidateQueries({ queryKey: ["match-sessions"] });
       onClose();
     },
     onError: (e: any) => toast.error(e.message),
@@ -469,15 +480,8 @@ function SessionDialog({
               <Button
                 type="button"
                 variant="destructive"
-                onClick={async () => {
-                  const ok = await confirm({
-                    title: "Delete this session?",
-                    description:
-                      "This will remove the session and any associated ratings. This cannot be undone.",
-                    confirmLabel: "Delete",
-                    destructive: true,
-                  });
-                  if (ok) del.mutate();
+                onClick={() => {
+                  if (confirm("Delete this session?")) del.mutate();
                 }}
               >
                 Delete
@@ -492,7 +496,6 @@ function SessionDialog({
           </DialogFooter>
         </form>
       </DialogContent>
-      {confirmDialog}
     </Dialog>
   );
 }

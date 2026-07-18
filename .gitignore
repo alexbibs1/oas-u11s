@@ -20,11 +20,6 @@ dist-ssr
 .wrangler/
 .dev.vars
 
-# Environment variables — never commit. Lovable manages these in the cloud.
-.env
-.env.*
-!.env.example
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

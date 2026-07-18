@@ -34,7 +34,7 @@ export const inviteUser = createServerFn({ method: "POST" })
     const { error: insertErr } = await supabaseAdmin.from("user_roles").insert({
       user_id: newUserId,
       role: data.role,
-      coach_id: data.role === "coach" ? (data.coach_id ?? null) : null,
+      coach_id: data.role === "coach" ? data.coach_id ?? null : null,
     });
     if (insertErr) throw new Error(insertErr.message);
 

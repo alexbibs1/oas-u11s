@@ -90,8 +90,8 @@ export const createSession = createServerFn({ method: "POST" })
       session_date: data.session_date,
       session_type: data.session_type,
       week_number: data.week_number ?? null,
-      opponent: data.session_type === "match" ? (data.opponent ?? null) : null,
-      venue: data.session_type === "match" ? (data.venue ?? null) : null,
+      opponent: data.session_type === "match" ? data.opponent ?? null : null,
+      venue: data.session_type === "match" ? data.venue ?? null : null,
     };
     const { data: row, error } = await context.supabase
       .from("sessions")
@@ -113,8 +113,8 @@ export const updateSession = createServerFn({ method: "POST" })
       session_date: rest.session_date,
       session_type: rest.session_type,
       week_number: rest.week_number ?? null,
-      opponent: rest.session_type === "match" ? (rest.opponent ?? null) : null,
-      venue: rest.session_type === "match" ? (rest.venue ?? null) : null,
+      opponent: rest.session_type === "match" ? rest.opponent ?? null : null,
+      venue: rest.session_type === "match" ? rest.venue ?? null : null,
     };
     const { error } = await context.supabase.from("sessions").update(payload).eq("id", id);
     if (error) throw new Error(error.message);
@@ -190,7 +190,10 @@ export const getMatchSummary = createServerFn({ method: "GET" })
     );
     (overrides ?? []).forEach((o: any) => playerIds.add(o.player_id));
     const { data: players } = playerIds.size
-      ? await sb.from("players").select("id, player_name").in("id", Array.from(playerIds))
+      ? await sb
+          .from("players")
+          .select("id, player_name")
+          .in("id", Array.from(playerIds))
       : { data: [] as any[] };
     const pMap = new Map((players ?? []).map((p: any) => [p.id, p.player_name]));
     const oMap = new Map(

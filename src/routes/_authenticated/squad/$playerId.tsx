@@ -10,15 +10,12 @@ import {
   updatePlayerNote,
   deletePlayerNote,
 } from "@/lib/feed/feed.functions";
-import { qk } from "@/lib/query-keys";
-import { formatDateTime } from "@/lib/dates";
-import { useConfirm } from "@/components/confirm-dialog";
 import { ChevronLeft, Pencil, Trash2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
 const playerQuery = (id: string) => ({
-  queryKey: qk.players.detail(id),
+  queryKey: ["player", id],
   queryFn: () => getPlayer({ data: { id } }),
 });
 
@@ -39,11 +36,10 @@ function PlayerProfile() {
   const { playerId } = Route.useParams();
   const { data: player } = useSuspenseQuery(playerQuery(playerId));
   const { data: currentBlock } = useQuery({
-    queryKey: qk.players.currentBlock(playerId),
+    queryKey: ["player-current-block", playerId],
     queryFn: () => getPlayerCurrentBlock({ data: { player_id: playerId } }),
   });
   const qc = useQueryClient();
-  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const listFn = useServerFn(listPlayerNotes);
   const createFn = useServerFn(createPlayerNote);
@@ -51,7 +47,7 @@ function PlayerProfile() {
   const deleteFn = useServerFn(deletePlayerNote);
 
   const { data: notes = [] } = useQuery({
-    queryKey: qk.players.notes(playerId),
+    queryKey: ["player-notes", playerId],
     queryFn: () => listFn({ data: { player_id: playerId } }),
   });
 
@@ -61,25 +57,18 @@ function PlayerProfile() {
   const [editDraft, setEditDraft] = useState("");
 
   const invalidate = () => {
-    qc.invalidateQueries({ queryKey: qk.players.notes(playerId) });
-    qc.invalidateQueries({ queryKey: qk.feed.all });
-    qc.invalidateQueries({ queryKey: qk.feed.homeSummary });
+    qc.invalidateQueries({ queryKey: ["player-notes", playerId] });
+    qc.invalidateQueries({ queryKey: ["feed"] });
+    qc.invalidateQueries({ queryKey: ["home-summary"] });
   };
 
   const addM = useMutation({
     mutationFn: (note: string) => createFn({ data: { player_id: playerId, note } }),
-    onSuccess: () => {
-      setDraft("");
-      setAdding(false);
-      invalidate();
-    },
+    onSuccess: () => { setDraft(""); setAdding(false); invalidate(); },
   });
   const updateM = useMutation({
     mutationFn: (v: { id: string; note: string }) => updateFn({ data: v }),
-    onSuccess: () => {
-      setEditingId(null);
-      invalidate();
-    },
+    onSuccess: () => { setEditingId(null); invalidate(); },
   });
   const deleteM = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { id } }),
@@ -108,13 +97,14 @@ function PlayerProfile() {
         {currentBlock?.block ? (
           <div className="mt-1">
             <p className="text-sm font-semibold text-primary">
-              {(currentBlock.block as any).name ??
-                `Block ${(currentBlock.block as any).block_number}`}
+              {(currentBlock.block as any).name ?? `Block ${(currentBlock.block as any).block_number}`}
             </p>
             <p className="text-xs text-muted-foreground">
               {currentBlock.group
                 ? `Group ${currentBlock.group.group_number}${
-                    currentBlock.coaches.length ? ` · Coach ${currentBlock.coaches.join(", ")}` : ""
+                    currentBlock.coaches.length
+                      ? ` · Coach ${currentBlock.coaches.join(", ")}`
+                      : ""
                   }`
                 : "Not assigned to a group"}
             </p>
@@ -123,6 +113,7 @@ function PlayerProfile() {
           <p className="mt-1 text-sm text-muted-foreground">No active block.</p>
         )}
       </section>
+
 
       <section className="mb-6">
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Skills</h2>
@@ -140,7 +131,9 @@ function PlayerProfile() {
                   {[1, 2, 3, 4, 5].map((n) => (
                     <span
                       key={n}
-                      className={`h-2 flex-1 rounded-full ${n <= value ? "bg-accent" : "bg-muted"}`}
+                      className={`h-2 flex-1 rounded-full ${
+                        n <= value ? "bg-accent" : "bg-muted"
+                      }`}
                     />
                   ))}
                 </div>
@@ -158,7 +151,10 @@ function PlayerProfile() {
           {ATTRIBUTES.map((a) => {
             const value = (player as any)[a.key] as number;
             return (
-              <div key={a.key} className="rounded-md border border-dashed bg-card/60 p-4">
+              <div
+                key={a.key}
+                className="rounded-md border border-dashed bg-card/60 p-4"
+              >
                 <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                   {a.label}
                 </p>
@@ -173,6 +169,9 @@ function PlayerProfile() {
       </section>
 
       <WeeklyHistory playerId={playerId} />
+
+
+
 
       <section>
         <div className="mb-3 flex items-center justify-between">
@@ -194,14 +193,7 @@ function PlayerProfile() {
               rows={4}
             />
             <div className="flex justify-end gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setAdding(false);
-                  setDraft("");
-                }}
-              >
+              <Button variant="ghost" size="sm" onClick={() => { setAdding(false); setDraft(""); }}>
                 Cancel
               </Button>
               <Button
@@ -227,32 +219,23 @@ function PlayerProfile() {
               <div className="mb-2 flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-primary">{n.coach_name ?? "Coach"}</p>
-                  <p className="text-xs text-muted-foreground">{formatDateTime(n.created_at)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(n.created_at).toLocaleString()}
+                  </p>
                 </div>
                 {n.canEdit && editingId !== n.id && (
                   <div className="flex gap-1">
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => {
-                        setEditingId(n.id);
-                        setEditDraft(n.note);
-                      }}
+                      onClick={() => { setEditingId(n.id); setEditDraft(n.note); }}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={async () => {
-                        const ok = await confirm({
-                          title: "Delete this note?",
-                          description: "This cannot be undone.",
-                          confirmLabel: "Delete",
-                          destructive: true,
-                        });
-                        if (ok) deleteM.mutate(n.id);
-                      }}
+                      onClick={() => { if (confirm("Delete this note?")) deleteM.mutate(n.id); }}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -261,11 +244,7 @@ function PlayerProfile() {
               </div>
               {editingId === n.id ? (
                 <div className="space-y-2">
-                  <Textarea
-                    value={editDraft}
-                    onChange={(e) => setEditDraft(e.target.value)}
-                    rows={4}
-                  />
+                  <Textarea value={editDraft} onChange={(e) => setEditDraft(e.target.value)} rows={4} />
                   <div className="flex justify-end gap-2">
                     <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
                       Cancel
@@ -286,14 +265,13 @@ function PlayerProfile() {
           ))}
         </ul>
       </section>
-      {confirmDialog}
     </main>
   );
 }
 
 function WeeklyHistory({ playerId }: { playerId: string }) {
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: qk.players.skillRatings(playerId),
+    queryKey: ["player-skill-ratings", playerId],
     queryFn: () => listPlayerSkillRatings({ data: { player_id: playerId } }),
   });
   if (isLoading) return null;
@@ -319,7 +297,9 @@ function WeeklyHistory({ playerId }: { playerId: string }) {
                   </span>
                 </div>
                 <p className="mb-2 text-xs text-muted-foreground">
-                  {(r.coach_names ?? []).length ? (r.coach_names as string[]).join(", ") : "—"}
+                  {(r.coach_names ?? []).length
+                    ? (r.coach_names as string[]).join(", ")
+                    : "—"}
                   {r.entered_by_name ? ` · entered by ${r.entered_by_name}` : ""}
                 </p>
                 <div className="grid grid-cols-7 gap-1 text-center text-xs">
@@ -340,3 +320,4 @@ function WeeklyHistory({ playerId }: { playerId: string }) {
     </section>
   );
 }
+

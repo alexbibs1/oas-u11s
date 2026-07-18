@@ -31,16 +31,9 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        navigate({ to: "/home", replace: true });
-        return;
-      }
-      // Only check bootstrap status if there's no active session —
-      // no point doing the extra server roundtrip for a logged-in user.
-      checkStatus()
-        .then((r) => setNeedsBootstrap(r.needsBootstrap))
-        .catch(() => {});
+      if (data.session) navigate({ to: "/home", replace: true });
     });
+    checkStatus().then((r) => setNeedsBootstrap(r.needsBootstrap)).catch(() => {});
   }, [navigate, checkStatus]);
 
   async function handleSubmit(e: React.FormEvent) {
