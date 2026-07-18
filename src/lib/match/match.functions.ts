@@ -64,10 +64,10 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
       movedInPlayers = pl ?? [];
     }
 
-    // Existing ratings for this session+group
+    // Existing ratings for this session+group (source of truth is skill_ratings)
     const { data: ratings, error: e4 } = await supabase
-      .from("match_ratings")
-      .select("*")
+      .from("skill_ratings")
+      .select("player_id, group_id, carrying, handling, tackling, rucking, kicking, catching, iq")
       .eq("session_id", data.session_id)
       .eq("group_id", data.group_id);
     if (e4) throw new Error(e4.message);
