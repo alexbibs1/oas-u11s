@@ -258,6 +258,7 @@ export const upsertWeekRatings = createServerFn({ method: "POST" })
         player_id: r.player_id,
         player_name: nameMap.get(r.player_id) ?? "",
         block_id: blockId,
+        group_id: data.group_id,
         group_number: groupNumber,
         week_number: weekNumber,
         coach_names: coachNames,
