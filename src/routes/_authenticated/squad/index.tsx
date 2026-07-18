@@ -43,8 +43,7 @@ function SquadPage() {
                   <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[12px] text-muted-foreground">
                     {SKILLS.map((s) => (
                       <span key={s.key} className="tabular-nums">
-                        {s.short}{" "}
-                        <span className="font-semibold text-foreground">{p[s.key]}</span>
+                        {s.short} <span className="font-semibold text-foreground">{p[s.key]}</span>
                       </span>
                     ))}
                   </div>
@@ -54,8 +53,7 @@ function SquadPage() {
                   <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground/80">
                     {ATTRIBUTES.map((a) => (
                       <span key={a.key} className="tabular-nums italic">
-                        {a.short}{" "}
-                        <span className="font-medium not-italic">{p[a.key]}</span>
+                        {a.short} <span className="font-medium not-italic">{p[a.key]}</span>
                       </span>
                     ))}
                   </div>

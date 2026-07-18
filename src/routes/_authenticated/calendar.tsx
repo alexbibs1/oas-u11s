@@ -102,22 +102,25 @@ function CalendarPage() {
         map.set(key, row);
       }
       const dow = d.getDay();
-      if (dow === 0) row.sun = s; // Sunday
-      else if (dow === 3) row.wed = s; // Wednesday
+      if (dow === 0)
+        row.sun = s; // Sunday
+      else if (dow === 3)
+        row.wed = s; // Wednesday
       else {
         // Non-Wed/Sun: put on whichever slot is empty (treat as Wed pref)
         if (!row.wed) row.wed = s;
         else if (!row.sun) row.sun = s;
       }
     }
-    return Array.from(map.values()).sort(
-      (a, b) => a.weekStart.getTime() - b.weekStart.getTime(),
-    );
+    return Array.from(map.values()).sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime());
   }, [sessions]);
 
   // Group rows by block for sectioned display
   const byBlock = useMemo(() => {
-    const m = new Map<string, { block_name: string; block_number: number | null; rows: typeof grouped }>();
+    const m = new Map<
+      string,
+      { block_name: string; block_number: number | null; rows: typeof grouped }
+    >();
     for (const r of grouped) {
       let b = m.get(r.block_id);
       if (!b) {
@@ -205,18 +208,10 @@ function CalendarPage() {
       <div className="h-24" />
 
       {creating && (
-        <SessionDialog
-          open={creating}
-          onClose={() => setCreating(false)}
-          session={null}
-        />
+        <SessionDialog open={creating} onClose={() => setCreating(false)} session={null} />
       )}
       {editing && (
-        <SessionDialog
-          open={!!editing}
-          onClose={() => setEditing(null)}
-          session={editing}
-        />
+        <SessionDialog open={!!editing} onClose={() => setEditing(null)} session={editing} />
       )}
     </main>
   );
@@ -283,9 +278,7 @@ function SessionSlot({
         </div>
         {isMatch && (session.opponent || session.venue) && (
           <div className="mt-2 flex items-center gap-2 text-sm">
-            <span className="font-semibold text-primary">
-              vs {session.opponent || "TBC"}
-            </span>
+            <span className="font-semibold text-primary">vs {session.opponent || "TBC"}</span>
             {session.venue && (
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                 <MapPin className="h-3 w-3" />
@@ -327,9 +320,7 @@ function SessionDialog({
   const [date, setDate] = useState(session?.session_date ?? "");
   const [type, setType] = useState<"training" | "match">(session?.session_type ?? "match");
   const [opponent, setOpponent] = useState(session?.opponent ?? "");
-  const [venue, setVenue] = useState<"Home" | "Away" | "">(
-    (session?.venue as any) ?? "",
-  );
+  const [venue, setVenue] = useState<"Home" | "Away" | "">((session?.venue as any) ?? "");
   const [weekNumber, setWeekNumber] = useState<string>(
     session?.week_number ? String(session.week_number) : "",
   );

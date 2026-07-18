@@ -10,7 +10,9 @@ export const listGroupsForBlock = createServerFn({ method: "GET" })
   .handler(async ({ context, data }) => {
     const { data: groups, error } = await context.supabase
       .from("groups")
-      .select("id, group_number, group_coaches:group_coaches ( coach_id, coaches:coach_id ( coach_name ) )")
+      .select(
+        "id, group_number, group_coaches:group_coaches ( coach_id, coaches:coach_id ( coach_name ) )",
+      )
       .eq("block_id", data.block_id)
       .order("group_number", { ascending: true });
     if (error) throw new Error(error.message);
@@ -38,7 +40,9 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
     // Default roster from group_players
     const { data: defaultRoster, error: e1 } = await supabase
       .from("group_players")
-      .select("player_id, players:player_id ( id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability )")
+      .select(
+        "player_id, players:player_id ( id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability )",
+      )
       .eq("group_id", data.group_id);
     if (e1) throw new Error(e1.message);
 
@@ -58,7 +62,9 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
     if (movedInIds.length) {
       const { data: pl, error: e3 } = await supabase
         .from("players")
-        .select("id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability")
+        .select(
+          "id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability",
+        )
         .in("id", movedInIds);
       if (e3) throw new Error(e3.message);
       movedInPlayers = pl ?? [];
@@ -112,7 +118,7 @@ export const saveRegister = createServerFn({ method: "POST" })
         e.status === "here"
           ? data.group_id
           : e.status === "move"
-            ? e.move_to_group_id ?? null
+            ? (e.move_to_group_id ?? null)
             : null,
       created_by: context.userId,
     }));
@@ -224,7 +230,21 @@ export const submitRatings = createServerFn({ method: "POST" })
       .in("id", playerIds);
     const nameMap = new Map((players ?? []).map((p: any) => [p.id, p.player_name]));
 
-    const rows = data.ratings.map((r) => ({
+    // Dedupe by player_id — a single ON CONFLICT upsert can't affect the
+    // same target row twice in one statement ("ON CONFLICT DO UPDATE
+    // command cannot affect row a second time"). This can happen when a
+    // player in the group's default roster is also explicitly marked
+    // "Here" via an override, which surfaces them in both defaultRoster
+    // AND movedInPlayers on the match-day UI. Keep the last rating per
+    // player (in input order) so any later edits win.
+    const seen = new Set<string>();
+    const dedupedRatings = data.ratings.filter((r) => {
+      if (seen.has(r.player_id)) return false;
+      seen.add(r.player_id);
+      return true;
+    });
+
+    const rows = dedupedRatings.map((r) => ({
       session_id: data.session_id,
       group_id: data.group_id,
       group_number: groupNumber,
@@ -272,7 +292,10 @@ export const submitRatings = createServerFn({ method: "POST" })
         const list = byPlayer.get(pid) ?? [];
         if (!list.length) continue;
         const avgSkill = (key: string) => {
-          const vals = list.map((x) => x[key]).filter((v) => v != null).map(Number);
+          const vals = list
+            .map((x) => x[key])
+            .filter((v) => v != null)
+            .map(Number);
           return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
         };
         const avg: Record<string, number> = {};
@@ -280,7 +303,11 @@ export const submitRatings = createServerFn({ method: "POST" })
           const v = avgSkill(k);
           if (v != null) avg[k] = v;
         }
-        if (Object.keys(avg).length) await supabase.from("players").update(avg as any).eq("id", pid);
+        if (Object.keys(avg).length)
+          await supabase
+            .from("players")
+            .update(avg as any)
+            .eq("id", pid);
       }
     }
 

@@ -94,7 +94,6 @@ function AdminPage() {
         </div>
       </section>
 
-
       {/* 4. Player Data */}
       <div className="my-8 border-t-2 border-dashed border-accent/40" />
 
@@ -307,7 +306,9 @@ function PlayersSection() {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <Button type="submit" disabled={add.isPending}>Add</Button>
+        <Button type="submit" disabled={add.isPending}>
+          Add
+        </Button>
       </form>
       <ul className="max-h-72 space-y-1 overflow-auto">
         {players.map((p: any) => (
@@ -367,7 +368,9 @@ function CoachesSection() {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <Button type="submit" disabled={add.isPending}>Add</Button>
+        <Button type="submit" disabled={add.isPending}>
+          Add
+        </Button>
       </form>
       <ul className="space-y-1">
         {coaches.map((c: any) => (
@@ -510,9 +513,7 @@ function AttributesSection() {
                   {pending?.attributeLabel}
                 </p>
                 <p>
-                  From{" "}
-                  <span className="font-semibold">{pending?.oldValue ?? "—"}</span>{" "}
-                  to{" "}
+                  From <span className="font-semibold">{pending?.oldValue ?? "—"}</span> to{" "}
                   <span className="font-semibold text-primary">{pending?.newValue}</span>
                 </p>
                 {pending?.attribute === "repeatability" && pending && (
@@ -614,7 +615,9 @@ function CompletionTrackerSection() {
                     {g.coaches.length ? g.coaches.join(", ") : "No coaches"}
                   </p>
                 </div>
-                <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${palette}`}>
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${palette}`}
+                >
                   {label}
                 </span>
               </li>
@@ -625,7 +628,6 @@ function CompletionTrackerSection() {
     </div>
   );
 }
-
 
 function AuditLogSection() {
   const { data: rows = [] } = useQuery({
@@ -649,10 +651,7 @@ function AuditLogSection() {
             const changed = (r.metadata?.changed_fields as string[] | undefined) ?? null;
             const attr = r.metadata?.attribute as string | undefined;
             return (
-              <li
-                key={r.id}
-                className="rounded-md border bg-background px-3 py-2"
-              >
+              <li key={r.id} className="rounded-md border bg-background px-3 py-2">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-semibold">
                     {playerName ?? r.table_name}
@@ -683,7 +682,6 @@ function AuditLogSection() {
             );
           })}
         </ul>
-
       )}
     </div>
   );

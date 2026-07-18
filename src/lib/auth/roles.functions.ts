@@ -16,8 +16,7 @@ export const getMyRole = createServerFn({ method: "GET" })
     const coachName = coachRow?.coaches?.coach_name ?? null;
 
     const email: string | null = (claims as any).email ?? null;
-    const metaUsername: string | null =
-      (claims as any).user_metadata?.username ?? null;
+    const metaUsername: string | null = (claims as any).user_metadata?.username ?? null;
 
     let username = metaUsername;
     if (!username && email) {

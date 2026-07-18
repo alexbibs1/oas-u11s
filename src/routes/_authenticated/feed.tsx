@@ -73,7 +73,13 @@ function FeedPage() {
               rows={4}
             />
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => { setComposing(false); setDraft(""); }}>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setComposing(false);
+                  setDraft("");
+                }}
+              >
                 Cancel
               </Button>
               <Button
@@ -103,9 +109,7 @@ function FeedPage() {
               <div className="flex items-center gap-2">
                 <UserCircle2 className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <p className="text-sm font-semibold text-primary">
-                    {p.coach_name ?? "Coach"}
-                  </p>
+                  <p className="text-sm font-semibold text-primary">{p.coach_name ?? "Coach"}</p>
                   <p className="text-xs text-muted-foreground">
                     {new Date(p.created_at).toLocaleString()}
                   </p>

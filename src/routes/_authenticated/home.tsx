@@ -86,9 +86,7 @@ function HomePage() {
 
         {summary?.otherGroups && summary.otherGroups.length > 0 && (
           <div className="rounded-lg border bg-card p-5">
-            <h2 className="text-sm font-semibold text-muted-foreground">
-              Other groups this block
-            </h2>
+            <h2 className="text-sm font-semibold text-muted-foreground">Other groups this block</h2>
             <ul className="mt-3 space-y-3">
               {summary.otherGroups.map((g: any) => (
                 <li key={g.id} className="border-t pt-3 first:border-t-0 first:pt-0">
@@ -109,20 +107,14 @@ function HomePage() {
 
         {next ? (
           <Link
-            to={
-              (next as any).session_type === "match"
-                ? "/match-day"
-                : "/session-info/$sessionId"
-            }
+            to={(next as any).session_type === "match" ? "/match-day" : "/session-info/$sessionId"}
             search={
               (next as any).session_type === "match"
                 ? ({ sessionId: (next as any).id } as any)
                 : undefined
             }
             params={
-              (next as any).session_type === "match"
-                ? undefined
-                : { sessionId: (next as any).id }
+              (next as any).session_type === "match" ? undefined : { sessionId: (next as any).id }
             }
             className="block rounded-lg border bg-card p-5 hover:bg-secondary"
           >
@@ -161,9 +153,7 @@ function HomePage() {
               {feed.map((p: any) => (
                 <li key={p.id} className="border-t pt-3 first:border-t-0 first:pt-0">
                   <p className="text-xs text-muted-foreground">
-                    <span className="font-semibold text-foreground">
-                      {p.coach_name ?? "Coach"}
-                    </span>{" "}
+                    <span className="font-semibold text-foreground">{p.coach_name ?? "Coach"}</span>{" "}
                     · {new Date(p.created_at).toLocaleDateString()}
                   </p>
                   <p className="mt-1 line-clamp-2 text-sm">{p.content}</p>

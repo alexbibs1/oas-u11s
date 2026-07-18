@@ -111,7 +111,9 @@ export const listAuditLog = createServerFn({ method: "GET" })
     const limit = Math.min(Math.max(data?.limit ?? 100, 1), 500);
     const { data: rows, error } = await context.supabase
       .from("audit_log")
-      .select("id, changed_by, table_name, record_id, operation, old_values, new_values, metadata, created_at")
+      .select(
+        "id, changed_by, table_name, record_id, operation, old_values, new_values, metadata, created_at",
+      )
       .order("created_at", { ascending: false })
       .limit(limit);
     if (error) throw new Error(error.message);

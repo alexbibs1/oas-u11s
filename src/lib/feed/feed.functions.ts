@@ -254,9 +254,7 @@ export const getHomeSummary = createServerFn({ method: "GET" })
         player_count: (g.group_players ?? []).length,
       }));
 
-      const mine = myCoachId
-        ? enriched.find((g) => g.coach_ids.includes(myCoachId!))
-        : null;
+      const mine = myCoachId ? enriched.find((g) => g.coach_ids.includes(myCoachId!)) : null;
       if (mine) {
         myGroup = {
           id: mine.id,
@@ -284,7 +282,9 @@ export const getHomeSummary = createServerFn({ method: "GET" })
 
     const { data: feed } = await sb
       .from("feed_posts")
-      .select("id, content, coach_name, player_id, is_player_note, created_at, players:player_id ( player_name )")
+      .select(
+        "id, content, coach_name, player_id, is_player_note, created_at, players:player_id ( player_name )",
+      )
       .order("created_at", { ascending: false })
       .limit(5);
 

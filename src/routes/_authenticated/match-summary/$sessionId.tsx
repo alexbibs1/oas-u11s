@@ -53,7 +53,6 @@ function MatchSummaryPage() {
         </div>
       </header>
 
-
       {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
 
       <div className="space-y-6 pb-24">
@@ -72,9 +71,7 @@ function MatchSummaryPage() {
               <div className="space-y-3">
                 <PlayerList label="Present" items={g.present} />
                 <PlayerList label="Absent" items={g.absent} muted />
-                {g.movedIn.length > 0 && (
-                  <PlayerList label="Moved in" items={g.movedIn} />
-                )}
+                {g.movedIn.length > 0 && <PlayerList label="Moved in" items={g.movedIn} />}
 
                 <div className="mt-4 border-t pt-3">
                   <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -106,7 +103,7 @@ function MatchSummaryPage() {
                                   key={s.key}
                                   className="py-1.5 px-1 text-center text-muted-foreground/80 tabular-nums"
                                 >
-                                  {r.scores ? (r.scores as any)[s.key] ?? "–" : "–"}
+                                  {r.scores ? ((r.scores as any)[s.key] ?? "–") : "–"}
                                 </td>
                               ))}
                             </tr>

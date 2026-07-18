@@ -37,7 +37,9 @@ function RatingsPage() {
           </Button>
         )}
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-accent">Weekly ratings</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-accent">
+            Weekly ratings
+          </p>
           <h1 className="mt-1 text-2xl font-bold text-primary">
             {!sessionId && "Pick a week"}
             {sessionId && !groupId && "Pick a group"}
@@ -47,9 +49,7 @@ function RatingsPage() {
       </header>
 
       {!sessionId && <WeekPicker onPick={setSessionId} />}
-      {sessionId && !groupId && (
-        <GroupPicker sessionId={sessionId} onPick={setGroupId} />
-      )}
+      {sessionId && !groupId && <GroupPicker sessionId={sessionId} onPick={setGroupId} />}
       {sessionId && groupId && (
         <RatingsEntry
           sessionId={sessionId}
@@ -106,13 +106,7 @@ function WeekPicker({ onPick }: { onPick: (id: string) => void }) {
   );
 }
 
-function GroupPicker({
-  sessionId,
-  onPick,
-}: {
-  sessionId: string;
-  onPick: (id: string) => void;
-}) {
+function GroupPicker({ sessionId, onPick }: { sessionId: string; onPick: (id: string) => void }) {
   const { data, isLoading } = useQuery({
     queryKey: ["my-groups-week", sessionId],
     queryFn: () => getMyGroupsForWeek({ data: { session_id: sessionId } }),
@@ -157,8 +151,7 @@ function RatingsEntry({
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["group-roster-week", sessionId, groupId],
-    queryFn: () =>
-      getGroupRosterForWeek({ data: { session_id: sessionId, group_id: groupId } }),
+    queryFn: () => getGroupRosterForWeek({ data: { session_id: sessionId, group_id: groupId } }),
   });
   const [scores, setScores] = useState<Scores>({});
 
@@ -170,7 +163,7 @@ function RatingsEntry({
       const ex = existingMap.get(p.id);
       init[p.id] = {};
       for (const s of SKILLS) {
-        init[p.id][s.key] = ex ? (ex as any)[s.key] : (p as any)[s.key] ?? 3;
+        init[p.id][s.key] = ex ? (ex as any)[s.key] : ((p as any)[s.key] ?? 3);
       }
     }
     setScores(init);
@@ -195,9 +188,7 @@ function RatingsEntry({
         },
       }),
     onSuccess: (r: any) => {
-      toast.success(
-        `Saved — ${r.inserted} new, ${r.updated} updated`,
-      );
+      toast.success(`Saved — ${r.inserted} new, ${r.updated} updated`);
       qc.invalidateQueries({ queryKey: ["group-roster-week", sessionId, groupId] });
       qc.invalidateQueries({ queryKey: ["week-completion"] });
       onDone();
@@ -256,11 +247,7 @@ function RatingsEntry({
         ))}
       </ul>
 
-      <Button
-        className="w-full"
-        disabled={submit.isPending}
-        onClick={() => submit.mutate()}
-      >
+      <Button className="w-full" disabled={submit.isPending} onClick={() => submit.mutate()}>
         {submit.isPending ? "Saving…" : "Save ratings"}
       </Button>
     </div>

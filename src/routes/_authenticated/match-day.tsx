@@ -16,7 +16,6 @@ import { toast } from "sonner";
 import { ChevronLeft, Check, X, ArrowRightLeft, Lock } from "lucide-react";
 import { formatDateLong } from "@/lib/dates";
 
-
 export const Route = createFileRoute("/_authenticated/match-day")({
   validateSearch: (s: Record<string, unknown>) => ({
     sessionId: typeof s.sessionId === "string" ? s.sessionId : undefined,
@@ -93,7 +92,6 @@ function MatchDayPage() {
         </div>
       </header>
 
-
       {step === "session" && (
         <SessionStep
           onPick={(s) => {
@@ -112,11 +110,7 @@ function MatchDayPage() {
         />
       )}
       {step === "register" && session && group && (
-        <RegisterStep
-          session={session}
-          group={group}
-          onProceed={() => setStep("rate")}
-        />
+        <RegisterStep session={session} group={group} onProceed={() => setStep("rate")} />
       )}
       {step === "rate" && session && group && (
         <RateStep session={session} group={group} onDone={() => setStep("done")} />
@@ -260,7 +254,7 @@ function RegisterStep({
           entries: Object.entries(state).map(([player_id, v]) => ({
             player_id,
             status: v.status,
-            move_to_group_id: v.status === "move" ? v.move_to ?? null : null,
+            move_to_group_id: v.status === "move" ? (v.move_to ?? null) : null,
           })),
         },
       }),
@@ -273,8 +267,7 @@ function RegisterStep({
   });
 
   const unlock = useMutation({
-    mutationFn: () =>
-      unlockRegister({ data: { session_id: session.id, group_id: group.id } }),
+    mutationFn: () => unlockRegister({ data: { session_id: session.id, group_id: group.id } }),
     onSuccess: () => {
       toast.success("Register unlocked");
       qc.invalidateQueries({ queryKey: ["match-ctx", session.id, group.id] });
@@ -373,11 +366,7 @@ function RegisterStep({
       </ul>
 
       {!locked && (
-        <Button
-          className="w-full"
-          disabled={save.isPending}
-          onClick={() => save.mutate()}
-        >
+        <Button className="w-full" disabled={save.isPending} onClick={() => save.mutate()}>
           {save.isPending ? "Saving…" : "Confirm Register"}
         </Button>
       )}
@@ -399,9 +388,15 @@ function PillBtn({
   disabled?: boolean;
 }) {
   const palette = {
-    green: active ? "bg-emerald-600 text-white border-emerald-600" : "border-emerald-600/40 text-emerald-700",
-    grey: active ? "bg-slate-500 text-white border-slate-500" : "border-slate-400/50 text-slate-600",
-    amber: active ? "bg-amber-500 text-white border-amber-500" : "border-amber-500/50 text-amber-700",
+    green: active
+      ? "bg-emerald-600 text-white border-emerald-600"
+      : "border-emerald-600/40 text-emerald-700",
+    grey: active
+      ? "bg-slate-500 text-white border-slate-500"
+      : "border-slate-400/50 text-slate-600",
+    amber: active
+      ? "bg-amber-500 text-white border-amber-500"
+      : "border-amber-500/50 text-amber-700",
   }[color];
   return (
     <button
@@ -417,15 +412,7 @@ function PillBtn({
   );
 }
 
-function RateStep({
-  session,
-  group,
-  onDone,
-}: {
-  session: any;
-  group: any;
-  onDone: () => void;
-}) {
+function RateStep({ session, group, onDone }: { session: any; group: any; onDone: () => void }) {
   const { data: ctx, isLoading } = useQuery({
     queryKey: ["match-ctx", session.id, group.id],
     queryFn: () => getMatchDayContext({ data: { session_id: session.id, group_id: group.id } }),
@@ -448,9 +435,7 @@ function RateStep({
   useEffect(() => {
     if (!ctx) return;
     const init: Record<string, any> = {};
-    const existingByPid = new Map(
-      (ctx.ratings as any[]).map((r) => [r.player_id, r]),
-    );
+    const existingByPid = new Map((ctx.ratings as any[]).map((r) => [r.player_id, r]));
     for (const p of presentPlayers) {
       const ex = existingByPid.get(p.id);
       const entry: any = {};
@@ -508,9 +493,7 @@ function RateStep({
             <div className="space-y-2">
               {SKILLS.map((sk) => (
                 <div key={sk.key} className="flex items-center justify-between gap-2">
-                  <span className="w-20 text-xs font-medium text-muted-foreground">
-                    {sk.label}
-                  </span>
+                  <span className="w-20 text-xs font-medium text-muted-foreground">{sk.label}</span>
                   <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map((n) => {
                       const val = scores[p.id]?.[sk.key];
@@ -526,8 +509,7 @@ function RateStep({
                             });
                             setActiveDescriptor(id);
                             setTimeout(
-                              () =>
-                                setActiveDescriptor((cur) => (cur === id ? null : cur)),
+                              () => setActiveDescriptor((cur) => (cur === id ? null : cur)),
                               1800,
                             );
                           }}

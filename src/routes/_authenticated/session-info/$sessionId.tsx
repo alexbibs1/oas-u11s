@@ -41,12 +41,9 @@ function SessionInfoPage() {
           <h1 className="mt-1 text-2xl font-bold text-primary">
             {session ? formatDateLong(session.session_date) : "…"}
           </h1>
-          {session && (
-            <p className="text-xs text-muted-foreground">{session.block_name}</p>
-          )}
+          {session && <p className="text-xs text-muted-foreground">{session.block_name}</p>}
         </div>
       </header>
-
 
       <section className="rounded-lg border bg-card p-5">
         <h2 className="mb-3 text-sm font-semibold text-primary">Active groups</h2>

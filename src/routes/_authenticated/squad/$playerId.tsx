@@ -64,11 +64,18 @@ function PlayerProfile() {
 
   const addM = useMutation({
     mutationFn: (note: string) => createFn({ data: { player_id: playerId, note } }),
-    onSuccess: () => { setDraft(""); setAdding(false); invalidate(); },
+    onSuccess: () => {
+      setDraft("");
+      setAdding(false);
+      invalidate();
+    },
   });
   const updateM = useMutation({
     mutationFn: (v: { id: string; note: string }) => updateFn({ data: v }),
-    onSuccess: () => { setEditingId(null); invalidate(); },
+    onSuccess: () => {
+      setEditingId(null);
+      invalidate();
+    },
   });
   const deleteM = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { id } }),
@@ -97,14 +104,13 @@ function PlayerProfile() {
         {currentBlock?.block ? (
           <div className="mt-1">
             <p className="text-sm font-semibold text-primary">
-              {(currentBlock.block as any).name ?? `Block ${(currentBlock.block as any).block_number}`}
+              {(currentBlock.block as any).name ??
+                `Block ${(currentBlock.block as any).block_number}`}
             </p>
             <p className="text-xs text-muted-foreground">
               {currentBlock.group
                 ? `Group ${currentBlock.group.group_number}${
-                    currentBlock.coaches.length
-                      ? ` · Coach ${currentBlock.coaches.join(", ")}`
-                      : ""
+                    currentBlock.coaches.length ? ` · Coach ${currentBlock.coaches.join(", ")}` : ""
                   }`
                 : "Not assigned to a group"}
             </p>
@@ -113,7 +119,6 @@ function PlayerProfile() {
           <p className="mt-1 text-sm text-muted-foreground">No active block.</p>
         )}
       </section>
-
 
       <section className="mb-6">
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Skills</h2>
@@ -131,9 +136,7 @@ function PlayerProfile() {
                   {[1, 2, 3, 4, 5].map((n) => (
                     <span
                       key={n}
-                      className={`h-2 flex-1 rounded-full ${
-                        n <= value ? "bg-accent" : "bg-muted"
-                      }`}
+                      className={`h-2 flex-1 rounded-full ${n <= value ? "bg-accent" : "bg-muted"}`}
                     />
                   ))}
                 </div>
@@ -151,10 +154,7 @@ function PlayerProfile() {
           {ATTRIBUTES.map((a) => {
             const value = (player as any)[a.key] as number;
             return (
-              <div
-                key={a.key}
-                className="rounded-md border border-dashed bg-card/60 p-4"
-              >
+              <div key={a.key} className="rounded-md border border-dashed bg-card/60 p-4">
                 <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                   {a.label}
                 </p>
@@ -169,9 +169,6 @@ function PlayerProfile() {
       </section>
 
       <WeeklyHistory playerId={playerId} />
-
-
-
 
       <section>
         <div className="mb-3 flex items-center justify-between">
@@ -193,7 +190,14 @@ function PlayerProfile() {
               rows={4}
             />
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => { setAdding(false); setDraft(""); }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setAdding(false);
+                  setDraft("");
+                }}
+              >
                 Cancel
               </Button>
               <Button
@@ -228,14 +232,19 @@ function PlayerProfile() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => { setEditingId(n.id); setEditDraft(n.note); }}
+                      onClick={() => {
+                        setEditingId(n.id);
+                        setEditDraft(n.note);
+                      }}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => { if (confirm("Delete this note?")) deleteM.mutate(n.id); }}
+                      onClick={() => {
+                        if (confirm("Delete this note?")) deleteM.mutate(n.id);
+                      }}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -244,7 +253,11 @@ function PlayerProfile() {
               </div>
               {editingId === n.id ? (
                 <div className="space-y-2">
-                  <Textarea value={editDraft} onChange={(e) => setEditDraft(e.target.value)} rows={4} />
+                  <Textarea
+                    value={editDraft}
+                    onChange={(e) => setEditDraft(e.target.value)}
+                    rows={4}
+                  />
                   <div className="flex justify-end gap-2">
                     <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
                       Cancel
@@ -297,9 +310,7 @@ function WeeklyHistory({ playerId }: { playerId: string }) {
                   </span>
                 </div>
                 <p className="mb-2 text-xs text-muted-foreground">
-                  {(r.coach_names ?? []).length
-                    ? (r.coach_names as string[]).join(", ")
-                    : "—"}
+                  {(r.coach_names ?? []).length ? (r.coach_names as string[]).join(", ") : "—"}
                   {r.entered_by_name ? ` · entered by ${r.entered_by_name}` : ""}
                 </p>
                 <div className="grid grid-cols-7 gap-1 text-center text-xs">
@@ -320,4 +331,3 @@ function WeeklyHistory({ playerId }: { playerId: string }) {
     </section>
   );
 }
-

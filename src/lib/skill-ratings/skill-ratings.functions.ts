@@ -31,7 +31,8 @@ export const listMatchWeeks = createServerFn({ method: "GET" })
           ? Math.max(
               1,
               Math.floor(
-                (new Date(s.session_date).getTime() - new Date((block as any).start_date).getTime()) /
+                (new Date(s.session_date).getTime() -
+                  new Date((block as any).start_date).getTime()) /
                   (7 * 86400000),
               ) + 1,
             )
@@ -64,9 +65,7 @@ export const getMyGroupsForWeek = createServerFn({ method: "GET" })
       .from("user_roles")
       .select("coach_id")
       .eq("user_id", context.userId);
-    const myCoachIds = (rolesData ?? [])
-      .map((r: any) => r.coach_id)
-      .filter(Boolean) as string[];
+    const myCoachIds = (rolesData ?? []).map((r: any) => r.coach_id).filter(Boolean) as string[];
 
     // All groups in this block with their coaches
     const { data: groups } = await sb
@@ -105,9 +104,7 @@ export const getGroupRosterForWeek = createServerFn({ method: "GET" })
     const sb = context.supabase;
     const { data: roster } = await sb
       .from("group_players")
-      .select(
-        `player_id, players:player_id ( id, player_name, ${SKILL_FIELDS} )`,
-      )
+      .select(`player_id, players:player_id ( id, player_name, ${SKILL_FIELDS} )`)
       .eq("group_id", data.group_id);
     const { data: overrides } = await sb
       .from("session_player_overrides")
@@ -146,9 +143,7 @@ export const getGroupRosterForWeek = createServerFn({ method: "GET" })
       : { data: [] as any[] };
 
     return {
-      players: [...players, ...extra].sort((a, b) =>
-        a.player_name.localeCompare(b.player_name),
-      ),
+      players: [...players, ...extra].sort((a, b) => a.player_name.localeCompare(b.player_name)),
       existing: existingByPlayer ?? [],
     };
   });
@@ -233,13 +228,9 @@ export const upsertWeekRatings = createServerFn({ method: "POST" })
       ((context as any).claims?.email as string | undefined) ??
       null;
 
-
     // Player names + existing rows
     const pIds = data.ratings.map((r) => r.player_id);
-    const { data: players } = await sb
-      .from("players")
-      .select("id, player_name")
-      .in("id", pIds);
+    const { data: players } = await sb.from("players").select("id, player_name").in("id", pIds);
     const nameMap = new Map((players ?? []).map((p: any) => [p.id, p.player_name]));
 
     const { data: existing } = await sb
@@ -277,7 +268,8 @@ export const upsertWeekRatings = createServerFn({ method: "POST" })
         inserts.push(base);
       } else {
         const changed = SKILL_KEYS.filter((k) => (prev as any)[k] !== (r as any)[k]);
-        if (changed.length) updates.push({ row: { id: (prev as any).id, ...base }, old: prev, changed });
+        if (changed.length)
+          updates.push({ row: { id: (prev as any).id, ...base }, old: prev, changed });
       }
     }
 
@@ -286,10 +278,7 @@ export const upsertWeekRatings = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
     for (const u of updates) {
-      const { error } = await sb
-        .from("skill_ratings")
-        .update(u.row)
-        .eq("id", u.row.id);
+      const { error } = await sb.from("skill_ratings").update(u.row).eq("id", u.row.id);
       if (error) throw new Error(error.message);
       const oldVals: any = {};
       const newVals: any = {};
@@ -314,7 +303,6 @@ export const upsertWeekRatings = createServerFn({ method: "POST" })
       });
     }
 
-
     return { ok: true, inserted: inserts.length, updated: updates.length };
   });
 
@@ -338,7 +326,8 @@ export const listPlayerSkillRatings = createServerFn({ method: "GET" })
       ...r,
       session_date: r.sessions?.session_date,
       opponent: r.sessions?.opponent,
-      block_label: r.blocks?.name ?? (r.blocks?.block_number ? `Block ${r.blocks.block_number}` : null),
+      block_label:
+        r.blocks?.name ?? (r.blocks?.block_number ? `Block ${r.blocks.block_number}` : null),
     }));
   });
 
@@ -368,7 +357,9 @@ export const getWeekCompletion = createServerFn({ method: "GET" })
       .select("player_id, override_group_id")
       .eq("session_id", data.session_id);
     const absent = new Set(
-      (overrides ?? []).filter((o: any) => o.override_group_id === null).map((o: any) => o.player_id),
+      (overrides ?? [])
+        .filter((o: any) => o.override_group_id === null)
+        .map((o: any) => o.player_id),
     );
     const movedTo = new Map<string, string>();
     (overrides ?? []).forEach((o: any) => {
