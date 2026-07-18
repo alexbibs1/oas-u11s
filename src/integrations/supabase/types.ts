@@ -299,76 +299,6 @@ export type Database = {
           },
         ]
       }
-      match_ratings: {
-        Row: {
-          carrying: number
-          catching: number
-          created_at: string
-          group_id: string
-          handling: number
-          id: string
-          iq: number
-          kicking: number
-          player_id: string
-          rated_by: string | null
-          rucking: number
-          session_id: string
-          tackling: number
-        }
-        Insert: {
-          carrying?: number
-          catching: number
-          created_at?: string
-          group_id: string
-          handling?: number
-          id?: string
-          iq: number
-          kicking: number
-          player_id: string
-          rated_by?: string | null
-          rucking: number
-          session_id: string
-          tackling: number
-        }
-        Update: {
-          carrying?: number
-          catching?: number
-          created_at?: string
-          group_id?: string
-          handling?: number
-          id?: string
-          iq?: number
-          kicking?: number
-          player_id?: string
-          rated_by?: string | null
-          rucking?: number
-          session_id?: string
-          tackling?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "match_ratings_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "match_ratings_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "match_ratings_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       player_notes: {
         Row: {
           coach_name: string | null
@@ -554,6 +484,7 @@ export type Database = {
           created_at: string
           entered_by: string | null
           entered_by_name: string | null
+          group_id: string | null
           group_number: number
           handling: number
           id: string
@@ -575,6 +506,7 @@ export type Database = {
           created_at?: string
           entered_by?: string | null
           entered_by_name?: string | null
+          group_id?: string | null
           group_number: number
           handling: number
           id?: string
@@ -596,6 +528,7 @@ export type Database = {
           created_at?: string
           entered_by?: string | null
           entered_by_name?: string | null
+          group_id?: string | null
           group_number?: number
           handling?: number
           id?: string
@@ -615,6 +548,13 @@ export type Database = {
             columns: ["block_id"]
             isOneToOne: false
             referencedRelation: "blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_ratings_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
             referencedColumns: ["id"]
           },
           {

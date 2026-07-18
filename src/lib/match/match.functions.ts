@@ -64,10 +64,10 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
       movedInPlayers = pl ?? [];
     }
 
-    // Existing ratings for this session+group
+    // Existing ratings for this session+group (source of truth is skill_ratings)
     const { data: ratings, error: e4 } = await supabase
-      .from("match_ratings")
-      .select("*")
+      .from("skill_ratings")
+      .select("player_id, group_id, carrying, handling, tackling, rucking, kicking, catching, iq")
       .eq("session_id", data.session_id)
       .eq("group_id", data.group_id);
     if (e4) throw new Error(e4.message);
@@ -187,10 +187,52 @@ export const submitRatings = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const supabase = context.supabase;
 
+    // Look up context needed for skill_ratings NOT NULL columns
+    const { data: session, error: sErr } = await supabase
+      .from("sessions")
+      .select("id, session_date, week_number, blocks:block_id ( start_date )")
+      .eq("id", data.session_id)
+      .single();
+    if (sErr) throw new Error(sErr.message);
+
+    let weekNumber = (session as any).week_number as number | null;
+    if (!weekNumber && (session as any).blocks?.start_date) {
+      weekNumber =
+        Math.floor(
+          (new Date((session as any).session_date).getTime() -
+            new Date((session as any).blocks.start_date).getTime()) /
+            (7 * 86400000),
+        ) + 1;
+      if (weekNumber < 1) weekNumber = 1;
+    }
+
+    const { data: group, error: gErr } = await supabase
+      .from("groups")
+      .select("id, group_number, group_coaches:group_coaches ( coaches:coach_id ( coach_name ) )")
+      .eq("id", data.group_id)
+      .single();
+    if (gErr) throw new Error(gErr.message);
+    const groupNumber = (group as any).group_number as number;
+    const coachNames = ((group as any).group_coaches ?? [])
+      .map((gc: any) => gc.coaches?.coach_name)
+      .filter(Boolean) as string[];
+
+    const playerIds = data.ratings.map((r) => r.player_id);
+    const { data: players } = await supabase
+      .from("players")
+      .select("id, player_name")
+      .in("id", playerIds);
+    const nameMap = new Map((players ?? []).map((p: any) => [p.id, p.player_name]));
+
     const rows = data.ratings.map((r) => ({
       session_id: data.session_id,
       group_id: data.group_id,
+      group_number: groupNumber,
+      block_id: data.block_id,
+      week_number: weekNumber,
+      coach_names: coachNames,
       player_id: r.player_id,
+      player_name: nameMap.get(r.player_id) ?? "",
       tackling: r.tackling,
       rucking: r.rucking,
       carrying: r.carrying,
@@ -198,11 +240,11 @@ export const submitRatings = createServerFn({ method: "POST" })
       kicking: r.kicking,
       catching: r.catching,
       iq: r.iq,
-      rated_by: context.userId,
+      entered_by: context.userId,
     }));
 
     const { error } = await supabase
-      .from("match_ratings")
+      .from("skill_ratings")
       .upsert(rows, { onConflict: "session_id,player_id" });
     if (error) throw new Error(error.message);
 
@@ -213,16 +255,15 @@ export const submitRatings = createServerFn({ method: "POST" })
       .eq("block_id", data.block_id);
     const sessionIds = (blockSessions ?? []).map((s: any) => s.id);
 
-    const playerIds = data.ratings.map((r) => r.player_id);
     if (sessionIds.length && playerIds.length) {
       const { data: allRatings } = await supabase
-        .from("match_ratings")
+        .from("skill_ratings")
         .select("player_id, tackling, rucking, carrying, handling, kicking, catching, iq")
         .in("session_id", sessionIds)
         .in("player_id", playerIds);
 
       const byPlayer = new Map<string, any[]>();
-      for (const r of allRatings ?? []) {
+      for (const r of (allRatings ?? []) as any[]) {
         if (!byPlayer.has(r.player_id)) byPlayer.set(r.player_id, []);
         byPlayer.get(r.player_id)!.push(r);
       }

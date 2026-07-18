@@ -180,7 +180,7 @@ export const getMatchSummary = createServerFn({ method: "GET" })
       .eq("session_id", data.session_id);
 
     const { data: ratings } = await sb
-      .from("match_ratings")
+      .from("skill_ratings")
       .select("player_id, group_id, tackling, rucking, carrying, handling, kicking, catching, iq")
       .eq("session_id", data.session_id);
 
