@@ -2,15 +2,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-import { SKILL_KEYS } from "@/lib/skills";
-
 export const listGroupsForBlock = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ block_id: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const { data: groups, error } = await context.supabase
       .from("groups")
-      .select("id, group_number, group_coaches:group_coaches ( coach_id, coaches:coach_id ( coach_name ) )")
+      .select(
+        "id, group_number, group_coaches:group_coaches ( coach_id, coaches:coach_id ( coach_name ) )",
+      )
       .eq("block_id", data.block_id)
       .order("group_number", { ascending: true });
     if (error) throw new Error(error.message);
@@ -38,7 +38,9 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
     // Default roster from group_players
     const { data: defaultRoster, error: e1 } = await supabase
       .from("group_players")
-      .select("player_id, players:player_id ( id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability )")
+      .select(
+        "player_id, players:player_id ( id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability )",
+      )
       .eq("group_id", data.group_id);
     if (e1) throw new Error(e1.message);
 
@@ -58,15 +60,17 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
     if (movedInIds.length) {
       const { data: pl, error: e3 } = await supabase
         .from("players")
-        .select("id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability")
+        .select(
+          "id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability",
+        )
         .in("id", movedInIds);
       if (e3) throw new Error(e3.message);
       movedInPlayers = pl ?? [];
     }
 
-    // Existing ratings for this session+group
+    // Existing ratings for this session+group (now in skill_ratings, not match_ratings)
     const { data: ratings, error: e4 } = await supabase
-      .from("match_ratings")
+      .from("skill_ratings")
       .select("*")
       .eq("session_id", data.session_id)
       .eq("group_id", data.group_id);
@@ -104,7 +108,9 @@ export const saveRegister = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const supabase = context.supabase;
-    // Build override rows for every entry from this group's default roster
+    // Build override rows for every entry from this group's default roster.
+    // "here" → override_group_id = this group (explicitly marks present so
+    // the register is "submitted"); "absent" → null; "move" → other group.
     const rows = data.entries.map((e) => ({
       session_id: data.session_id,
       player_id: e.player_id,
@@ -112,25 +118,29 @@ export const saveRegister = createServerFn({ method: "POST" })
         e.status === "here"
           ? data.group_id
           : e.status === "move"
-            ? e.move_to_group_id ?? null
+            ? (e.move_to_group_id ?? null)
             : null,
       created_by: context.userId,
     }));
 
-    // Remove any existing overrides for these players in this session, then insert fresh
+    // NOTE: delete-then-insert is not atomic across the two requests. Two
+    // coaches submitting simultaneously for overlapping players can race.
+    // The correct fix is a single PostgREST rpc() that does both in a
+    // transaction. For now, we at least guard the empty array path so we
+    // never issue a `.in("player_id", [])` which PostgREST rejects.
     const playerIds = rows.map((r) => r.player_id);
-    if (playerIds.length) {
-      const { error: delErr } = await supabase
-        .from("session_player_overrides")
-        .delete()
-        .eq("session_id", data.session_id)
-        .in("player_id", playerIds);
-      if (delErr) throw new Error(delErr.message);
+    if (playerIds.length === 0) {
+      return { ok: true };
     }
-    if (rows.length) {
-      const { error: insErr } = await supabase.from("session_player_overrides").insert(rows);
-      if (insErr) throw new Error(insErr.message);
-    }
+    const { error: delErr } = await supabase
+      .from("session_player_overrides")
+      .delete()
+      .eq("session_id", data.session_id)
+      .in("player_id", playerIds);
+    if (delErr) throw new Error(delErr.message);
+
+    const { error: insErr } = await supabase.from("session_player_overrides").insert(rows);
+    if (insErr) throw new Error(insErr.message);
     return { ok: true };
   });
 
@@ -142,25 +152,53 @@ export const unlockRegister = createServerFn({ method: "POST" })
       _user_id: context.userId,
       _role: "block_builder",
     });
-    if (!isAdmin) throw new Error("Forbidden");
+    if (!isAdmin) throw new Error("Forbidden: block_builder role required");
 
-    // Get default roster ids
-    const { data: roster } = await context.supabase
+    // Get default roster ids for this group.
+    const { data: roster, error: rErr } = await context.supabase
       .from("group_players")
       .select("player_id")
       .eq("group_id", data.group_id);
-    const defaultIds = (roster ?? []).map((r: any) => r.player_id);
+    if (rErr) throw new Error(rErr.message);
+    const defaultIds = (roster ?? []).map((r: any) => r.player_id as string);
 
-    // Delete overrides that target this group OR belong to a default player of this group
+    // Delete overrides that target this group OR belong to a default player
+    // of this group. Previously this was built as a single .or() string with
+    // interpolation, which (a) broke when defaultIds was empty (trailing
+    // comma) and (b) interpolated group_id directly into a filter string.
+    // We now fetch the matching rows explicitly and delete by id — slightly
+    // more queries but unambiguous and safe.
+    let toDelete: string[] = [];
+    {
+      // overrides targeting this group (moved-in players)
+      const { data: movedIn, error: mErr } = await context.supabase
+        .from("session_player_overrides")
+        .select("id, player_id")
+        .eq("session_id", data.session_id)
+        .eq("override_group_id", data.group_id);
+      if (mErr) throw new Error(mErr.message);
+      toDelete.push(...(movedIn ?? []).map((r: any) => r.id as string));
+    }
+    if (defaultIds.length) {
+      const { data: defaulters, error: dErr } = await context.supabase
+        .from("session_player_overrides")
+        .select("id")
+        .eq("session_id", data.session_id)
+        .in("player_id", defaultIds);
+      if (dErr) throw new Error(dErr.message);
+      toDelete.push(...(defaulters ?? []).map((r: any) => r.id as string));
+    }
+
+    // Dedupe
+    toDelete = Array.from(new Set(toDelete));
+    if (toDelete.length === 0) return { ok: true, deleted: 0 };
+
     const { error } = await context.supabase
       .from("session_player_overrides")
       .delete()
-      .eq("session_id", data.session_id)
-      .or(
-        `override_group_id.eq.${data.group_id}${defaultIds.length ? `,player_id.in.(${defaultIds.join(",")})` : ""}`,
-      );
+      .in("id", toDelete);
     if (error) throw new Error(error.message);
-    return { ok: true };
+    return { ok: true, deleted: toDelete.length };
   });
 
 export const submitRatings = createServerFn({ method: "POST" })
@@ -185,63 +223,16 @@ export const submitRatings = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ context, data }) => {
-    const supabase = context.supabase;
-
-    const rows = data.ratings.map((r) => ({
-      session_id: data.session_id,
-      group_id: data.group_id,
-      player_id: r.player_id,
-      tackling: r.tackling,
-      rucking: r.rucking,
-      carrying: r.carrying,
-      handling: r.handling,
-      kicking: r.kicking,
-      catching: r.catching,
-      iq: r.iq,
-      rated_by: context.userId,
-    }));
-
-    const { error } = await supabase
-      .from("match_ratings")
-      .upsert(rows, { onConflict: "session_id,player_id" });
-    if (error) throw new Error(error.message);
-
-    // Recalculate baseline for each player across active block's sessions
-    const { data: blockSessions } = await supabase
-      .from("sessions")
-      .select("id")
-      .eq("block_id", data.block_id);
-    const sessionIds = (blockSessions ?? []).map((s: any) => s.id);
-
-    const playerIds = data.ratings.map((r) => r.player_id);
-    if (sessionIds.length && playerIds.length) {
-      const { data: allRatings } = await supabase
-        .from("match_ratings")
-        .select("player_id, tackling, rucking, carrying, handling, kicking, catching, iq")
-        .in("session_id", sessionIds)
-        .in("player_id", playerIds);
-
-      const byPlayer = new Map<string, any[]>();
-      for (const r of allRatings ?? []) {
-        if (!byPlayer.has(r.player_id)) byPlayer.set(r.player_id, []);
-        byPlayer.get(r.player_id)!.push(r);
-      }
-
-      for (const pid of playerIds) {
-        const list = byPlayer.get(pid) ?? [];
-        if (!list.length) continue;
-        const avgSkill = (key: string) => {
-          const vals = list.map((x) => x[key]).filter((v) => v != null).map(Number);
-          return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
-        };
-        const avg: Record<string, number> = {};
-        for (const k of SKILL_KEYS) {
-          const v = avgSkill(k);
-          if (v != null) avg[k] = v;
-        }
-        if (Object.keys(avg).length) await supabase.from("players").update(avg as any).eq("id", pid);
-      }
-    }
-
-    return { ok: true, count: rows.length };
+    // Match-day ratings and weekly ratings used to write to two different
+    // tables (match_ratings vs skill_ratings). They are now unified:
+    // match-day submission delegates to upsertWeekRatings, which writes
+    // skill_ratings AND the audit log. Baseline recomputation is handled
+    // there too. This keeps the audit trail complete for ALL rating edits
+    // and removes the parallel-source-of-truth bug.
+    const { upsertWeekRatings } = await import("@/lib/skill-ratings/skill-ratings.functions");
+    // upsertWeekRatings derives block_id from session_id itself, so we
+    // strip the block_id that match-day.tsx sends (kept in submitRatings'
+    // input validator for backwards compat with the existing UI call site).
+    const { block_id: _blockId, ...rest } = data;
+    return upsertWeekRatings({ data: rest });
   });

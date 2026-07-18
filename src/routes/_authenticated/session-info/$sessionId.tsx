@@ -2,6 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getSession } from "@/lib/sessions/sessions.functions";
 import { listGroupsForBlock } from "@/lib/match/match.functions";
+import { qk } from "@/lib/query-keys";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDateLong } from "@/lib/dates";
@@ -14,11 +15,11 @@ function SessionInfoPage() {
   const { sessionId } = Route.useParams();
   const router = useRouter();
   const { data: session } = useQuery({
-    queryKey: ["session", sessionId],
+    queryKey: qk.sessions.detail(sessionId),
     queryFn: () => getSession({ data: { id: sessionId } }),
   });
   const { data: groups = [] } = useQuery({
-    queryKey: ["groups", session?.block_id],
+    queryKey: qk.groups.forBlock(session?.block_id ?? ""),
     queryFn: () => listGroupsForBlock({ data: { block_id: session!.block_id } }),
     enabled: !!session?.block_id,
   });
@@ -41,12 +42,9 @@ function SessionInfoPage() {
           <h1 className="mt-1 text-2xl font-bold text-primary">
             {session ? formatDateLong(session.session_date) : "…"}
           </h1>
-          {session && (
-            <p className="text-xs text-muted-foreground">{session.block_name}</p>
-          )}
+          {session && <p className="text-xs text-muted-foreground">{session.block_name}</p>}
         </div>
       </header>
-
 
       <section className="rounded-lg border bg-card p-5">
         <h2 className="mb-3 text-sm font-semibold text-primary">Active groups</h2>

@@ -1,8 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getMyRole } from "@/lib/auth/roles.functions";
 import { getHomeSummary } from "@/lib/feed/feed.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { qk } from "@/lib/query-keys";
+import { formatDateShort, formatDateBare } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/home")({
@@ -11,17 +13,14 @@ export const Route = createFileRoute("/_authenticated/home")({
 
 function fmtDate(d: string | null | undefined) {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString(undefined, {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
+  return formatDateShort(d);
 }
 
 function HomePage() {
-  const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => getMyRole() });
+  const navigate = useNavigate();
+  const { data: me } = useQuery({ queryKey: qk.me, queryFn: () => getMyRole() });
   const { data: summary } = useQuery({
-    queryKey: ["home-summary"],
+    queryKey: qk.feed.homeSummary,
     queryFn: () => getHomeSummary(),
   });
 
@@ -42,7 +41,9 @@ function HomePage() {
           size="sm"
           onClick={async () => {
             await supabase.auth.signOut();
-            window.location.href = "/auth";
+            // Use SPA navigation — onAuthStateChange in __root.tsx will invalidate
+            // the router and clear cached queries. No full-page reload needed.
+            navigate({ to: "/auth", replace: true });
           }}
         >
           Sign out
@@ -86,9 +87,7 @@ function HomePage() {
 
         {summary?.otherGroups && summary.otherGroups.length > 0 && (
           <div className="rounded-lg border bg-card p-5">
-            <h2 className="text-sm font-semibold text-muted-foreground">
-              Other groups this block
-            </h2>
+            <h2 className="text-sm font-semibold text-muted-foreground">Other groups this block</h2>
             <ul className="mt-3 space-y-3">
               {summary.otherGroups.map((g: any) => (
                 <li key={g.id} className="border-t pt-3 first:border-t-0 first:pt-0">
@@ -109,20 +108,14 @@ function HomePage() {
 
         {next ? (
           <Link
-            to={
-              (next as any).session_type === "match"
-                ? "/match-day"
-                : "/session-info/$sessionId"
-            }
+            to={(next as any).session_type === "match" ? "/match-day" : "/session-info/$sessionId"}
             search={
               (next as any).session_type === "match"
                 ? ({ sessionId: (next as any).id } as any)
                 : undefined
             }
             params={
-              (next as any).session_type === "match"
-                ? undefined
-                : { sessionId: (next as any).id }
+              (next as any).session_type === "match" ? undefined : { sessionId: (next as any).id }
             }
             className="block rounded-lg border bg-card p-5 hover:bg-secondary"
           >
@@ -161,10 +154,8 @@ function HomePage() {
               {feed.map((p: any) => (
                 <li key={p.id} className="border-t pt-3 first:border-t-0 first:pt-0">
                   <p className="text-xs text-muted-foreground">
-                    <span className="font-semibold text-foreground">
-                      {p.coach_name ?? "Coach"}
-                    </span>{" "}
-                    · {new Date(p.created_at).toLocaleDateString()}
+                    <span className="font-semibold text-foreground">{p.coach_name ?? "Coach"}</span>{" "}
+                    · {formatDateBare(p.created_at)}
                   </p>
                   <p className="mt-1 line-clamp-2 text-sm">{p.content}</p>
                   {p.is_player_note && p.player_name && (

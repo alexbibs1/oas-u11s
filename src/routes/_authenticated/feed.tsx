@@ -8,6 +8,9 @@ import {
   updateFeedPost,
   deleteFeedPost,
 } from "@/lib/feed/feed.functions";
+import { qk } from "@/lib/query-keys";
+import { formatDateTime } from "@/lib/dates";
+import { useConfirm } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Pencil, Trash2, UserCircle2 } from "lucide-react";
@@ -18,13 +21,14 @@ export const Route = createFileRoute("/_authenticated/feed")({
 
 function FeedPage() {
   const qc = useQueryClient();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const listFn = useServerFn(listFeed);
   const createFn = useServerFn(createFeedPost);
   const updateFn = useServerFn(updateFeedPost);
   const deleteFn = useServerFn(deleteFeedPost);
 
   const { data: posts = [] } = useQuery({
-    queryKey: ["feed"],
+    queryKey: qk.feed.list,
     queryFn: () => listFn({ data: {} }),
   });
 
@@ -33,7 +37,7 @@ function FeedPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["feed"] });
+  const invalidate = () => qc.invalidateQueries({ queryKey: qk.feed.all });
 
   const createM = useMutation({
     mutationFn: (content: string) => createFn({ data: { content } }),
@@ -73,7 +77,13 @@ function FeedPage() {
               rows={4}
             />
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => { setComposing(false); setDraft(""); }}>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setComposing(false);
+                  setDraft("");
+                }}
+              >
                 Cancel
               </Button>
               <Button
@@ -103,12 +113,8 @@ function FeedPage() {
               <div className="flex items-center gap-2">
                 <UserCircle2 className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <p className="text-sm font-semibold text-primary">
-                    {p.coach_name ?? "Coach"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(p.created_at).toLocaleString()}
-                  </p>
+                  <p className="text-sm font-semibold text-primary">{p.coach_name ?? "Coach"}</p>
+                  <p className="text-xs text-muted-foreground">{formatDateTime(p.created_at)}</p>
                 </div>
               </div>
               {p.canEdit && editingId !== p.id && (
@@ -126,8 +132,14 @@ function FeedPage() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => {
-                      if (confirm("Delete this post?")) deleteM.mutate(p.id);
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: "Delete this post?",
+                        description: "This cannot be undone.",
+                        confirmLabel: "Delete",
+                        destructive: true,
+                      });
+                      if (ok) deleteM.mutate(p.id);
                     }}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -177,6 +189,7 @@ function FeedPage() {
           </article>
         ))}
       </section>
+      {confirmDialog}
     </main>
   );
 }

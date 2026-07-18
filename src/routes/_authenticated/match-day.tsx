@@ -10,12 +10,13 @@ import {
   unlockRegister,
 } from "@/lib/match/match.functions";
 import { getMyRole } from "@/lib/auth/roles.functions";
+import { qk } from "@/lib/query-keys";
+import { useConfirm } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ChevronLeft, Check, X, ArrowRightLeft, Lock } from "lucide-react";
 import { formatDateLong } from "@/lib/dates";
-
 
 export const Route = createFileRoute("/_authenticated/match-day")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -36,7 +37,7 @@ function MatchDayPage() {
   const [group, setGroup] = useState<any | null>(null);
 
   const { data: preselectSessions } = useQuery({
-    queryKey: ["match-sessions"],
+    queryKey: qk.sessions.matchList,
     queryFn: () => listMatchSessions(),
     enabled: !!preselectId,
   });
@@ -93,7 +94,6 @@ function MatchDayPage() {
         </div>
       </header>
 
-
       {step === "session" && (
         <SessionStep
           onPick={(s) => {
@@ -112,11 +112,7 @@ function MatchDayPage() {
         />
       )}
       {step === "register" && session && group && (
-        <RegisterStep
-          session={session}
-          group={group}
-          onProceed={() => setStep("rate")}
-        />
+        <RegisterStep session={session} group={group} onProceed={() => setStep("rate")} />
       )}
       {step === "rate" && session && group && (
         <RateStep session={session} group={group} onDone={() => setStep("done")} />
@@ -125,7 +121,7 @@ function MatchDayPage() {
         <div className="rounded-lg border bg-card p-6 text-center">
           <p className="text-lg font-semibold text-primary">Ratings submitted</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Baseline scores updated for the active block.
+            Weekly ratings saved and recorded in the audit log.
           </p>
           <Button className="mt-6" onClick={back}>
             Done
@@ -138,7 +134,7 @@ function MatchDayPage() {
 
 function SessionStep({ onPick }: { onPick: (s: any) => void }) {
   const { data: sessions = [], isLoading } = useQuery({
-    queryKey: ["match-sessions"],
+    queryKey: qk.sessions.matchList,
     queryFn: () => listMatchSessions(),
   });
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
@@ -180,7 +176,7 @@ function SessionStep({ onPick }: { onPick: (s: any) => void }) {
 
 function GroupStep({ blockId, onPick }: { blockId: string; onPick: (g: any) => void }) {
   const { data: groups = [], isLoading } = useQuery({
-    queryKey: ["groups", blockId],
+    queryKey: qk.groups.forBlock(blockId),
     queryFn: () => listGroupsForBlock({ data: { block_id: blockId } }),
   });
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
@@ -221,13 +217,13 @@ function RegisterStep({
   onProceed: () => void;
 }) {
   const qc = useQueryClient();
-  const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => getMyRole() });
+  const { data: me } = useQuery({ queryKey: qk.me, queryFn: () => getMyRole() });
   const { data: ctx, isLoading } = useQuery({
-    queryKey: ["match-ctx", session.id, group.id],
+    queryKey: qk.match.context(session.id, group.id),
     queryFn: () => getMatchDayContext({ data: { session_id: session.id, group_id: group.id } }),
   });
   const { data: allGroups = [] } = useQuery({
-    queryKey: ["groups", session.block_id],
+    queryKey: qk.groups.forBlock(session.block_id),
     queryFn: () => listGroupsForBlock({ data: { block_id: session.block_id } }),
   });
 
@@ -260,24 +256,23 @@ function RegisterStep({
           entries: Object.entries(state).map(([player_id, v]) => ({
             player_id,
             status: v.status,
-            move_to_group_id: v.status === "move" ? v.move_to ?? null : null,
+            move_to_group_id: v.status === "move" ? (v.move_to ?? null) : null,
           })),
         },
       }),
     onSuccess: () => {
       toast.success("Register confirmed");
-      qc.invalidateQueries({ queryKey: ["match-ctx", session.id, group.id] });
+      qc.invalidateQueries({ queryKey: qk.match.context(session.id, group.id) });
       onProceed();
     },
     onError: (e: any) => toast.error(e.message),
   });
 
   const unlock = useMutation({
-    mutationFn: () =>
-      unlockRegister({ data: { session_id: session.id, group_id: group.id } }),
+    mutationFn: () => unlockRegister({ data: { session_id: session.id, group_id: group.id } }),
     onSuccess: () => {
       toast.success("Register unlocked");
-      qc.invalidateQueries({ queryKey: ["match-ctx", session.id, group.id] });
+      qc.invalidateQueries({ queryKey: qk.match.context(session.id, group.id) });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -373,11 +368,7 @@ function RegisterStep({
       </ul>
 
       {!locked && (
-        <Button
-          className="w-full"
-          disabled={save.isPending}
-          onClick={() => save.mutate()}
-        >
+        <Button className="w-full" disabled={save.isPending} onClick={() => save.mutate()}>
           {save.isPending ? "Saving…" : "Confirm Register"}
         </Button>
       )}
@@ -399,9 +390,15 @@ function PillBtn({
   disabled?: boolean;
 }) {
   const palette = {
-    green: active ? "bg-emerald-600 text-white border-emerald-600" : "border-emerald-600/40 text-emerald-700",
-    grey: active ? "bg-slate-500 text-white border-slate-500" : "border-slate-400/50 text-slate-600",
-    amber: active ? "bg-amber-500 text-white border-amber-500" : "border-amber-500/50 text-amber-700",
+    green: active
+      ? "bg-emerald-600 text-white border-emerald-600"
+      : "border-emerald-600/40 text-emerald-700",
+    grey: active
+      ? "bg-slate-500 text-white border-slate-500"
+      : "border-slate-400/50 text-slate-600",
+    amber: active
+      ? "bg-amber-500 text-white border-amber-500"
+      : "border-amber-500/50 text-amber-700",
   }[color];
   return (
     <button
@@ -417,17 +414,10 @@ function PillBtn({
   );
 }
 
-function RateStep({
-  session,
-  group,
-  onDone,
-}: {
-  session: any;
-  group: any;
-  onDone: () => void;
-}) {
+function RateStep({ session, group, onDone }: { session: any; group: any; onDone: () => void }) {
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const { data: ctx, isLoading } = useQuery({
-    queryKey: ["match-ctx", session.id, group.id],
+    queryKey: qk.match.context(session.id, group.id),
     queryFn: () => getMatchDayContext({ data: { session_id: session.id, group_id: group.id } }),
   });
 
@@ -448,9 +438,7 @@ function RateStep({
   useEffect(() => {
     if (!ctx) return;
     const init: Record<string, any> = {};
-    const existingByPid = new Map(
-      (ctx.ratings as any[]).map((r) => [r.player_id, r]),
-    );
+    const existingByPid = new Map((ctx.ratings as any[]).map((r) => [r.player_id, r]));
     for (const p of presentPlayers) {
       const ex = existingByPid.get(p.id);
       const entry: any = {};
@@ -484,9 +472,15 @@ function RateStep({
     onError: (e: any) => toast.error(e.message),
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (hasExisting) {
-      if (!confirm("Ratings already exist for this group/session. Overwrite?")) return;
+      const ok = await confirm({
+        title: "Ratings already exist",
+        description: "Ratings already exist for this group/session. Do you want to overwrite them?",
+        confirmLabel: "Overwrite",
+        destructive: true,
+      });
+      if (!ok) return;
     }
     submit.mutate();
   };
@@ -508,9 +502,7 @@ function RateStep({
             <div className="space-y-2">
               {SKILLS.map((sk) => (
                 <div key={sk.key} className="flex items-center justify-between gap-2">
-                  <span className="w-20 text-xs font-medium text-muted-foreground">
-                    {sk.label}
-                  </span>
+                  <span className="w-20 text-xs font-medium text-muted-foreground">{sk.label}</span>
                   <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map((n) => {
                       const val = scores[p.id]?.[sk.key];
@@ -526,8 +518,7 @@ function RateStep({
                             });
                             setActiveDescriptor(id);
                             setTimeout(
-                              () =>
-                                setActiveDescriptor((cur) => (cur === id ? null : cur)),
+                              () => setActiveDescriptor((cur) => (cur === id ? null : cur)),
                               1800,
                             );
                           }}
@@ -557,6 +548,7 @@ function RateStep({
       <Button className="w-full" onClick={handleSubmit} disabled={submit.isPending}>
         {submit.isPending ? "Saving…" : "Submit Ratings"}
       </Button>
+      {confirmDialog}
     </div>
   );
 }

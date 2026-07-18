@@ -10,12 +10,32 @@ function toDate(input: string | Date): Date {
 
 const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS_SHORT = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 const MONTHS_LONG = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 function ordinal(n: number): string {
@@ -34,4 +54,18 @@ export function formatDateShort(input: string | Date): string {
 export function formatDateLong(input: string | Date): string {
   const d = toDate(input);
   return `${WEEKDAYS_SHORT[d.getDay()]} ${ordinal(d.getDate())} ${MONTHS_LONG[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/** "Wed 1 Jul, 14:30" — for feed items, notes, audit log rows. */
+export function formatDateTime(input: string | Date): string {
+  const d = toDate(input);
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${WEEKDAYS_SHORT[d.getDay()]} ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}, ${hh}:${mm}`;
+}
+
+/** "1 Jul 2026" — bare date without weekday, for compact non-UK-locale contexts. */
+export function formatDateBare(input: string | Date): string {
+  const d = toDate(input);
+  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
 }

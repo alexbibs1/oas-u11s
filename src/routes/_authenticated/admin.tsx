@@ -14,6 +14,9 @@ import { inviteUser } from "@/lib/admin/invite.functions";
 import { listBlocks, createSession } from "@/lib/sessions/sessions.functions";
 import { ATTRIBUTES, SKILLS, REPEATABILITY_DESCRIPTORS, SKILL_DESCRIPTORS } from "@/lib/skills";
 import { listMatchWeeks, getWeekCompletion } from "@/lib/skill-ratings/skill-ratings.functions";
+import { qk } from "@/lib/query-keys";
+import { formatDateTime } from "@/lib/dates";
+import { useConfirm } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -94,7 +97,6 @@ function AdminPage() {
         </div>
       </section>
 
-
       {/* 4. Player Data */}
       <div className="my-8 border-t-2 border-dashed border-accent/40" />
 
@@ -119,7 +121,7 @@ function AdminPage() {
 
 function SessionsSection() {
   const qc = useQueryClient();
-  const { data: blocks = [] } = useQuery({ queryKey: ["blocks"], queryFn: () => listBlocks() });
+  const { data: blocks = [] } = useQuery({ queryKey: qk.blocks.list, queryFn: () => listBlocks() });
   const [blockId, setBlockId] = useState("");
   const [date, setDate] = useState("");
   const [type, setType] = useState<"training" | "match">("match");
@@ -132,7 +134,7 @@ function SessionsSection() {
     onSuccess: () => {
       toast.success("Session created");
       setDate("");
-      qc.invalidateQueries({ queryKey: ["match-sessions"] });
+      qc.invalidateQueries({ queryKey: qk.sessions.matchList });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -195,7 +197,10 @@ function SessionsSection() {
 }
 
 function InviteSection() {
-  const { data: coaches = [] } = useQuery({ queryKey: ["coaches"], queryFn: () => listCoaches() });
+  const { data: coaches = [] } = useQuery({
+    queryKey: qk.coaches.list,
+    queryFn: () => listCoaches(),
+  });
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"block_builder" | "coach">("coach");
   const [coachId, setCoachId] = useState<string>("");
@@ -274,21 +279,25 @@ function InviteSection() {
 
 function PlayersSection() {
   const qc = useQueryClient();
-  const { data: players = [] } = useQuery({ queryKey: ["players"], queryFn: () => listPlayers() });
+  const { confirm, dialog: confirmDialog } = useConfirm();
+  const { data: players = [] } = useQuery({
+    queryKey: qk.players.list,
+    queryFn: () => listPlayers(),
+  });
   const [name, setName] = useState("");
 
   const add = useMutation({
     mutationFn: () => addPlayer({ data: { player_name: name } }),
     onSuccess: () => {
       setName("");
-      qc.invalidateQueries({ queryKey: ["players"] });
+      qc.invalidateQueries({ queryKey: qk.players.all });
       toast.success("Player added");
     },
     onError: (e: any) => toast.error(e.message),
   });
   const remove = useMutation({
     mutationFn: (id: string) => removePlayer({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["players"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.players.all }),
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -307,7 +316,9 @@ function PlayersSection() {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <Button type="submit" disabled={add.isPending}>Add</Button>
+        <Button type="submit" disabled={add.isPending}>
+          Add
+        </Button>
       </form>
       <ul className="max-h-72 space-y-1 overflow-auto">
         {players.map((p: any) => (
@@ -319,8 +330,14 @@ function PlayersSection() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => {
-                if (confirm(`Remove ${p.player_name}?`)) remove.mutate(p.id);
+              onClick={async () => {
+                const ok = await confirm({
+                  title: `Remove ${p.player_name}?`,
+                  description: "This will remove the player from the squad. This cannot be undone.",
+                  confirmLabel: "Remove",
+                  destructive: true,
+                });
+                if (ok) remove.mutate(p.id);
               }}
             >
               <Trash2 className="h-4 w-4 text-destructive" />
@@ -328,27 +345,32 @@ function PlayersSection() {
           </li>
         ))}
       </ul>
+      {confirmDialog}
     </div>
   );
 }
 
 function CoachesSection() {
   const qc = useQueryClient();
-  const { data: coaches = [] } = useQuery({ queryKey: ["coaches"], queryFn: () => listCoaches() });
+  const { confirm, dialog: confirmDialog } = useConfirm();
+  const { data: coaches = [] } = useQuery({
+    queryKey: qk.coaches.list,
+    queryFn: () => listCoaches(),
+  });
   const [name, setName] = useState("");
 
   const add = useMutation({
     mutationFn: () => addCoach({ data: { coach_name: name } }),
     onSuccess: () => {
       setName("");
-      qc.invalidateQueries({ queryKey: ["coaches"] });
+      qc.invalidateQueries({ queryKey: qk.coaches.all });
       toast.success("Coach added");
     },
     onError: (e: any) => toast.error(e.message),
   });
   const remove = useMutation({
     mutationFn: (id: string) => removeCoach({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["coaches"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.coaches.all }),
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -367,7 +389,9 @@ function CoachesSection() {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <Button type="submit" disabled={add.isPending}>Add</Button>
+        <Button type="submit" disabled={add.isPending}>
+          Add
+        </Button>
       </form>
       <ul className="space-y-1">
         {coaches.map((c: any) => (
@@ -379,8 +403,14 @@ function CoachesSection() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => {
-                if (confirm(`Remove ${c.coach_name}?`)) remove.mutate(c.id);
+              onClick={async () => {
+                const ok = await confirm({
+                  title: `Remove ${c.coach_name}?`,
+                  description: "This will remove the coach from the roster. This cannot be undone.",
+                  confirmLabel: "Remove",
+                  destructive: true,
+                });
+                if (ok) remove.mutate(c.id);
               }}
             >
               <Trash2 className="h-4 w-4 text-destructive" />
@@ -388,6 +418,7 @@ function CoachesSection() {
           </li>
         ))}
       </ul>
+      {confirmDialog}
     </div>
   );
 }
@@ -415,7 +446,7 @@ type PendingAttr = {
 function AttributesSection() {
   const qc = useQueryClient();
   const { data: players = [] } = useQuery({
-    queryKey: ["players"],
+    queryKey: qk.players.list,
     queryFn: () => listPlayers(),
   });
   const [pending, setPending] = useState<PendingAttr | null>(null);
@@ -425,8 +456,8 @@ function AttributesSection() {
       updatePlayerAttribute({ data: v }),
     onSuccess: () => {
       toast.success("Baseline updated");
-      qc.invalidateQueries({ queryKey: ["players"] });
-      qc.invalidateQueries({ queryKey: ["audit-log"] });
+      qc.invalidateQueries({ queryKey: qk.players.all });
+      qc.invalidateQueries({ queryKey: qk.auditLog });
       setPending(null);
     },
     onError: (e: any) => toast.error(e.message),
@@ -510,9 +541,7 @@ function AttributesSection() {
                   {pending?.attributeLabel}
                 </p>
                 <p>
-                  From{" "}
-                  <span className="font-semibold">{pending?.oldValue ?? "—"}</span>{" "}
-                  to{" "}
+                  From <span className="font-semibold">{pending?.oldValue ?? "—"}</span> to{" "}
                   <span className="font-semibold text-primary">{pending?.newValue}</span>
                 </p>
                 {pending?.attribute === "repeatability" && pending && (
@@ -556,13 +585,13 @@ function AttributesSection() {
 
 function CompletionTrackerSection() {
   const { data: weeks } = useQuery({
-    queryKey: ["match-weeks"],
+    queryKey: qk.sessions.matchWeeks,
     queryFn: () => listMatchWeeks(),
   });
   const [selected, setSelected] = useState<string | null>(null);
   const activeId = selected ?? weeks?.weeks?.[0]?.id ?? null;
   const { data: tracker } = useQuery({
-    queryKey: ["week-completion", activeId],
+    queryKey: qk.sessions.weekCompletion.detail(activeId),
     queryFn: () => getWeekCompletion({ data: { session_id: activeId! } }),
     enabled: !!activeId,
   });
@@ -614,7 +643,9 @@ function CompletionTrackerSection() {
                     {g.coaches.length ? g.coaches.join(", ") : "No coaches"}
                   </p>
                 </div>
-                <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${palette}`}>
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${palette}`}
+                >
                   {label}
                 </span>
               </li>
@@ -626,10 +657,9 @@ function CompletionTrackerSection() {
   );
 }
 
-
 function AuditLogSection() {
   const { data: rows = [] } = useQuery({
-    queryKey: ["audit-log"],
+    queryKey: qk.auditLog,
     queryFn: () => listAuditLog({ data: { limit: 50 } }),
   });
 
@@ -649,10 +679,7 @@ function AuditLogSection() {
             const changed = (r.metadata?.changed_fields as string[] | undefined) ?? null;
             const attr = r.metadata?.attribute as string | undefined;
             return (
-              <li
-                key={r.id}
-                className="rounded-md border bg-background px-3 py-2"
-              >
+              <li key={r.id} className="rounded-md border bg-background px-3 py-2">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-semibold">
                     {playerName ?? r.table_name}
@@ -660,9 +687,7 @@ function AuditLogSection() {
                       ? ` · Week ${r.metadata?.week_number ?? "?"} · Group ${r.metadata?.group_number ?? "?"}`
                       : ` · ${attr ?? r.operation}`}
                   </span>
-                  <span className="text-muted-foreground">
-                    {new Date(r.created_at).toLocaleString()}
-                  </span>
+                  <span className="text-muted-foreground">{formatDateTime(r.created_at)}</span>
                 </div>
                 {isSkillRatings && changed ? (
                   <ul className="mt-0.5 space-y-0.5 text-muted-foreground">
@@ -683,7 +708,6 @@ function AuditLogSection() {
             );
           })}
         </ul>
-
       )}
     </div>
   );
