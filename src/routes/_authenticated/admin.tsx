@@ -37,6 +37,7 @@ import {
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { qk } from "@/lib/query-keys";
+import { useConfirm } from "@/components/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
@@ -274,6 +275,7 @@ function InviteSection() {
 
 function PlayersSection() {
   const qc = useQueryClient();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const { data: players = [] } = useQuery({ queryKey: qk.players.all, queryFn: () => listPlayers() });
   const [name, setName] = useState("");
 
@@ -321,8 +323,9 @@ function PlayersSection() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => {
-                if (confirm(`Remove ${p.player_name}?`)) remove.mutate(p.id);
+              onClick={async () => {
+                const ok = await confirm({ title: `Remove ${p.player_name}?`, description: "This player will be removed from the roster.", confirmLabel: "Remove", destructive: true });
+                if (ok) remove.mutate(p.id);
               }}
             >
               <Trash2 className="h-4 w-4 text-destructive" />
@@ -330,12 +333,14 @@ function PlayersSection() {
           </li>
         ))}
       </ul>
+      {confirmDialog}
     </div>
   );
 }
 
 function CoachesSection() {
   const qc = useQueryClient();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const { data: coaches = [] } = useQuery({ queryKey: qk.coaches.all, queryFn: () => listCoaches() });
   const [name, setName] = useState("");
 
@@ -383,8 +388,9 @@ function CoachesSection() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => {
-                if (confirm(`Remove ${c.coach_name}?`)) remove.mutate(c.id);
+              onClick={async () => {
+                const ok = await confirm({ title: `Remove ${c.coach_name}?`, description: "This coach will be removed.", confirmLabel: "Remove", destructive: true });
+                if (ok) remove.mutate(c.id);
               }}
             >
               <Trash2 className="h-4 w-4 text-destructive" />
@@ -392,6 +398,7 @@ function CoachesSection() {
           </li>
         ))}
       </ul>
+      {confirmDialog}
     </div>
   );
 }

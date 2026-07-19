@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Pencil, Trash2, UserCircle2 } from "lucide-react";
 import { qk } from "@/lib/query-keys";
+import { useConfirm } from "@/components/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/feed")({
   component: FeedPage,
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/_authenticated/feed")({
 
 function FeedPage() {
   const qc = useQueryClient();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const listFn = useServerFn(listFeed);
   const createFn = useServerFn(createFeedPost);
   const updateFn = useServerFn(updateFeedPost);
@@ -131,8 +133,9 @@ function FeedPage() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => {
-                      if (confirm("Delete this post?")) deleteM.mutate(p.id);
+                    onClick={async () => {
+                      const ok = await confirm({ title: "Delete post?", description: "This post will be removed from the feed.", confirmLabel: "Delete", destructive: true });
+                      if (ok) deleteM.mutate(p.id);
                     }}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -182,6 +185,7 @@ function FeedPage() {
           </article>
         ))}
       </section>
+      {confirmDialog}
     </main>
   );
 }

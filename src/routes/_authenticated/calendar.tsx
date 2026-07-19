@@ -62,6 +62,7 @@ function startOfWeekMon(d: Date) {
 
 import { formatDateShort } from "@/lib/dates";
 import { qk } from "@/lib/query-keys";
+import { useConfirm } from "@/components/confirm-dialog";
 
 function CalendarPage() {
   const { data: me } = useQuery({ queryKey: qk.me, queryFn: () => getMyRole() });
@@ -315,6 +316,7 @@ function SessionDialog({
   session: Session | null;
 }) {
   const qc = useQueryClient();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const { data: blocks = [] } = useQuery({ queryKey: qk.blocks.all, queryFn: () => listBlocks() });
 
   const [blockId, setBlockId] = useState(session?.block_id ?? "");
@@ -472,8 +474,9 @@ function SessionDialog({
               <Button
                 type="button"
                 variant="destructive"
-                onClick={() => {
-                  if (confirm("Delete this session?")) del.mutate();
+                onClick={async () => {
+                  const ok = await confirm({ title: "Delete session?", description: "This session will be permanently removed.", confirmLabel: "Delete", destructive: true });
+                  if (ok) del.mutate();
                 }}
               >
                 Delete
@@ -488,6 +491,7 @@ function SessionDialog({
           </DialogFooter>
         </form>
       </DialogContent>
+      {confirmDialog}
     </Dialog>
   );
 }
