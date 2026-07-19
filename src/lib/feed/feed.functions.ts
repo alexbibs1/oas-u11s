@@ -286,22 +286,6 @@ export const getHomeSummary = createServerFn({ method: "GET" })
         }));
     }
 
-    const { data: nextSess } = await sb
-      .from("sessions")
-      .select("id, session_date, session_type, opponent, venue")
-      .gte("session_date", today)
-      .order("session_date", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    const { data: feed } = await sb
-      .from("feed_posts")
-      .select(
-        "id, content, coach_name, player_id, is_player_note, created_at, players:player_id ( player_name )",
-      )
-      .order("created_at", { ascending: false })
-      .limit(5);
-
     return {
       block: block ?? null,
       myGroup,
