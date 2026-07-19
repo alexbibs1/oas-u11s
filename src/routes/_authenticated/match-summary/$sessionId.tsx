@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getMatchSummary } from "@/lib/sessions/sessions.functions";
 import { ChevronLeft, MapPin } from "lucide-react";
@@ -59,12 +59,16 @@ function MatchSummaryPage() {
       <div className="space-y-6 pb-24">
         {data?.groups.map((g) => (
           <section key={g.id} className="rounded-lg border bg-card p-5">
-            <div className="mb-3 flex items-center justify-between">
+            <Link
+              to="/group/$groupId"
+              params={{ groupId: g.id }}
+              className="mb-3 flex items-center justify-between rounded border bg-background px-3 py-2 transition-colors hover:border-primary/40 hover:bg-secondary"
+            >
               <h2 className="text-base font-bold text-primary">Group {g.group_number}</h2>
               <p className="text-xs text-muted-foreground">
                 {g.coaches.length ? g.coaches.join(", ") : "No coaches"}
               </p>
-            </div>
+            </Link>
 
             {!g.hasOverrides ? (
               <p className="text-sm italic text-muted-foreground">No register submitted.</p>
