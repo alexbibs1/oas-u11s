@@ -340,6 +340,7 @@ function PlayersSection() {
 
 function CoachesSection() {
   const qc = useQueryClient();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const { data: coaches = [] } = useQuery({ queryKey: qk.coaches.all, queryFn: () => listCoaches() });
   const [name, setName] = useState("");
 
@@ -387,8 +388,9 @@ function CoachesSection() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => {
-                if (confirm(`Remove ${c.coach_name}?`)) remove.mutate(c.id);
+              onClick={async () => {
+                const ok = await confirm({ title: `Remove ${c.coach_name}?`, description: "This coach will be removed.", confirmLabel: "Remove", destructive: true });
+                if (ok) remove.mutate(c.id);
               }}
             >
               <Trash2 className="h-4 w-4 text-destructive" />
@@ -396,6 +398,7 @@ function CoachesSection() {
           </li>
         ))}
       </ul>
+      {confirmDialog}
     </div>
   );
 }
