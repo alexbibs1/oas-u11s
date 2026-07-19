@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { qk } from "@/lib/query-keys";
 
 export const Route = createFileRoute("/_authenticated/ratings")({
   component: RatingsPage,
@@ -65,7 +66,7 @@ function RatingsPage() {
 
 function WeekPicker({ onPick }: { onPick: (id: string) => void }) {
   const { data, isLoading } = useQuery({
-    queryKey: ["match-weeks"],
+    queryKey: qk.sessions.matchWeeks,
     queryFn: () => listMatchWeeks(),
   });
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
@@ -108,7 +109,7 @@ function WeekPicker({ onPick }: { onPick: (id: string) => void }) {
 
 function GroupPicker({ sessionId, onPick }: { sessionId: string; onPick: (id: string) => void }) {
   const { data, isLoading } = useQuery({
-    queryKey: ["my-groups-week", sessionId],
+    queryKey: qk.groups.myForWeek(sessionId),
     queryFn: () => getMyGroupsForWeek({ data: { session_id: sessionId } }),
   });
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
@@ -150,7 +151,7 @@ function RatingsEntry({
 }) {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({
-    queryKey: ["group-roster-week", sessionId, groupId],
+    queryKey: qk.groups.rosterForWeek(sessionId, groupId),
     queryFn: () => getGroupRosterForWeek({ data: { session_id: sessionId, group_id: groupId } }),
   });
   const [scores, setScores] = useState<Scores>({});
@@ -189,8 +190,8 @@ function RatingsEntry({
       }),
     onSuccess: (r: any) => {
       toast.success(`Saved — ${r.inserted} new, ${r.updated} updated`);
-      qc.invalidateQueries({ queryKey: ["group-roster-week", sessionId, groupId] });
-      qc.invalidateQueries({ queryKey: ["week-completion"] });
+      qc.invalidateQueries({ queryKey: qk.groups.rosterForWeek(sessionId, groupId) });
+      qc.invalidateQueries({ queryKey: qk.sessions.weekCompletion.all });
       onDone();
     },
     onError: (e: any) => toast.error(e.message),

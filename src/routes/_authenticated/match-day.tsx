@@ -26,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/match-day")({
 type Step = "session" | "group" | "register" | "rate" | "done";
 
 import { SKILLS, SKILL_DESCRIPTORS as DESCRIPTORS } from "@/lib/skills";
+import { qk } from "@/lib/query-keys";
 
 function MatchDayPage() {
   const { sessionId: preselectId } = Route.useSearch();
@@ -35,7 +36,7 @@ function MatchDayPage() {
   const [group, setGroup] = useState<any | null>(null);
 
   const { data: preselectSessions } = useQuery({
-    queryKey: ["match-sessions"],
+    queryKey: qk.sessions.matchList,
     queryFn: () => listMatchSessions(),
     enabled: !!preselectId,
   });
@@ -132,7 +133,7 @@ function MatchDayPage() {
 
 function SessionStep({ onPick }: { onPick: (s: any) => void }) {
   const { data: sessions = [], isLoading } = useQuery({
-    queryKey: ["match-sessions"],
+    queryKey: qk.sessions.matchList,
     queryFn: () => listMatchSessions(),
   });
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
@@ -174,7 +175,7 @@ function SessionStep({ onPick }: { onPick: (s: any) => void }) {
 
 function GroupStep({ blockId, onPick }: { blockId: string; onPick: (g: any) => void }) {
   const { data: groups = [], isLoading } = useQuery({
-    queryKey: ["groups", blockId],
+    queryKey: qk.groups.forBlock(blockId),
     queryFn: () => listGroupsForBlock({ data: { block_id: blockId } }),
   });
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
@@ -215,13 +216,13 @@ function RegisterStep({
   onProceed: () => void;
 }) {
   const qc = useQueryClient();
-  const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => getMyRole() });
+  const { data: me } = useQuery({ queryKey: qk.me, queryFn: () => getMyRole() });
   const { data: ctx, isLoading } = useQuery({
-    queryKey: ["match-ctx", session.id, group.id],
+    queryKey: qk.match.context(session.id, group.id),
     queryFn: () => getMatchDayContext({ data: { session_id: session.id, group_id: group.id } }),
   });
   const { data: allGroups = [] } = useQuery({
-    queryKey: ["groups", session.block_id],
+    queryKey: qk.groups.forBlock(session.block_id),
     queryFn: () => listGroupsForBlock({ data: { block_id: session.block_id } }),
   });
 
@@ -260,7 +261,7 @@ function RegisterStep({
       }),
     onSuccess: () => {
       toast.success("Register confirmed");
-      qc.invalidateQueries({ queryKey: ["match-ctx", session.id, group.id] });
+      qc.invalidateQueries({ queryKey: qk.match.context(session.id, group.id) });
       onProceed();
     },
     onError: (e: any) => toast.error(e.message),
@@ -270,7 +271,7 @@ function RegisterStep({
     mutationFn: () => unlockRegister({ data: { session_id: session.id, group_id: group.id } }),
     onSuccess: () => {
       toast.success("Register unlocked");
-      qc.invalidateQueries({ queryKey: ["match-ctx", session.id, group.id] });
+      qc.invalidateQueries({ queryKey: qk.match.context(session.id, group.id) });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -414,7 +415,7 @@ function PillBtn({
 
 function RateStep({ session, group, onDone }: { session: any; group: any; onDone: () => void }) {
   const { data: ctx, isLoading } = useQuery({
-    queryKey: ["match-ctx", session.id, group.id],
+    queryKey: qk.match.context(session.id, group.id),
     queryFn: () => getMatchDayContext({ data: { session_id: session.id, group_id: group.id } }),
   });
 

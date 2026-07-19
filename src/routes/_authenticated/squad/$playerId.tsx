@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
 const playerQuery = (id: string) => ({
-  queryKey: ["player", id],
+  queryKey: qk.players.detail(id),
   queryFn: () => getPlayer({ data: { id } }),
 });
 
@@ -31,12 +31,13 @@ export const Route = createFileRoute("/_authenticated/squad/$playerId")({
 });
 
 import { SKILLS, ATTRIBUTES } from "@/lib/skills";
+import { qk } from "@/lib/query-keys";
 
 function PlayerProfile() {
   const { playerId } = Route.useParams();
   const { data: player } = useSuspenseQuery(playerQuery(playerId));
   const { data: currentBlock } = useQuery({
-    queryKey: ["player-current-block", playerId],
+    queryKey: qk.players.currentBlock(playerId),
     queryFn: () => getPlayerCurrentBlock({ data: { player_id: playerId } }),
   });
   const qc = useQueryClient();
@@ -47,7 +48,7 @@ function PlayerProfile() {
   const deleteFn = useServerFn(deletePlayerNote);
 
   const { data: notes = [] } = useQuery({
-    queryKey: ["player-notes", playerId],
+    queryKey: qk.players.notes(playerId),
     queryFn: () => listFn({ data: { player_id: playerId } }),
   });
 
@@ -57,9 +58,9 @@ function PlayerProfile() {
   const [editDraft, setEditDraft] = useState("");
 
   const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ["player-notes", playerId] });
-    qc.invalidateQueries({ queryKey: ["feed"] });
-    qc.invalidateQueries({ queryKey: ["home-summary"] });
+    qc.invalidateQueries({ queryKey: qk.players.notes(playerId) });
+    qc.invalidateQueries({ queryKey: qk.feed.all });
+    qc.invalidateQueries({ queryKey: qk.feed.homeSummary });
   };
 
   const addM = useMutation({
@@ -284,7 +285,7 @@ function PlayerProfile() {
 
 function WeeklyHistory({ playerId }: { playerId: string }) {
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["player-skill-ratings", playerId],
+    queryKey: qk.players.skillRatings(playerId),
     queryFn: () => listPlayerSkillRatings({ data: { player_id: playerId } }),
   });
   if (isLoading) return null;

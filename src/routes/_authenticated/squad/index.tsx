@@ -4,7 +4,7 @@ import { listPlayers } from "@/lib/players/players.functions";
 import { ChevronRight } from "lucide-react";
 
 const playersQuery = {
-  queryKey: ["players"],
+  queryKey: qk.players.all,
   queryFn: () => listPlayers(),
 };
 
@@ -14,6 +14,7 @@ export const Route = createFileRoute("/_authenticated/squad/")({
 });
 
 import { SKILLS, ATTRIBUTES } from "@/lib/skills";
+import { qk } from "@/lib/query-keys";
 
 function SquadPage() {
   const { data: players } = useSuspenseQuery(playersQuery);

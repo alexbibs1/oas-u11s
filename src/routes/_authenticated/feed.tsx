@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Pencil, Trash2, UserCircle2 } from "lucide-react";
+import { qk } from "@/lib/query-keys";
 
 export const Route = createFileRoute("/_authenticated/feed")({
   component: FeedPage,
@@ -24,7 +25,7 @@ function FeedPage() {
   const deleteFn = useServerFn(deleteFeedPost);
 
   const { data: posts = [] } = useQuery({
-    queryKey: ["feed"],
+    queryKey: qk.feed.all,
     queryFn: () => listFn({ data: {} }),
   });
 
@@ -33,7 +34,7 @@ function FeedPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["feed"] });
+  const invalidate = () => qc.invalidateQueries({ queryKey: qk.feed.all });
 
   const createM = useMutation({
     mutationFn: (content: string) => createFn({ data: { content } }),

@@ -4,6 +4,7 @@ import { getMyRole } from "@/lib/auth/roles.functions";
 import { getHomeSummary } from "@/lib/feed/feed.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { qk } from "@/lib/query-keys";
 
 export const Route = createFileRoute("/_authenticated/home")({
   component: HomePage,
@@ -20,9 +21,9 @@ function fmtDate(d: string | null | undefined) {
 
 function HomePage() {
   const navigate = useNavigate();
-  const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => getMyRole() });
+  const { data: me } = useQuery({ queryKey: qk.me, queryFn: () => getMyRole() });
   const { data: summary } = useQuery({
-    queryKey: ["home-summary"],
+    queryKey: qk.feed.homeSummary,
     queryFn: () => getHomeSummary(),
   });
 
