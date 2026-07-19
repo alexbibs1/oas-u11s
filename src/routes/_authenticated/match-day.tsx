@@ -244,6 +244,9 @@ function RegisterStep({
         init[p.id] = { status: "move", move_to: ov.override_group_id };
       }
     }
+    for (const p of ctx.movedInPlayers as any[]) {
+      if (!init[p.id]) init[p.id] = { status: "present" };
+    }
     setState(init);
   }, [ctx, group.id]);
 
@@ -302,8 +305,8 @@ function RegisterStep({
         </div>
       )}
 
-      <ul className="space-y-2">
-        {(ctx.defaultRoster as any[]).map((p) => {
+      {(() => {
+        const renderRow = (p: any) => {
           const s = state[p.id] ?? { status: "present" as RegStatus };
           return (
             <li key={p.id} className="rounded-lg border bg-card p-3">
@@ -365,8 +368,23 @@ function RegisterStep({
               )}
             </li>
           );
-        })}
-      </ul>
+        };
+        return (
+          <>
+            <ul className="space-y-2">{(ctx.defaultRoster as any[]).map(renderRow)}</ul>
+            {(ctx.movedInPlayers as any[]).length > 0 && (
+              <>
+                <p className="pt-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Moved in from other groups
+                </p>
+                <ul className="space-y-2">
+                  {(ctx.movedInPlayers as any[]).map(renderRow)}
+                </ul>
+              </>
+            )}
+          </>
+        );
+      })()}
 
       {!locked && (
         <Button className="w-full" disabled={save.isPending} onClick={() => save.mutate()}>
