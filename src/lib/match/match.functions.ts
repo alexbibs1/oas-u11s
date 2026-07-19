@@ -4,6 +4,40 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import { SKILL_KEYS } from "@/lib/skills";
 
+export const getGroupDetail = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ group_id: z.string().uuid() }))
+  .handler(async ({ context, data }) => {
+    const sb = context.supabase;
+    const { data: group, error: gErr } = await sb
+      .from("groups")
+      .select(
+        "id, group_number, block_id, blocks:block_id ( id, name, block_number, is_active, start_date, end_date ), group_coaches:group_coaches ( coaches:coach_id ( coach_name ) )",
+      )
+      .eq("id", data.group_id)
+      .single();
+    if (gErr) throw new Error(gErr.message);
+    const { data: roster, error: rErr } = await sb
+      .from("group_players")
+      .select(
+        "player_id, players:player_id ( id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability )",
+      )
+      .eq("group_id", data.group_id)
+      .order("player_name", { referencedTable: "players", ascending: true });
+    if (rErr) throw new Error(rErr.message);
+    return {
+      group: {
+        id: (group as any).id,
+        group_number: (group as any).group_number,
+        block: (group as any).blocks,
+      },
+      coaches: ((group as any).group_coaches ?? [])
+        .map((gc: any) => gc.coaches?.coach_name)
+        .filter(Boolean) as string[],
+      players: (roster ?? []).map((r: any) => r.players).filter(Boolean),
+    };
+  });
+
 export const listGroupsForBlock = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ block_id: z.string().uuid() }))
