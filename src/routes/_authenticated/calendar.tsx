@@ -474,8 +474,9 @@ function SessionDialog({
               <Button
                 type="button"
                 variant="destructive"
-                onClick={() => {
-                  if (confirm("Delete this session?")) del.mutate();
+                onClick={async () => {
+                  const ok = await confirm({ title: "Delete session?", description: "This session will be permanently removed.", confirmLabel: "Delete", destructive: true });
+                  if (ok) del.mutate();
                 }}
               >
                 Delete
@@ -490,6 +491,7 @@ function SessionDialog({
           </DialogFooter>
         </form>
       </DialogContent>
+      {confirmDialog}
     </Dialog>
   );
 }
