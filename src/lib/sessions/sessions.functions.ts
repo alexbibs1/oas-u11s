@@ -206,7 +206,11 @@ export const getMatchSummary = createServerFn({ method: "GET" })
       defaultIds.forEach((pid) => {
         const has = oMap.has(pid);
         const target = oMap.get(pid);
-        if (!has) return; // no register entry
+        // No override = implicitly present in the default group
+        if (!has) {
+          present.push({ id: pid, name: pMap.get(pid) ?? "—" });
+          return;
+        }
         if (target === g.id) present.push({ id: pid, name: pMap.get(pid) ?? "—" });
         else if (target === null) absent.push({ id: pid, name: pMap.get(pid) ?? "—" });
         // else moved out → don't show
