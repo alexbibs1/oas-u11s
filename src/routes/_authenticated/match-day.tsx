@@ -266,7 +266,7 @@ function RegisterStep({
       }),
     onSuccess: () => {
       toast.success("Register confirmed");
-      qc.invalidateQueries({ queryKey: ["match-ctx", session.id] });
+      qc.invalidateQueries({ queryKey: qk.match.contextForSession(session.id) });
       qc.invalidateQueries({ queryKey: qk.groups.forBlock(session.block_id) });
       onProceed();
     },
@@ -277,7 +277,7 @@ function RegisterStep({
     mutationFn: () => unlockRegister({ data: { session_id: session.id, group_id: group.id } }),
     onSuccess: () => {
       toast.success("Register unlocked");
-      qc.invalidateQueries({ queryKey: ["match-ctx", session.id] });
+      qc.invalidateQueries({ queryKey: qk.match.contextForSession(session.id) });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -440,6 +440,7 @@ function RateStep({ session, group, onDone }: { session: any; group: any; onDone
   const { data: ctx, isLoading } = useQuery({
     queryKey: qk.match.context(session.id, group.id),
     queryFn: () => getMatchDayContext({ data: { session_id: session.id, group_id: group.id } }),
+    staleTime: 0,
   });
 
   const presentPlayers = useMemo(() => {
