@@ -52,39 +52,48 @@ function HomePage() {
       </header>
 
       <section className="space-y-4">
-        <div className="rounded-lg border bg-card p-5">
-          <h2 className="text-sm font-semibold text-muted-foreground">Current block</h2>
-          {block ? (
-            <>
-              <p className="mt-2 text-base font-semibold text-primary">
-                {(block as any).name ?? `Block ${(block as any).block_number}`}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {fmtDate((block as any).start_date)} – {fmtDate((block as any).end_date)}
-              </p>
-            </>
-          ) : (
+        {block ? (
+          <Link
+            to="/calendar"
+            className="block rounded-lg border bg-card p-5 hover:bg-secondary"
+          >
+            <h2 className="text-sm font-semibold text-muted-foreground">Current block</h2>
+            <p className="mt-2 text-base font-semibold text-primary">
+              {(block as any).name ?? `Block ${(block as any).block_number}`}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {fmtDate((block as any).start_date)} – {fmtDate((block as any).end_date)}
+            </p>
+          </Link>
+        ) : (
+          <div className="rounded-lg border bg-card p-5">
+            <h2 className="text-sm font-semibold text-muted-foreground">Current block</h2>
             <p className="mt-2 text-sm text-muted-foreground">No active block.</p>
-          )}
-        </div>
+          </div>
+        )}
 
-        <div className="rounded-lg border bg-card p-5">
-          <h2 className="text-sm font-semibold text-muted-foreground">Your group this block</h2>
-          {summary?.myGroup ? (
-            <>
-              <p className="mt-2 text-base font-semibold text-primary">
-                Group {summary.myGroup.group_number}
+        {summary?.myGroup ? (
+          <Link
+            to="/group/$groupId"
+            params={{ groupId: summary.myGroup.id }}
+            className="block rounded-lg border bg-card p-5 hover:bg-secondary"
+          >
+            <h2 className="text-sm font-semibold text-muted-foreground">Your group this block</h2>
+            <p className="mt-2 text-base font-semibold text-primary">
+              Group {summary.myGroup.group_number}
+            </p>
+            {summary.myGroup.coach_names && summary.myGroup.coach_names.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Coach {summary.myGroup.coach_names.join(", ")}
               </p>
-              {summary.myGroup.coach_names && summary.myGroup.coach_names.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  Coach {summary.myGroup.coach_names.join(", ")}
-                </p>
-              )}
-            </>
-          ) : (
+            )}
+          </Link>
+        ) : (
+          <div className="rounded-lg border bg-card p-5">
+            <h2 className="text-sm font-semibold text-muted-foreground">Your group this block</h2>
             <p className="mt-2 text-sm text-muted-foreground">Not assigned to a group.</p>
-          )}
-        </div>
+          </div>
+        )}
 
         {summary?.otherGroups && summary.otherGroups.length > 0 && (
           <div className="rounded-lg border bg-card p-5">
@@ -92,20 +101,27 @@ function HomePage() {
             <ul className="mt-3 space-y-3">
               {summary.otherGroups.map((g: any) => (
                 <li key={g.id} className="border-t pt-3 first:border-t-0 first:pt-0">
-                  <p className="text-sm font-semibold text-primary">
-                    Group {g.group_number}
-                    <span className="ml-2 text-xs font-normal text-muted-foreground">
-                      · {g.player_count} player{g.player_count === 1 ? "" : "s"}
-                    </span>
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {g.coach_names.length ? g.coach_names.join(", ") : "No coach assigned"}
-                  </p>
+                  <Link
+                    to="/group/$groupId"
+                    params={{ groupId: g.id }}
+                    className="-mx-2 block rounded-md px-2 py-1 hover:bg-secondary"
+                  >
+                    <p className="text-sm font-semibold text-primary">
+                      Group {g.group_number}
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                        · {g.player_count} player{g.player_count === 1 ? "" : "s"}
+                      </span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {g.coach_names.length ? g.coach_names.join(", ") : "No coach assigned"}
+                    </p>
+                  </Link>
                 </li>
               ))}
             </ul>
           </div>
         )}
+
 
         {next ? (
           <Link
