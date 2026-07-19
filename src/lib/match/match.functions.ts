@@ -157,7 +157,7 @@ export const saveRegister = createServerFn({ method: "POST" })
       entries: z.array(
         z.object({
           player_id: z.string().uuid(),
-          status: z.enum(["here", "absent", "move"]),
+          status: z.enum(["present", "absent", "move"]),
           move_to_group_id: z.string().uuid().nullable().optional(),
         }),
       ),
@@ -165,21 +165,23 @@ export const saveRegister = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const supabase = context.supabase;
-    // Build override rows for every entry from this group's default roster
-    const rows = data.entries.map((e) => ({
-      session_id: data.session_id,
-      player_id: e.player_id,
-      override_group_id:
-        e.status === "here"
-          ? data.group_id
-          : e.status === "move"
-            ? (e.move_to_group_id ?? null)
-            : null,
-      created_by: context.userId,
-    }));
+    // Skip implicit-present entries — override rows only for absent or moved
+    const rows = data.entries
+      .filter((e) => e.status !== "present")
+      .map((e) => ({
+        session_id: data.session_id,
+        player_id: e.player_id,
+        override_group_id:
+          e.status === "absent"
+            ? null
+            : e.status === "move"
+              ? (e.move_to_group_id ?? null)
+              : null,
+        created_by: context.userId,
+      }));
 
-    // Remove any existing overrides for these players in this session, then insert fresh
-    const playerIds = rows.map((r) => r.player_id);
+    // Remove existing overrides for all submitted players in this session, then insert overrides
+    const playerIds = data.entries.map((e) => e.player_id);
     if (playerIds.length) {
       const { error: delErr } = await supabase
         .from("session_player_overrides")
