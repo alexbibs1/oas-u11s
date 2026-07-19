@@ -472,9 +472,15 @@ function RateStep({ session, group, onDone }: { session: any; group: any; onDone
     onError: (e: any) => toast.error(e.message),
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (hasExisting) {
-      if (!confirm("Ratings already exist for this group/session. Overwrite?")) return;
+      const ok = await confirm({
+        title: "Overwrite existing ratings?",
+        description: "Ratings already exist for this group/session. Submitting will overwrite them.",
+        confirmLabel: "Overwrite",
+        destructive: true,
+      });
+      if (!ok) return;
     }
     submit.mutate();
   };
@@ -542,6 +548,7 @@ function RateStep({ session, group, onDone }: { session: any; group: any; onDone
       <Button className="w-full" onClick={handleSubmit} disabled={submit.isPending}>
         {submit.isPending ? "Saving…" : "Submit Ratings"}
       </Button>
+      {confirmDialog}
     </div>
   );
 }
