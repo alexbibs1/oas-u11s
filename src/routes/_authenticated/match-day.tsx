@@ -27,6 +27,7 @@ type Step = "session" | "group" | "register" | "rate" | "done";
 
 import { SKILLS, SKILL_DESCRIPTORS as DESCRIPTORS } from "@/lib/skills";
 import { qk } from "@/lib/query-keys";
+import { useConfirm } from "@/components/confirm-dialog";
 
 function MatchDayPage() {
   const { sessionId: preselectId } = Route.useSearch();
@@ -414,6 +415,8 @@ function PillBtn({
 }
 
 function RateStep({ session, group, onDone }: { session: any; group: any; onDone: () => void }) {
+  const { confirm, dialog: confirmDialog } = useConfirm();
+  const _rs = null; // placeholder to keep line alignment minimal
   const { data: ctx, isLoading } = useQuery({
     queryKey: qk.match.context(session.id, group.id),
     queryFn: () => getMatchDayContext({ data: { session_id: session.id, group_id: group.id } }),
