@@ -304,25 +304,23 @@ function RegisterStep({
 
       <ul className="space-y-2">
         {(ctx.defaultRoster as any[]).map((p) => {
-          const s = state[p.id] ?? { status: "here" as RegStatus };
+          const s = state[p.id] ?? { status: "present" as RegStatus };
           return (
             <li key={p.id} className="rounded-lg border bg-card p-3">
               <div className="flex items-center justify-between gap-3">
                 <span className="text-sm font-semibold">{p.player_name}</span>
                 <div className="flex gap-1">
                   <PillBtn
-                    active={s.status === "here"}
-                    color="green"
-                    disabled={locked}
-                    onClick={() => setState({ ...state, [p.id]: { status: "here" } })}
-                  >
-                    <Check className="h-3.5 w-3.5" /> Here
-                  </PillBtn>
-                  <PillBtn
                     active={s.status === "absent"}
                     color="grey"
                     disabled={locked}
-                    onClick={() => setState({ ...state, [p.id]: { status: "absent" } })}
+                    onClick={() =>
+                      setState({
+                        ...state,
+                        [p.id]:
+                          s.status === "absent" ? { status: "present" } : { status: "absent" },
+                      })
+                    }
                   >
                     <X className="h-3.5 w-3.5" /> Absent
                   </PillBtn>
@@ -333,7 +331,10 @@ function RegisterStep({
                     onClick={() =>
                       setState({
                         ...state,
-                        [p.id]: { status: "move", move_to: otherGroups[0]?.id },
+                        [p.id]:
+                          s.status === "move"
+                            ? { status: "present" }
+                            : { status: "move", move_to: otherGroups[0]?.id },
                       })
                     }
                   >
