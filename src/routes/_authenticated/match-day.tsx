@@ -7,13 +7,11 @@ import {
   listGroupsForBlock,
   saveRegister,
   submitRatings,
-  unlockRegister,
 } from "@/lib/match/match.functions";
-import { getMyRole } from "@/lib/auth/roles.functions";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { ChevronLeft, X, ArrowRightLeft, Lock } from "lucide-react";
+import { ChevronLeft, X, ArrowRightLeft } from "lucide-react";
 import { formatDateLong } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/match-day")({
