@@ -121,9 +121,27 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
       (o: any) => defaultIds.has(o.player_id) || o.override_group_id === data.group_id,
     );
 
+    // Players moved OUT of this group (override target is absent or a different group)
+    const movedOutIds = new Set(
+      (overrides ?? [])
+        .filter((o: any) => defaultIds.has(o.player_id) && o.override_group_id !== data.group_id)
+        .map((o: any) => o.player_id),
+    );
+
+    const filteredDefaultRoster = (defaultRoster ?? [])
+      .map((r: any) => r.players)
+      .filter((p: any) => p && !movedOutIds.has(p.id))
+      .sort((a: any, b: any) => a.player_name.localeCompare(b.player_name));
+
+    // Dedupe movedIn: exclude any players already appearing in defaultRoster
+    const defaultRosterIds = new Set(filteredDefaultRoster.map((p: any) => p.id));
+    const dedupedMovedIn = movedInPlayers
+      .filter((p: any) => !defaultRosterIds.has(p.id))
+      .sort((a: any, b: any) => a.player_name.localeCompare(b.player_name));
+
     return {
-      defaultRoster: (defaultRoster ?? []).map((r: any) => r.players),
-      movedInPlayers,
+      defaultRoster: filteredDefaultRoster,
+      movedInPlayers: dedupedMovedIn,
       overrides: overrides ?? [],
       ratings: ratings ?? [],
       locked: lockedByOverride,
