@@ -244,6 +244,9 @@ function RegisterStep({
         init[p.id] = { status: "move", move_to: ov.override_group_id };
       }
     }
+    for (const p of ctx.movedInPlayers as any[]) {
+      if (!init[p.id]) init[p.id] = { status: "present" };
+    }
     setState(init);
   }, [ctx, group.id]);
 
