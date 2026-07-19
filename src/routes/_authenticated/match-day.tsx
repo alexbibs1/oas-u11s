@@ -205,7 +205,7 @@ function GroupStep({ blockId, onPick }: { blockId: string; onPick: (g: any) => v
   );
 }
 
-type RegStatus = "here" | "absent" | "move";
+type RegStatus = "present" | "absent" | "move";
 
 function RegisterStep({
   session,
@@ -235,11 +235,11 @@ function RegisterStep({
     for (const p of ctx.defaultRoster as any[]) {
       const ov = (ctx.overrides as any[]).find((o) => o.player_id === p.id);
       if (!ov) {
-        init[p.id] = { status: "here" };
+        init[p.id] = { status: "present" };
       } else if (ov.override_group_id === null) {
         init[p.id] = { status: "absent" };
       } else if (ov.override_group_id === group.id) {
-        init[p.id] = { status: "here" };
+        init[p.id] = { status: "present" };
       } else {
         init[p.id] = { status: "move", move_to: ov.override_group_id };
       }
