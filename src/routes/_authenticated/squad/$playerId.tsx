@@ -32,6 +32,7 @@ export const Route = createFileRoute("/_authenticated/squad/$playerId")({
 
 import { SKILLS, ATTRIBUTES } from "@/lib/skills";
 import { qk } from "@/lib/query-keys";
+import { useConfirm } from "@/components/confirm-dialog";
 
 function PlayerProfile() {
   const { playerId } = Route.useParams();
@@ -41,6 +42,7 @@ function PlayerProfile() {
     queryFn: () => getPlayerCurrentBlock({ data: { player_id: playerId } }),
   });
   const qc = useQueryClient();
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const listFn = useServerFn(listPlayerNotes);
   const createFn = useServerFn(createPlayerNote);
@@ -243,8 +245,9 @@ function PlayerProfile() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => {
-                        if (confirm("Delete this note?")) deleteM.mutate(n.id);
+                      onClick={async () => {
+                        const ok = await confirm({ title: "Delete note?", description: "This will remove the note and its feed post.", confirmLabel: "Delete", destructive: true });
+                        if (ok) deleteM.mutate(n.id);
                       }}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -279,6 +282,7 @@ function PlayerProfile() {
           ))}
         </ul>
       </section>
+      {confirmDialog}
     </main>
   );
 }
