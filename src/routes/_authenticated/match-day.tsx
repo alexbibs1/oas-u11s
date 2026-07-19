@@ -416,7 +416,6 @@ function PillBtn({
 
 function RateStep({ session, group, onDone }: { session: any; group: any; onDone: () => void }) {
   const { confirm, dialog: confirmDialog } = useConfirm();
-  const _rs = null; // placeholder to keep line alignment minimal
   const { data: ctx, isLoading } = useQuery({
     queryKey: qk.match.context(session.id, group.id),
     queryFn: () => getMatchDayContext({ data: { session_id: session.id, group_id: group.id } }),
