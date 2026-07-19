@@ -34,7 +34,10 @@ export const getGroupDetail = createServerFn({ method: "GET" })
       coaches: ((group as any).group_coaches ?? [])
         .map((gc: any) => gc.coaches?.coach_name)
         .filter(Boolean) as string[],
-      players: (roster ?? []).map((r: any) => r.players).filter(Boolean),
+      players: (roster ?? [])
+        .map((r: any) => r.players)
+        .filter(Boolean)
+        .sort((a: any, b: any) => a.player_name.localeCompare(b.player_name)),
     };
   });
 
