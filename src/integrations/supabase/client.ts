@@ -19,11 +19,13 @@ function createSupabaseClient() {
     throw new Error(message);
   }
 
+  const isBrowser = typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
-      storage: typeof window !== "undefined" ? localStorage : undefined,
-      persistSession: true,
-      autoRefreshToken: true,
+      persistSession: isBrowser,
+      autoRefreshToken: isBrowser,
+      storage: isBrowser ? window.localStorage : undefined,
     },
   });
 }

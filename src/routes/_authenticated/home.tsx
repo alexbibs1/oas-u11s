@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getMyRole } from "@/lib/auth/roles.functions";
 import { getHomeSummary } from "@/lib/feed/feed.functions";
@@ -19,6 +19,7 @@ function fmtDate(d: string | null | undefined) {
 }
 
 function HomePage() {
+  const navigate = useNavigate();
   const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => getMyRole() });
   const { data: summary } = useQuery({
     queryKey: ["home-summary"],
@@ -42,7 +43,7 @@ function HomePage() {
           size="sm"
           onClick={async () => {
             await supabase.auth.signOut();
-            window.location.href = "/auth";
+            navigate({ to: "/auth", replace: true });
           }}
         >
           Sign out

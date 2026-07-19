@@ -31,11 +31,14 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/home", replace: true });
+      if (data.session) {
+        navigate({ to: "/home", replace: true });
+      } else {
+        checkStatus()
+          .then((r) => setNeedsBootstrap(r.needsBootstrap))
+          .catch(() => {});
+      }
     });
-    checkStatus()
-      .then((r) => setNeedsBootstrap(r.needsBootstrap))
-      .catch(() => {});
   }, [navigate, checkStatus]);
 
   async function handleSubmit(e: React.FormEvent) {
