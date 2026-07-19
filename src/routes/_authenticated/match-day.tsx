@@ -266,7 +266,8 @@ function RegisterStep({
       }),
     onSuccess: () => {
       toast.success("Register confirmed");
-      qc.invalidateQueries({ queryKey: qk.match.context(session.id, group.id) });
+      qc.invalidateQueries({ queryKey: ["match-ctx", session.id] });
+      qc.invalidateQueries({ queryKey: qk.groups.forBlock(session.block_id) });
       onProceed();
     },
     onError: (e: any) => toast.error(e.message),
@@ -276,7 +277,7 @@ function RegisterStep({
     mutationFn: () => unlockRegister({ data: { session_id: session.id, group_id: group.id } }),
     onSuccess: () => {
       toast.success("Register unlocked");
-      qc.invalidateQueries({ queryKey: qk.match.context(session.id, group.id) });
+      qc.invalidateQueries({ queryKey: ["match-ctx", session.id] });
     },
     onError: (e: any) => toast.error(e.message),
   });
