@@ -34,7 +34,10 @@ export const getGroupDetail = createServerFn({ method: "GET" })
       coaches: ((group as any).group_coaches ?? [])
         .map((gc: any) => gc.coaches?.coach_name)
         .filter(Boolean) as string[],
-      players: (roster ?? []).map((r: any) => r.players).filter(Boolean),
+      players: (roster ?? [])
+        .map((r: any) => r.players)
+        .filter(Boolean)
+        .sort((a: any, b: any) => a.player_name.localeCompare(b.player_name)),
     };
   });
 
@@ -118,9 +121,27 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
       (o: any) => defaultIds.has(o.player_id) || o.override_group_id === data.group_id,
     );
 
+    // Players moved OUT of this group (override target is absent or a different group)
+    const movedOutIds = new Set(
+      (overrides ?? [])
+        .filter((o: any) => defaultIds.has(o.player_id) && o.override_group_id !== data.group_id)
+        .map((o: any) => o.player_id),
+    );
+
+    const filteredDefaultRoster = (defaultRoster ?? [])
+      .map((r: any) => r.players)
+      .filter((p: any) => p && !movedOutIds.has(p.id))
+      .sort((a: any, b: any) => a.player_name.localeCompare(b.player_name));
+
+    // Dedupe movedIn: exclude any players already appearing in defaultRoster
+    const defaultRosterIds = new Set(filteredDefaultRoster.map((p: any) => p.id));
+    const dedupedMovedIn = movedInPlayers
+      .filter((p: any) => !defaultRosterIds.has(p.id))
+      .sort((a: any, b: any) => a.player_name.localeCompare(b.player_name));
+
     return {
-      defaultRoster: (defaultRoster ?? []).map((r: any) => r.players),
-      movedInPlayers,
+      defaultRoster: filteredDefaultRoster,
+      movedInPlayers: dedupedMovedIn,
       overrides: overrides ?? [],
       ratings: ratings ?? [],
       locked: lockedByOverride,
@@ -136,7 +157,7 @@ export const saveRegister = createServerFn({ method: "POST" })
       entries: z.array(
         z.object({
           player_id: z.string().uuid(),
-          status: z.enum(["here", "absent", "move"]),
+          status: z.enum(["present", "absent", "move"]),
           move_to_group_id: z.string().uuid().nullable().optional(),
         }),
       ),
@@ -144,21 +165,23 @@ export const saveRegister = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const supabase = context.supabase;
-    // Build override rows for every entry from this group's default roster
-    const rows = data.entries.map((e) => ({
-      session_id: data.session_id,
-      player_id: e.player_id,
-      override_group_id:
-        e.status === "here"
-          ? data.group_id
-          : e.status === "move"
-            ? (e.move_to_group_id ?? null)
-            : null,
-      created_by: context.userId,
-    }));
+    // Skip implicit-present entries — override rows only for absent or moved
+    const rows = data.entries
+      .filter((e) => e.status !== "present")
+      .map((e) => ({
+        session_id: data.session_id,
+        player_id: e.player_id,
+        override_group_id:
+          e.status === "absent"
+            ? null
+            : e.status === "move"
+              ? (e.move_to_group_id ?? null)
+              : null,
+        created_by: context.userId,
+      }));
 
-    // Remove any existing overrides for these players in this session, then insert fresh
-    const playerIds = rows.map((r) => r.player_id);
+    // Remove existing overrides for all submitted players in this session, then insert overrides
+    const playerIds = data.entries.map((e) => e.player_id);
     if (playerIds.length) {
       const { error: delErr } = await supabase
         .from("session_player_overrides")

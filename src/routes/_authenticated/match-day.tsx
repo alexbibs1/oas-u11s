@@ -13,7 +13,7 @@ import { getMyRole } from "@/lib/auth/roles.functions";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { ChevronLeft, Check, X, ArrowRightLeft, Lock } from "lucide-react";
+import { ChevronLeft, X, ArrowRightLeft, Lock } from "lucide-react";
 import { formatDateLong } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/match-day")({
@@ -205,7 +205,7 @@ function GroupStep({ blockId, onPick }: { blockId: string; onPick: (g: any) => v
   );
 }
 
-type RegStatus = "here" | "absent" | "move";
+type RegStatus = "present" | "absent" | "move";
 
 function RegisterStep({
   session,
@@ -235,11 +235,11 @@ function RegisterStep({
     for (const p of ctx.defaultRoster as any[]) {
       const ov = (ctx.overrides as any[]).find((o) => o.player_id === p.id);
       if (!ov) {
-        init[p.id] = { status: "here" };
+        init[p.id] = { status: "present" };
       } else if (ov.override_group_id === null) {
         init[p.id] = { status: "absent" };
       } else if (ov.override_group_id === group.id) {
-        init[p.id] = { status: "here" };
+        init[p.id] = { status: "present" };
       } else {
         init[p.id] = { status: "move", move_to: ov.override_group_id };
       }
@@ -304,25 +304,23 @@ function RegisterStep({
 
       <ul className="space-y-2">
         {(ctx.defaultRoster as any[]).map((p) => {
-          const s = state[p.id] ?? { status: "here" as RegStatus };
+          const s = state[p.id] ?? { status: "present" as RegStatus };
           return (
             <li key={p.id} className="rounded-lg border bg-card p-3">
               <div className="flex items-center justify-between gap-3">
                 <span className="text-sm font-semibold">{p.player_name}</span>
                 <div className="flex gap-1">
                   <PillBtn
-                    active={s.status === "here"}
-                    color="green"
-                    disabled={locked}
-                    onClick={() => setState({ ...state, [p.id]: { status: "here" } })}
-                  >
-                    <Check className="h-3.5 w-3.5" /> Here
-                  </PillBtn>
-                  <PillBtn
                     active={s.status === "absent"}
                     color="grey"
                     disabled={locked}
-                    onClick={() => setState({ ...state, [p.id]: { status: "absent" } })}
+                    onClick={() =>
+                      setState({
+                        ...state,
+                        [p.id]:
+                          s.status === "absent" ? { status: "present" } : { status: "absent" },
+                      })
+                    }
                   >
                     <X className="h-3.5 w-3.5" /> Absent
                   </PillBtn>
@@ -333,7 +331,10 @@ function RegisterStep({
                     onClick={() =>
                       setState({
                         ...state,
-                        [p.id]: { status: "move", move_to: otherGroups[0]?.id },
+                        [p.id]:
+                          s.status === "move"
+                            ? { status: "present" }
+                            : { status: "move", move_to: otherGroups[0]?.id },
                       })
                     }
                   >
