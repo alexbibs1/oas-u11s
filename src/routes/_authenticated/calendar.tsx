@@ -62,6 +62,7 @@ function startOfWeekMon(d: Date) {
 
 import { formatDateShort } from "@/lib/dates";
 import { qk } from "@/lib/query-keys";
+import { useConfirm } from "@/components/confirm-dialog";
 
 function CalendarPage() {
   const { data: me } = useQuery({ queryKey: qk.me, queryFn: () => getMyRole() });
@@ -315,6 +316,7 @@ function SessionDialog({
   session: Session | null;
 }) {
   const qc = useQueryClient();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const { data: blocks = [] } = useQuery({ queryKey: qk.blocks.all, queryFn: () => listBlocks() });
 
   const [blockId, setBlockId] = useState(session?.block_id ?? "");
