@@ -293,6 +293,7 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
       toast.success("Block saved");
       qc.invalidateQueries({ queryKey: qk.blocks.meta });
       qc.invalidateQueries({ queryKey: qk.blocks.all });
+      qc.invalidateQueries({ queryKey: qk.blocks.detail(blockId) });
       onDone();
     },
     onError: (e: any) => toast.error(e.message),
