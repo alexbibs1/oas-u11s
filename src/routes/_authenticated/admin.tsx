@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { qk } from "@/lib/query-keys";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
@@ -118,7 +119,7 @@ function AdminPage() {
 
 function SessionsSection() {
   const qc = useQueryClient();
-  const { data: blocks = [] } = useQuery({ queryKey: ["blocks"], queryFn: () => listBlocks() });
+  const { data: blocks = [] } = useQuery({ queryKey: qk.blocks.all, queryFn: () => listBlocks() });
   const [blockId, setBlockId] = useState("");
   const [date, setDate] = useState("");
   const [type, setType] = useState<"training" | "match">("match");
@@ -131,7 +132,7 @@ function SessionsSection() {
     onSuccess: () => {
       toast.success("Session created");
       setDate("");
-      qc.invalidateQueries({ queryKey: ["match-sessions"] });
+      qc.invalidateQueries({ queryKey: qk.sessions.matchList });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -194,7 +195,7 @@ function SessionsSection() {
 }
 
 function InviteSection() {
-  const { data: coaches = [] } = useQuery({ queryKey: ["coaches"], queryFn: () => listCoaches() });
+  const { data: coaches = [] } = useQuery({ queryKey: qk.coaches.all, queryFn: () => listCoaches() });
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"block_builder" | "coach">("coach");
   const [coachId, setCoachId] = useState<string>("");
@@ -273,21 +274,21 @@ function InviteSection() {
 
 function PlayersSection() {
   const qc = useQueryClient();
-  const { data: players = [] } = useQuery({ queryKey: ["players"], queryFn: () => listPlayers() });
+  const { data: players = [] } = useQuery({ queryKey: qk.players.all, queryFn: () => listPlayers() });
   const [name, setName] = useState("");
 
   const add = useMutation({
     mutationFn: () => addPlayer({ data: { player_name: name } }),
     onSuccess: () => {
       setName("");
-      qc.invalidateQueries({ queryKey: ["players"] });
+      qc.invalidateQueries({ queryKey: qk.players.all });
       toast.success("Player added");
     },
     onError: (e: any) => toast.error(e.message),
   });
   const remove = useMutation({
     mutationFn: (id: string) => removePlayer({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["players"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.players.all }),
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -335,21 +336,21 @@ function PlayersSection() {
 
 function CoachesSection() {
   const qc = useQueryClient();
-  const { data: coaches = [] } = useQuery({ queryKey: ["coaches"], queryFn: () => listCoaches() });
+  const { data: coaches = [] } = useQuery({ queryKey: qk.coaches.all, queryFn: () => listCoaches() });
   const [name, setName] = useState("");
 
   const add = useMutation({
     mutationFn: () => addCoach({ data: { coach_name: name } }),
     onSuccess: () => {
       setName("");
-      qc.invalidateQueries({ queryKey: ["coaches"] });
+      qc.invalidateQueries({ queryKey: qk.coaches.all });
       toast.success("Coach added");
     },
     onError: (e: any) => toast.error(e.message),
   });
   const remove = useMutation({
     mutationFn: (id: string) => removeCoach({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["coaches"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.coaches.all }),
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -418,7 +419,7 @@ type PendingAttr = {
 function AttributesSection() {
   const qc = useQueryClient();
   const { data: players = [] } = useQuery({
-    queryKey: ["players"],
+    queryKey: qk.players.all,
     queryFn: () => listPlayers(),
   });
   const [pending, setPending] = useState<PendingAttr | null>(null);
@@ -428,8 +429,8 @@ function AttributesSection() {
       updatePlayerAttribute({ data: v }),
     onSuccess: () => {
       toast.success("Baseline updated");
-      qc.invalidateQueries({ queryKey: ["players"] });
-      qc.invalidateQueries({ queryKey: ["audit-log"] });
+      qc.invalidateQueries({ queryKey: qk.players.all });
+      qc.invalidateQueries({ queryKey: qk.auditLog });
       setPending(null);
     },
     onError: (e: any) => toast.error(e.message),
@@ -557,13 +558,13 @@ function AttributesSection() {
 
 function CompletionTrackerSection() {
   const { data: weeks } = useQuery({
-    queryKey: ["match-weeks"],
+    queryKey: qk.sessions.matchWeeks,
     queryFn: () => listMatchWeeks(),
   });
   const [selected, setSelected] = useState<string | null>(null);
   const activeId = selected ?? weeks?.weeks?.[0]?.id ?? null;
   const { data: tracker } = useQuery({
-    queryKey: ["week-completion", activeId],
+    queryKey: qk.sessions.weekCompletion.detail(activeId),
     queryFn: () => getWeekCompletion({ data: { session_id: activeId! } }),
     enabled: !!activeId,
   });
@@ -631,7 +632,7 @@ function CompletionTrackerSection() {
 
 function AuditLogSection() {
   const { data: rows = [] } = useQuery({
-    queryKey: ["audit-log"],
+    queryKey: qk.auditLog,
     queryFn: () => listAuditLog({ data: { limit: 50 } }),
   });
 

@@ -10,12 +10,13 @@ export const Route = createFileRoute("/_authenticated/match-summary/$sessionId")
 });
 
 import { SKILLS } from "@/lib/skills";
+import { qk } from "@/lib/query-keys";
 
 function MatchSummaryPage() {
   const { sessionId } = Route.useParams();
   const router = useRouter();
   const { data, isLoading } = useQuery({
-    queryKey: ["match-summary", sessionId],
+    queryKey: qk.sessions.matchSummary(sessionId),
     queryFn: () => getMatchSummary({ data: { session_id: sessionId } }),
   });
 

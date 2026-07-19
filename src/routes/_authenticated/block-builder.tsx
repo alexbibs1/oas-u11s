@@ -46,7 +46,7 @@ function BlockBuilderPage() {
 function BlockList({ onCreate, onEdit }: { onCreate: () => void; onEdit: (id: string) => void }) {
   const qc = useQueryClient();
   const { data: blocks = [], isLoading } = useQuery({
-    queryKey: ["blocks-meta"],
+    queryKey: qk.blocks.meta,
     queryFn: () => listBlocksWithMeta(),
   });
 
@@ -54,8 +54,8 @@ function BlockList({ onCreate, onEdit }: { onCreate: () => void; onEdit: (id: st
     mutationFn: (id: string) => setActiveBlock({ data: { id } }),
     onSuccess: () => {
       toast.success("Block set active");
-      qc.invalidateQueries({ queryKey: ["blocks-meta"] });
-      qc.invalidateQueries({ queryKey: ["blocks"] });
+      qc.invalidateQueries({ queryKey: qk.blocks.meta });
+      qc.invalidateQueries({ queryKey: qk.blocks.all });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -121,6 +121,7 @@ function BlockList({ onCreate, onEdit }: { onCreate: () => void; onEdit: (id: st
 }
 
 import { SKILLS as SKILL_DEFS, ATTRIBUTES as ATTR_DEFS, SKILL_KEYS } from "@/lib/skills";
+import { qk } from "@/lib/query-keys";
 
 const SKILLS = SKILL_KEYS;
 type SkillKey = (typeof SKILL_KEYS)[number];
@@ -135,7 +136,7 @@ type GroupState = { coach_ids: string[]; player_ids: string[] };
 function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () => void }) {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({
-    queryKey: ["block-builder", blockId],
+    queryKey: qk.blocks.detail(blockId),
     queryFn: () => getBlockBuilderData({ data: { block_id: blockId } }),
   });
 
@@ -290,8 +291,9 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
       }),
     onSuccess: () => {
       toast.success("Block saved");
-      qc.invalidateQueries({ queryKey: ["blocks-meta"] });
-      qc.invalidateQueries({ queryKey: ["blocks"] });
+      qc.invalidateQueries({ queryKey: qk.blocks.meta });
+      qc.invalidateQueries({ queryKey: qk.blocks.all });
+      qc.invalidateQueries({ queryKey: qk.blocks.detail(blockId) });
       onDone();
     },
     onError: (e: any) => toast.error(e.message),

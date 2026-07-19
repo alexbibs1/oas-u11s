@@ -5,6 +5,7 @@ import { listGroupsForBlock } from "@/lib/match/match.functions";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDateLong } from "@/lib/dates";
+import { qk } from "@/lib/query-keys";
 
 export const Route = createFileRoute("/_authenticated/session-info/$sessionId")({
   component: SessionInfoPage,
@@ -14,11 +15,11 @@ function SessionInfoPage() {
   const { sessionId } = Route.useParams();
   const router = useRouter();
   const { data: session } = useQuery({
-    queryKey: ["session", sessionId],
+    queryKey: qk.sessions.detail(sessionId),
     queryFn: () => getSession({ data: { id: sessionId } }),
   });
   const { data: groups = [] } = useQuery({
-    queryKey: ["groups", session?.block_id],
+    queryKey: qk.groups.forBlock(session?.block_id ?? ""),
     queryFn: () => listGroupsForBlock({ data: { block_id: session!.block_id } }),
     enabled: !!session?.block_id,
   });

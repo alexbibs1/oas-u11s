@@ -61,11 +61,12 @@ function startOfWeekMon(d: Date) {
 }
 
 import { formatDateShort } from "@/lib/dates";
+import { qk } from "@/lib/query-keys";
 
 function CalendarPage() {
-  const { data: me } = useQuery({ queryKey: ["me"], queryFn: () => getMyRole() });
+  const { data: me } = useQuery({ queryKey: qk.me, queryFn: () => getMyRole() });
   const { data: sessions = [], isLoading } = useQuery({
-    queryKey: ["all-sessions"],
+    queryKey: qk.sessions.list,
     queryFn: () => listAllSessions(),
   });
 
@@ -314,7 +315,7 @@ function SessionDialog({
   session: Session | null;
 }) {
   const qc = useQueryClient();
-  const { data: blocks = [] } = useQuery({ queryKey: ["blocks"], queryFn: () => listBlocks() });
+  const { data: blocks = [] } = useQuery({ queryKey: qk.blocks.all, queryFn: () => listBlocks() });
 
   const [blockId, setBlockId] = useState(session?.block_id ?? "");
   const [date, setDate] = useState(session?.session_date ?? "");
@@ -353,8 +354,8 @@ function SessionDialog({
       }),
     onSuccess: () => {
       toast.success("Session added");
-      qc.invalidateQueries({ queryKey: ["all-sessions"] });
-      qc.invalidateQueries({ queryKey: ["match-sessions"] });
+      qc.invalidateQueries({ queryKey: qk.sessions.list });
+      qc.invalidateQueries({ queryKey: qk.sessions.matchList });
       onClose();
     },
     onError: (e: any) => toast.error(e.message),
@@ -375,8 +376,8 @@ function SessionDialog({
       }),
     onSuccess: () => {
       toast.success("Session updated");
-      qc.invalidateQueries({ queryKey: ["all-sessions"] });
-      qc.invalidateQueries({ queryKey: ["match-sessions"] });
+      qc.invalidateQueries({ queryKey: qk.sessions.list });
+      qc.invalidateQueries({ queryKey: qk.sessions.matchList });
       onClose();
     },
     onError: (e: any) => toast.error(e.message),
@@ -386,8 +387,8 @@ function SessionDialog({
     mutationFn: () => deleteSession({ data: { id: session!.id } }),
     onSuccess: () => {
       toast.success("Session deleted");
-      qc.invalidateQueries({ queryKey: ["all-sessions"] });
-      qc.invalidateQueries({ queryKey: ["match-sessions"] });
+      qc.invalidateQueries({ queryKey: qk.sessions.list });
+      qc.invalidateQueries({ queryKey: qk.sessions.matchList });
       onClose();
     },
     onError: (e: any) => toast.error(e.message),
