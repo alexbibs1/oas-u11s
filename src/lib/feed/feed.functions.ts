@@ -211,14 +211,32 @@ export const getHomeSummary = createServerFn({ method: "GET" })
     const sb = context.supabase;
     const today = new Date().toISOString().slice(0, 10);
 
-    const { data: block } = await sb
-      .from("blocks")
-      .select("id, name, block_number, start_date, end_date, is_active")
-      .eq("is_active", true)
-      .order("block_number", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const [blockRes, roleRes, nextSessRes, feedRes] = await Promise.all([
+      sb.from("blocks")
+        .select("id, name, block_number, start_date, end_date, is_active")
+        .eq("is_active", true)
+        .order("block_number", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      sb.from("user_roles").select("coach_id").eq("user_id", context.userId),
+      sb.from("sessions")
+        .select("id, session_date, session_type, opponent, venue")
+        .gte("session_date", today)
+        .order("session_date", { ascending: true })
+        .limit(1)
+        .maybeSingle(),
+      sb.from("feed_posts")
+        .select(
+          "id, content, coach_name, player_id, is_player_note, created_at, players:player_id ( player_name )",
+        )
+        .order("created_at", { ascending: false })
+        .limit(5),
+    ]);
 
+    const block = blockRes.data;
+    const roleRow = roleRes.data;
+    const nextSess = nextSessRes.data;
+    const feed = feedRes.data;
     let myGroup: { id: string; group_number: number; coach_names: string[] } | null = null;
     let otherGroups: Array<{
       id: string;
@@ -226,12 +244,8 @@ export const getHomeSummary = createServerFn({ method: "GET" })
       coach_names: string[];
       player_count: number;
     }> = [];
-    let myCoachId: string | null = null;
-    const { data: roleRow } = await sb
-      .from("user_roles")
-      .select("coach_id")
-      .eq("user_id", context.userId);
-    myCoachId = (roleRow ?? []).find((r: any) => r.coach_id)?.coach_id ?? null;
+    const myCoachId: string | null =
+      (roleRow ?? []).find((r: any) => r.coach_id)?.coach_id ?? null;
 
     if (block) {
       const { data: blockGroups } = await sb
