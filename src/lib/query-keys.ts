@@ -33,6 +33,7 @@ export const qk = {
     rosterForWeek: (sessionId: string, groupId: string) => ["group-roster-week", sessionId, groupId] as const,
   },
   match: {
+    contextForSession: (sessionId: string) => ["match-ctx", sessionId] as const,
     context: (sessionId: string, groupId: string) => ["match-ctx", sessionId, groupId] as const,
   },
   feed: {
