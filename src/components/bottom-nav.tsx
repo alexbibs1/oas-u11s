@@ -28,6 +28,7 @@ export function BottomNav() {
           <li key={to} className="flex-1">
             <Link
               to={to}
+              replace
               activeProps={{ className: "text-primary" }}
               inactiveProps={{ className: "text-muted-foreground" }}
               className="flex flex-col items-center gap-1 px-2 py-3 text-[11px] font-medium transition-colors hover:text-primary"
