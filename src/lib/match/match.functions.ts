@@ -165,23 +165,55 @@ export const saveRegister = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const supabase = context.supabase;
-    // Skip implicit-present entries — override rows only for absent or moved
-    const rows = data.entries
-      .filter((e) => e.status !== "present")
-      .map((e) => ({
-        session_id: data.session_id,
-        player_id: e.player_id,
-        override_group_id:
-          e.status === "absent"
-            ? null
-            : e.status === "move"
-              ? (e.move_to_group_id ?? null)
-              : null,
-        created_by: context.userId,
-      }));
 
-    // Remove existing overrides for all submitted players in this session, then insert overrides
+    // Fetch current overrides for all submitted players so we can detect
+    // moved-in players (their current override targets this group) and
+    // preserve their override when they're marked "present".
     const playerIds = data.entries.map((e) => e.player_id);
+    const { data: currentOverrides } = await supabase
+      .from("session_player_overrides")
+      .select("player_id, override_group_id")
+      .eq("session_id", data.session_id)
+      .in("player_id", playerIds);
+    const currentByPid = new Map(
+      (currentOverrides ?? []).map((o: any) => [o.player_id, o]),
+    );
+
+    const rows = data.entries
+      .map((e) => {
+        const current = currentByPid.get(e.player_id);
+        const isMovedIn =
+          current && (current as any).override_group_id === data.group_id;
+
+        if (e.status === "present") {
+          if (isMovedIn) {
+            // Moved-in player marked present — keep their override so they
+            // stay in this group.
+            return {
+              session_id: data.session_id,
+              player_id: e.player_id,
+              override_group_id: data.group_id,
+              created_by: context.userId,
+            };
+          }
+          // Default-roster player marked present — no override needed.
+          return null;
+        }
+
+        return {
+          session_id: data.session_id,
+          player_id: e.player_id,
+          override_group_id:
+            e.status === "absent"
+              ? null
+              : e.status === "move"
+                ? (e.move_to_group_id ?? null)
+                : null,
+          created_by: context.userId,
+        };
+      })
+      .filter(Boolean) as any[];
+
     if (playerIds.length) {
       const { error: delErr } = await supabase
         .from("session_player_overrides")
