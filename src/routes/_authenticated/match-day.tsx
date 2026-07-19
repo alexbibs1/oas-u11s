@@ -221,6 +221,7 @@ function RegisterStep({
   const { data: ctx, isLoading } = useQuery({
     queryKey: qk.match.context(session.id, group.id),
     queryFn: () => getMatchDayContext({ data: { session_id: session.id, group_id: group.id } }),
+    staleTime: 0,
   });
   const { data: allGroups = [] } = useQuery({
     queryKey: qk.groups.forBlock(session.block_id),
