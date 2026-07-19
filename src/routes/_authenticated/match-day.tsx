@@ -7,13 +7,11 @@ import {
   listGroupsForBlock,
   saveRegister,
   submitRatings,
-  unlockRegister,
 } from "@/lib/match/match.functions";
-import { getMyRole } from "@/lib/auth/roles.functions";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { ChevronLeft, X, ArrowRightLeft, Lock } from "lucide-react";
+import { ChevronLeft, X, ArrowRightLeft } from "lucide-react";
 import { formatDateLong } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/match-day")({
@@ -217,7 +215,6 @@ function RegisterStep({
   onProceed: () => void;
 }) {
   const qc = useQueryClient();
-  const { data: me } = useQuery({ queryKey: qk.me, queryFn: () => getMyRole() });
   const { data: ctx, isLoading } = useQuery({
     queryKey: qk.match.context(session.id, group.id),
     queryFn: () => getMatchDayContext({ data: { session_id: session.id, group_id: group.id } }),
@@ -273,40 +270,12 @@ function RegisterStep({
     onError: (e: any) => toast.error(e.message),
   });
 
-  const unlock = useMutation({
-    mutationFn: () => unlockRegister({ data: { session_id: session.id, group_id: group.id } }),
-    onSuccess: () => {
-      toast.success("Register unlocked");
-      qc.invalidateQueries({ queryKey: qk.match.contextForSession(session.id) });
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
   if (isLoading || !ctx) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
-  const locked = ctx.locked;
   const otherGroups = (allGroups as any[]).filter((g) => g.id !== group.id);
 
   return (
     <div className="space-y-3">
-      {locked && (
-        <div className="flex items-center justify-between rounded-lg border border-accent/40 bg-accent/10 p-3 text-xs">
-          <span className="flex items-center gap-2">
-            <Lock className="h-4 w-4" /> Register locked
-          </span>
-          <div className="flex gap-2">
-            {me?.isBlockBuilder && (
-              <Button size="sm" variant="outline" onClick={() => unlock.mutate()}>
-                Unlock
-              </Button>
-            )}
-            <Button size="sm" onClick={onProceed}>
-              Proceed
-            </Button>
-          </div>
-        </div>
-      )}
-
       {(() => {
         const renderRow = (p: any) => {
           const s = state[p.id] ?? { status: "present" as RegStatus };
@@ -318,7 +287,6 @@ function RegisterStep({
                   <PillBtn
                     active={s.status === "absent"}
                     color="grey"
-                    disabled={locked}
                     onClick={() =>
                       setState({
                         ...state,
@@ -332,7 +300,6 @@ function RegisterStep({
                   <PillBtn
                     active={s.status === "move"}
                     color="amber"
-                    disabled={locked}
                     onClick={() =>
                       setState({
                         ...state,
@@ -352,7 +319,6 @@ function RegisterStep({
                   {otherGroups.map((g) => (
                     <button
                       key={g.id}
-                      disabled={locked}
                       onClick={() =>
                         setState({ ...state, [p.id]: { status: "move", move_to: g.id } })
                       }
@@ -388,11 +354,9 @@ function RegisterStep({
         );
       })()}
 
-      {!locked && (
-        <Button className="w-full" disabled={save.isPending} onClick={() => save.mutate()}>
-          {save.isPending ? "Saving…" : "Confirm Register"}
-        </Button>
-      )}
+      <Button className="w-full" disabled={save.isPending} onClick={() => save.mutate()}>
+        {save.isPending ? "Saving…" : "Confirm Register"}
+      </Button>
     </div>
   );
 }

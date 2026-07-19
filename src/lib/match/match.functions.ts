@@ -200,29 +200,15 @@ export const saveRegister = createServerFn({ method: "POST" })
 export const unlockRegister = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ session_id: z.string().uuid(), group_id: z.string().uuid() }))
-  .handler(async ({ context, data }) => {
+  .handler(async ({ context }) => {
     const { data: isAdmin } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
       _role: "block_builder",
     });
-    if (!isAdmin) throw new Error("Forbidden");
-
-    // Get default roster ids
-    const { data: roster } = await context.supabase
-      .from("group_players")
-      .select("player_id")
-      .eq("group_id", data.group_id);
-    const defaultIds = (roster ?? []).map((r: any) => r.player_id);
-
-    // Delete overrides that target this group OR belong to a default player of this group
-    const { error } = await context.supabase
-      .from("session_player_overrides")
-      .delete()
-      .eq("session_id", data.session_id)
-      .or(
-        `override_group_id.eq.${data.group_id}${defaultIds.length ? `,player_id.in.(${defaultIds.join(",")})` : ""}`,
-      );
-    if (error) throw new Error(error.message);
+    if (!isAdmin) throw new Error("Forbidden: block_builder role required");
+    // No-op: the "lock" is a UI concept. Coaches can re-save the register at
+    // any time; saveRegister's delete-then-insert handles updates. We do NOT
+    // delete override rows here — that would undo all player moves.
     return { ok: true };
   });
 
