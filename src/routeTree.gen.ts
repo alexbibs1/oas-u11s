@@ -23,6 +23,7 @@ import { Route as AuthenticatedSquadIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedSquadPlayerIdRouteImport } from './routes/_authenticated/squad/$playerId'
 import { Route as AuthenticatedSessionInfoSessionIdRouteImport } from './routes/_authenticated/session-info/$sessionId'
 import { Route as AuthenticatedMatchSummarySessionIdRouteImport } from './routes/_authenticated/match-summary/$sessionId'
+import { Route as AuthenticatedGroupGroupIdRouteImport } from './routes/_authenticated/group/$groupId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -97,6 +98,12 @@ const AuthenticatedMatchSummarySessionIdRoute =
     path: '/match-summary/$sessionId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedGroupGroupIdRoute =
+  AuthenticatedGroupGroupIdRouteImport.update({
+    id: '/group/$groupId',
+    path: '/group/$groupId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/home': typeof AuthenticatedHomeRoute
   '/match-day': typeof AuthenticatedMatchDayRoute
   '/ratings': typeof AuthenticatedRatingsRoute
+  '/group/$groupId': typeof AuthenticatedGroupGroupIdRoute
   '/match-summary/$sessionId': typeof AuthenticatedMatchSummarySessionIdRoute
   '/session-info/$sessionId': typeof AuthenticatedSessionInfoSessionIdRoute
   '/squad/$playerId': typeof AuthenticatedSquadPlayerIdRoute
@@ -123,6 +131,7 @@ export interface FileRoutesByTo {
   '/home': typeof AuthenticatedHomeRoute
   '/match-day': typeof AuthenticatedMatchDayRoute
   '/ratings': typeof AuthenticatedRatingsRoute
+  '/group/$groupId': typeof AuthenticatedGroupGroupIdRoute
   '/match-summary/$sessionId': typeof AuthenticatedMatchSummarySessionIdRoute
   '/session-info/$sessionId': typeof AuthenticatedSessionInfoSessionIdRoute
   '/squad/$playerId': typeof AuthenticatedSquadPlayerIdRoute
@@ -140,6 +149,7 @@ export interface FileRoutesById {
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/match-day': typeof AuthenticatedMatchDayRoute
   '/_authenticated/ratings': typeof AuthenticatedRatingsRoute
+  '/_authenticated/group/$groupId': typeof AuthenticatedGroupGroupIdRoute
   '/_authenticated/match-summary/$sessionId': typeof AuthenticatedMatchSummarySessionIdRoute
   '/_authenticated/session-info/$sessionId': typeof AuthenticatedSessionInfoSessionIdRoute
   '/_authenticated/squad/$playerId': typeof AuthenticatedSquadPlayerIdRoute
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/match-day'
     | '/ratings'
+    | '/group/$groupId'
     | '/match-summary/$sessionId'
     | '/session-info/$sessionId'
     | '/squad/$playerId'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/match-day'
     | '/ratings'
+    | '/group/$groupId'
     | '/match-summary/$sessionId'
     | '/session-info/$sessionId'
     | '/squad/$playerId'
@@ -188,6 +200,7 @@ export interface FileRouteTypes {
     | '/_authenticated/home'
     | '/_authenticated/match-day'
     | '/_authenticated/ratings'
+    | '/_authenticated/group/$groupId'
     | '/_authenticated/match-summary/$sessionId'
     | '/_authenticated/session-info/$sessionId'
     | '/_authenticated/squad/$playerId'
@@ -300,6 +313,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMatchSummarySessionIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/group/$groupId': {
+      id: '/_authenticated/group/$groupId'
+      path: '/group/$groupId'
+      fullPath: '/group/$groupId'
+      preLoaderRoute: typeof AuthenticatedGroupGroupIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -311,6 +331,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedMatchDayRoute: typeof AuthenticatedMatchDayRoute
   AuthenticatedRatingsRoute: typeof AuthenticatedRatingsRoute
+  AuthenticatedGroupGroupIdRoute: typeof AuthenticatedGroupGroupIdRoute
   AuthenticatedMatchSummarySessionIdRoute: typeof AuthenticatedMatchSummarySessionIdRoute
   AuthenticatedSessionInfoSessionIdRoute: typeof AuthenticatedSessionInfoSessionIdRoute
   AuthenticatedSquadPlayerIdRoute: typeof AuthenticatedSquadPlayerIdRoute
@@ -325,6 +346,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedMatchDayRoute: AuthenticatedMatchDayRoute,
   AuthenticatedRatingsRoute: AuthenticatedRatingsRoute,
+  AuthenticatedGroupGroupIdRoute: AuthenticatedGroupGroupIdRoute,
   AuthenticatedMatchSummarySessionIdRoute:
     AuthenticatedMatchSummarySessionIdRoute,
   AuthenticatedSessionInfoSessionIdRoute:
