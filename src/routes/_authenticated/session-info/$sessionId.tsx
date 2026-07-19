@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getSession } from "@/lib/sessions/sessions.functions";
 import { listGroupsForBlock } from "@/lib/match/match.functions";
@@ -53,15 +53,17 @@ function SessionInfoPage() {
         ) : (
           <ul className="space-y-2">
             {groups.map((g: any) => (
-              <li
+              <Link
                 key={g.id}
-                className="flex items-center justify-between rounded border bg-background px-4 py-3"
+                to="/group/$groupId"
+                params={{ groupId: g.id }}
+                className="flex items-center justify-between rounded border bg-background px-4 py-3 transition-colors hover:border-primary/40 hover:bg-secondary"
               >
                 <span className="font-semibold">Group {g.group_number}</span>
                 <span className="text-xs text-muted-foreground">
                   {g.coaches.length ? g.coaches.join(", ") : "No coaches assigned"}
                 </span>
-              </li>
+              </Link>
             ))}
           </ul>
         )}
