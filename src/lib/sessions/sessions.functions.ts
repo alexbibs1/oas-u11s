@@ -2,6 +2,84 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+export const getBlockSlots = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ block_id: z.string().uuid() }))
+  .handler(async ({ context, data }) => {
+    const sb = context.supabase;
+    const { data: block, error: bErr } = await sb
+      .from("blocks")
+      .select("id, name, block_number, start_date, end_date, is_active")
+      .eq("id", data.block_id)
+      .single();
+    if (bErr) throw new Error(bErr.message);
+
+    const { data: existingSessions, error: sErr } = await sb
+      .from("sessions")
+      .select("id, session_date, session_type, week_number, block_id, opponent, venue")
+      .eq("block_id", data.block_id)
+      .order("session_date", { ascending: true });
+    if (sErr) throw new Error(sErr.message);
+
+    type Slot = {
+      date: string;
+      dayOfWeek: number;
+      session: any | null;
+    };
+
+    const fmt = (d: Date) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const da = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${da}`;
+    };
+
+    const slots: Slot[] = [];
+    if (block.start_date && block.end_date) {
+      const startDate = new Date(block.start_date + "T00:00:00");
+      const endDate = new Date(block.end_date + "T00:00:00");
+      const cursor = new Date(startDate);
+      while (cursor <= endDate) {
+        const dow = cursor.getDay();
+        if (dow === 0 || dow === 3) {
+          slots.push({ date: fmt(cursor), dayOfWeek: dow, session: null });
+        }
+        cursor.setDate(cursor.getDate() + 1);
+      }
+    }
+
+    const sessionByDate = new Map((existingSessions ?? []).map((s: any) => [s.session_date, s]));
+    // Add off-day existing sessions as extra slots
+    for (const s of existingSessions ?? []) {
+      if (!slots.find((sl) => sl.date === (s as any).session_date)) {
+        const d = new Date((s as any).session_date + "T00:00:00");
+        slots.push({ date: (s as any).session_date, dayOfWeek: d.getDay(), session: s });
+      }
+    }
+    for (const slot of slots) {
+      const existing = sessionByDate.get(slot.date);
+      if (existing) slot.session = existing;
+    }
+    slots.sort((a, b) => a.date.localeCompare(b.date));
+
+    // Group by Mon-start weeks
+    const weekMap = new Map<string, Slot[]>();
+    for (const slot of slots) {
+      const d = new Date(slot.date + "T00:00:00");
+      const day = d.getDay();
+      const diff = (day + 6) % 7;
+      d.setDate(d.getDate() - diff);
+      const ws = fmt(d);
+      if (!weekMap.has(ws)) weekMap.set(ws, []);
+      weekMap.get(ws)!.push(slot);
+    }
+    const weeks = Array.from(weekMap.keys())
+      .sort()
+      .map((ws) => ({ weekStart: ws, items: weekMap.get(ws)! }));
+
+    return { block, weeks };
+  });
+
 export const listMatchSessions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
