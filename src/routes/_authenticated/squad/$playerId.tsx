@@ -73,12 +73,12 @@ function PlayerProfile() {
     }
     const recent = weeklyRows.slice(0, 3);
     for (const s of SKILLS) {
-      const vals = recent.map((r: any) => r[s.key]).filter((v: unknown) => v != null);
+      const vals = recent.map((r: any) => r[s.key] as number).filter((v): v is number => v != null);
       if (vals.length === 0) {
         trends[s.key] = { direction: "stable", delta: 0 };
         continue;
       }
-      const avg = vals.reduce((a: number, b: number) => a + b, 0) / vals.length;
+      const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
       const baseline = (player as PlayerDto)[s.key] as number;
       const delta = Math.round(avg - baseline);
       trends[s.key] = {
