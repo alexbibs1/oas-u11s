@@ -22,6 +22,7 @@ export const qk = {
     detail: (id: string) => ["session", id] as const,
     matchSummary: (sessionId: string) => ["match-summary", sessionId] as const,
     matchWeeks: ["match-weeks"] as const,
+    blockSlots: (blockId: string) => ["block-slots", blockId] as const,
     weekCompletion: {
       all: ["week-completion"] as const,
       detail: (sessionId: string | null) => ["week-completion", sessionId] as const,
