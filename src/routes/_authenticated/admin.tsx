@@ -419,7 +419,7 @@ type PendingAttr = {
   playerName: string;
   attribute: AttrKey;
   attributeLabel: string;
-  oldValue: number | null;
+  oldValue: number;
   newValue: number;
 };
 
@@ -429,46 +429,56 @@ function AttributesSection() {
     queryKey: qk.players.all,
     queryFn: () => listPlayers(),
   });
-  const [pending, setPending] = useState<PendingAttr | null>(null);
+  const [pendingChanges, setPendingChanges] = useState<PendingAttr[]>([]);
+  const [showReview, setShowReview] = useState(false);
 
   const update = useMutation({
     mutationFn: (v: { id: string; attribute: AttrKey; value: number }) =>
       updatePlayerAttribute({ data: v }),
-    onSuccess: () => {
-      toast.success("Baseline updated");
-      qc.invalidateQueries({ queryKey: qk.players.all });
-      qc.invalidateQueries({ queryKey: qk.auditLog });
-      setPending(null);
-    },
     onError: (e: any) => toast.error(e.message),
   });
 
   const renderRow = (p: any, def: { key: string; label: string }) => {
-    const current = p[def.key] as number | undefined;
+    const current = (p[def.key] as number | undefined) ?? 0;
+    const pendingChange = pendingChanges.find(
+      (c) => c.playerId === p.id && c.attribute === (def.key as AttrKey),
+    );
+    const displayValue = pendingChange?.newValue ?? current;
+    const isChanged = !!pendingChange;
     return (
       <div key={def.key} className="flex items-center justify-between gap-2">
         <span className="w-24 text-xs text-muted-foreground">{def.label}</span>
         <div className="flex gap-1">
           {[1, 2, 3, 4, 5].map((n) => {
-            const active = current === n;
+            const active = displayValue === n;
             return (
               <button
                 key={n}
                 type="button"
                 onClick={() => {
-                  if (active) return;
-                  setPending({
-                    playerId: p.id,
-                    playerName: p.player_name,
-                    attribute: def.key as AttrKey,
-                    attributeLabel: def.label,
-                    oldValue: current ?? null,
-                    newValue: n,
+                  setPendingChanges((prev) => {
+                    const filtered = prev.filter(
+                      (c) => !(c.playerId === p.id && c.attribute === (def.key as AttrKey)),
+                    );
+                    if (current === n) return filtered;
+                    return [
+                      ...filtered,
+                      {
+                        playerId: p.id,
+                        playerName: p.player_name,
+                        attribute: def.key as AttrKey,
+                        attributeLabel: def.label,
+                        oldValue: current,
+                        newValue: n,
+                      },
+                    ];
                   });
                 }}
                 className={`h-7 w-7 rounded-md border text-xs font-semibold transition ${
                   active
-                    ? "border-primary bg-primary text-primary-foreground"
+                    ? isChanged
+                      ? "border-amber-500 bg-amber-500 text-white"
+                      : "border-primary bg-primary text-primary-foreground"
                     : "bg-background hover:border-primary/50"
                 }`}
               >
@@ -481,16 +491,40 @@ function AttributesSection() {
     );
   };
 
+  const confirmAll = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      for (const change of pendingChanges) {
+        await update.mutateAsync({
+          id: change.playerId,
+          attribute: change.attribute,
+          value: change.newValue,
+        });
+      }
+      toast.success(
+        `${pendingChanges.length} baseline change${pendingChanges.length === 1 ? "" : "s"} saved`,
+      );
+      setPendingChanges([]);
+      setShowReview(false);
+      qc.invalidateQueries({ queryKey: qk.players.all });
+      qc.invalidateQueries({ queryKey: qk.auditLog });
+    } catch {
+      toast.error("Some changes failed to save");
+      qc.invalidateQueries({ queryKey: qk.players.all });
+      qc.invalidateQueries({ queryKey: qk.auditLog });
+    }
+  };
+
   return (
     <div className="rounded-lg border bg-card p-5">
       <div className="mb-1 flex items-center justify-between">
         <h3 className="text-sm font-semibold">Baselines</h3>
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          Confirmation required
+          Batch confirmation
         </span>
       </div>
       <p className="mb-4 text-xs text-muted-foreground">
-        Periodic baseline adjustment by admins. Every change is confirmed and audited.
+        Edit freely; review and confirm all changes at once. Every saved change is audited.
       </p>
       <ul className="space-y-3">
         {players.map((p: any) => (
@@ -510,51 +544,57 @@ function AttributesSection() {
         ))}
       </ul>
 
-      <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
+      {pendingChanges.length > 0 && (
+        <div className="fixed bottom-20 left-1/2 z-40 w-[min(95vw,640px)] -translate-x-1/2 rounded-xl border border-amber-500 bg-card p-3 shadow-lg">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold">
+              {pendingChanges.length} change{pendingChanges.length === 1 ? "" : "s"} pending
+            </p>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setPendingChanges([])}>
+                Discard
+              </Button>
+              <Button size="sm" onClick={() => setShowReview(true)}>
+                Review
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <AlertDialog open={showReview} onOpenChange={(o) => !update.isPending && setShowReview(o)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm baseline change</AlertDialogTitle>
+            <AlertDialogTitle>Confirm baseline changes</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-sm">
                 <p>
-                  <span className="font-semibold">{pending?.playerName}</span> ·{" "}
-                  {pending?.attributeLabel}
+                  The following {pendingChanges.length} change
+                  {pendingChanges.length === 1 ? "" : "s"} will be saved and recorded in the audit
+                  log:
                 </p>
-                <p>
-                  From <span className="font-semibold">{pending?.oldValue ?? "—"}</span> to{" "}
-                  <span className="font-semibold text-primary">{pending?.newValue}</span>
-                </p>
-                {pending?.attribute === "repeatability" && pending && (
-                  <p className="text-xs italic text-muted-foreground">
-                    {REPEATABILITY_DESCRIPTORS[pending.newValue]}
-                  </p>
-                )}
-                {pending && SKILLS.some((s) => s.key === pending.attribute) && (
-                  <p className="text-xs italic text-muted-foreground">
-                    {SKILL_DESCRIPTORS[pending.newValue]}
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  This change will be recorded in the audit log.
-                </p>
+                <ul className="max-h-60 space-y-1 overflow-auto rounded border bg-background p-2">
+                  {pendingChanges.map((c, i) => (
+                    <li key={i} className="flex items-center justify-between gap-2 text-xs">
+                      <span className="font-medium">{c.playerName}</span>
+                      <span className="text-muted-foreground">
+                        {c.attributeLabel}:{" "}
+                        <span className="font-semibold">{c.oldValue || "—"}</span>
+                        {" → "}
+                        <span className="font-semibold text-primary">{c.newValue}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={update.isPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={update.isPending}
-              onClick={(e) => {
-                e.preventDefault();
-                if (!pending) return;
-                update.mutate({
-                  id: pending.playerId,
-                  attribute: pending.attribute,
-                  value: pending.newValue,
-                });
-              }}
-            >
-              {update.isPending ? "Saving…" : "Confirm"}
+            <AlertDialogAction disabled={update.isPending} onClick={confirmAll}>
+              {update.isPending
+                ? "Saving…"
+                : `Confirm ${pendingChanges.length} change${pendingChanges.length === 1 ? "" : "s"}`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -562,6 +602,7 @@ function AttributesSection() {
     </div>
   );
 }
+
 
 function CompletionTrackerSection() {
   const { data: weeks } = useQuery({
