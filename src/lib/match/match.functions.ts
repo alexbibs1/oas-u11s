@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-import { SKILL_KEYS } from "@/lib/skills";
 
 export const getGroupDetail = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
