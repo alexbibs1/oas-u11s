@@ -2,8 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
 import {
-  listAllSessions,
   listBlocks,
+  getBlockSlots,
   createSession,
   updateSession,
   deleteSession,
@@ -28,20 +28,23 @@ import {
 } from "@/components/ui/select";
 import { Plus, Pencil, MapPin } from "lucide-react";
 import { toast } from "sonner";
+import { formatDateShort } from "@/lib/dates";
+import { qk } from "@/lib/query-keys";
+import { useConfirm } from "@/components/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/calendar")({
   component: CalendarPage,
 });
 
 const BLOCK_COLORS = [
-  "#003087", // navy
-  "#FFB81C", // gold
-  "#2E7D32", // green
-  "#C62828", // red
-  "#6A1B9A", // purple
-  "#00838F", // teal
-  "#EF6C00", // orange
-  "#455A64", // slate
+  "#003087",
+  "#FFB81C",
+  "#2E7D32",
+  "#C62828",
+  "#6A1B9A",
+  "#00838F",
+  "#EF6C00",
+  "#455A64",
 ];
 
 function blockColor(n: number | null | undefined) {
@@ -49,90 +52,53 @@ function blockColor(n: number | null | undefined) {
   return BLOCK_COLORS[(n - 1) % BLOCK_COLORS.length];
 }
 
-type Session = Awaited<ReturnType<typeof listAllSessions>>[number];
+type SlotSession = {
+  id: string;
+  session_date: string;
+  session_type: "training" | "match";
+  week_number: number | null;
+  block_id: string;
+  opponent: string | null;
+  venue: string | null;
+};
 
-function startOfWeekMon(d: Date) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  const day = x.getDay(); // 0 Sun..6 Sat
-  const diff = (day + 6) % 7; // days since Monday
-  x.setDate(x.getDate() - diff);
-  return x;
-}
-
-import { formatDateShort } from "@/lib/dates";
-import { qk } from "@/lib/query-keys";
-import { useConfirm } from "@/components/confirm-dialog";
+type Slot = {
+  date: string;
+  dayOfWeek: number;
+  session: SlotSession | null;
+};
 
 function CalendarPage() {
   const { data: me } = useQuery({ queryKey: qk.me, queryFn: () => getMyRole() });
-  const { data: sessions = [], isLoading } = useQuery({
-    queryKey: qk.sessions.list,
-    queryFn: () => listAllSessions(),
+  const { data: blocks = [], isLoading: blocksLoading } = useQuery({
+    queryKey: qk.blocks.all,
+    queryFn: () => listBlocks(),
   });
 
-  const [editing, setEditing] = useState<Session | null>(null);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<SlotSession | null>(null);
   const [creating, setCreating] = useState(false);
 
-  // Group sessions by (block_id, week start)
-  const grouped = useMemo(() => {
-    type WeekRow = {
-      key: string;
-      block_id: string;
-      block_name: string;
-      block_number: number | null;
-      weekStart: Date;
-      wed: Session | null;
-      sun: Session | null;
-    };
-    const map = new Map<string, WeekRow>();
-    for (const s of sessions) {
-      const d = new Date(s.session_date + "T00:00:00");
-      const ws = startOfWeekMon(d);
-      const key = `${s.block_id}|${ws.toISOString().slice(0, 10)}`;
-      let row = map.get(key);
-      if (!row) {
-        row = {
-          key,
-          block_id: s.block_id,
-          block_name: s.block_name,
-          block_number: s.block_number,
-          weekStart: ws,
-          wed: null,
-          sun: null,
-        };
-        map.set(key, row);
-      }
-      const dow = d.getDay();
-      if (dow === 0)
-        row.sun = s; // Sunday
-      else if (dow === 3)
-        row.wed = s; // Wednesday
-      else {
-        // Non-Wed/Sun: put on whichever slot is empty (treat as Wed pref)
-        if (!row.wed) row.wed = s;
-        else if (!row.sun) row.sun = s;
-      }
+  // Default to active block
+  useEffect(() => {
+    if (!selectedBlockId && blocks.length) {
+      const active = (blocks as any[]).find((b) => b.is_active);
+      setSelectedBlockId(active?.id ?? blocks[0].id);
     }
-    return Array.from(map.values()).sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime());
-  }, [sessions]);
+  }, [blocks, selectedBlockId]);
 
-  // Group rows by block for sectioned display
-  const byBlock = useMemo(() => {
-    const m = new Map<
-      string,
-      { block_name: string; block_number: number | null; rows: typeof grouped }
-    >();
-    for (const r of grouped) {
-      let b = m.get(r.block_id);
-      if (!b) {
-        b = { block_name: r.block_name, block_number: r.block_number, rows: [] };
-        m.set(r.block_id, b);
-      }
-      b.rows.push(r);
-    }
-    return Array.from(m.entries()).map(([block_id, v]) => ({ block_id, ...v }));
-  }, [grouped]);
+  const currentBlock: any = useMemo(
+    () => (blocks as any[]).find((b) => b.id === selectedBlockId) ?? null,
+    [blocks, selectedBlockId],
+  );
+
+  const { data: blockData, isLoading: slotsLoading } = useQuery({
+    queryKey: selectedBlockId ? qk.sessions.blockSlots(selectedBlockId) : ["block-slots", "none"],
+    queryFn: () => getBlockSlots({ data: { block_id: selectedBlockId! } }),
+    enabled: !!selectedBlockId,
+  });
+
+  const color = blockColor(currentBlock?.block_number);
 
   return (
     <main className="mx-auto max-w-2xl px-5 pt-8">
@@ -142,109 +108,280 @@ function CalendarPage() {
           <h1 className="mt-1 text-2xl font-bold text-primary">Calendar</h1>
         </div>
         {me?.isBlockBuilder && (
-          <Button onClick={() => setCreating(true)} size="sm">
+          <Button onClick={() => setCreating(true)} size="sm" variant="outline">
             <Plus className="h-4 w-4" /> Add Session
           </Button>
         )}
       </header>
 
-      {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-      {!isLoading && !sessions.length && (
+      {blocks.length > 0 && (
+        <div className="mb-5">
+          <Select value={selectedBlockId ?? ""} onValueChange={setSelectedBlockId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select block" />
+            </SelectTrigger>
+            <SelectContent>
+              {(blocks as any[]).map((b) => (
+                <SelectItem key={b.id} value={b.id}>
+                  {b.name ?? `Block ${b.block_number}`}
+                  {b.is_active ? " (Active)" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {(blocksLoading || slotsLoading) && (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      )}
+
+      {!blocksLoading && !blocks.length && (
         <p className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">
-          No sessions scheduled yet.
+          No blocks yet.
         </p>
       )}
 
-      <div className="space-y-8">
-        {byBlock.map((b) => {
-          const color = blockColor(b.block_number);
-          return (
-            <section key={b.block_id}>
-              <div className="mb-3 flex items-center gap-2">
-                <span
-                  className="inline-block h-3 w-3 rounded-full"
-                  style={{ backgroundColor: color }}
-                />
-                <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color }}>
-                  {b.block_name}
-                </h2>
-              </div>
-              <ul className="space-y-3">
-                {b.rows.map((r) => (
-                  <li
-                    key={r.key}
-                    className="rounded-lg border bg-card overflow-hidden"
-                    style={{ borderLeft: `4px solid ${color}` }}
-                  >
-                    <div className="px-4 pt-3 pb-1 text-[11px] uppercase tracking-wider text-muted-foreground">
-                      Week of{" "}
-                      {r.weekStart.toLocaleDateString(undefined, {
-                        day: "numeric",
-                        month: "short",
-                      })}
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-border/40">
-                      <SessionSlot
-                        label="Wed"
-                        session={r.wed}
+      {currentBlock && blockData && (
+        <section>
+          <div className="mb-3 flex items-center gap-2">
+            <span
+              className="inline-block h-3 w-3 rounded-full"
+              style={{ backgroundColor: color }}
+            />
+            <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color }}>
+              {currentBlock.name ?? `Block ${currentBlock.block_number}`}
+            </h2>
+          </div>
+
+          {blockData.weeks.length === 0 && (
+            <p className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">
+              This block has no date range set.
+            </p>
+          )}
+
+          <ul className="space-y-3">
+            {blockData.weeks.map((w: any) => {
+              const wsDate = new Date(w.weekStart + "T00:00:00");
+              const wed = (w.items as Slot[]).find((i) => i.dayOfWeek === 3) ?? null;
+              const sun = (w.items as Slot[]).find((i) => i.dayOfWeek === 0) ?? null;
+              const others = (w.items as Slot[]).filter(
+                (i) => i.dayOfWeek !== 0 && i.dayOfWeek !== 3,
+              );
+              return (
+                <li
+                  key={w.weekStart}
+                  className="rounded-lg border bg-card overflow-hidden"
+                  style={{ borderLeft: `4px solid ${color}` }}
+                >
+                  <div className="px-4 pt-3 pb-1 text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Week of{" "}
+                    {wsDate.toLocaleDateString(undefined, { day: "numeric", month: "short" })}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-border/40">
+                    <SlotCell
+                      label="Wed"
+                      slot={wed}
+                      blockId={currentBlock.id}
+                      color={color}
+                      canEdit={!!me?.isBlockBuilder}
+                      onEdit={(s) => setEditing(s)}
+                    />
+                    <SlotCell
+                      label="Sun"
+                      slot={sun}
+                      blockId={currentBlock.id}
+                      color={color}
+                      canEdit={!!me?.isBlockBuilder}
+                      onEdit={(s) => setEditing(s)}
+                    />
+                  </div>
+                  {others.map((o) => (
+                    <div key={o.date} className="border-t bg-card">
+                      <SlotCell
+                        label={new Date(o.date + "T00:00:00").toLocaleDateString(undefined, {
+                          weekday: "short",
+                        })}
+                        slot={o}
+                        blockId={currentBlock.id}
                         color={color}
                         canEdit={!!me?.isBlockBuilder}
                         onEdit={(s) => setEditing(s)}
                       />
-                      <SessionSlot
-                        label="Sun"
-                        session={r.sun}
-                        color={color}
-                        canEdit={!!me?.isBlockBuilder}
-                        onEdit={(s) => setEditing(s)}
-                      />
                     </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          );
-        })}
-      </div>
+                  ))}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       <div className="h-24" />
 
       {creating && (
-        <SessionDialog open={creating} onClose={() => setCreating(false)} session={null} />
+        <SessionDialog
+          open={creating}
+          onClose={() => setCreating(false)}
+          session={null}
+          defaultBlockId={selectedBlockId}
+        />
       )}
       {editing && (
-        <SessionDialog open={!!editing} onClose={() => setEditing(null)} session={editing} />
+        <SessionDialog
+          open={!!editing}
+          onClose={() => setEditing(null)}
+          session={editing}
+          defaultBlockId={editing.block_id}
+        />
       )}
     </main>
   );
 }
 
-function SessionSlot({
+function SlotCell({
   label,
-  session,
+  slot,
+  blockId,
   color,
   canEdit,
   onEdit,
 }: {
   label: string;
-  session: Session | null;
+  slot: Slot | null;
+  blockId: string;
   color: string;
   canEdit: boolean;
-  onEdit: (s: Session) => void;
+  onEdit: (s: SlotSession) => void;
 }) {
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [matchOpen, setMatchOpen] = useState(false);
+  const [opponent, setOpponent] = useState("");
+  const [venue, setVenue] = useState<"Home" | "Away" | "">("");
 
-  if (!session) {
+  const quickCreate = useMutation({
+    mutationFn: (payload: {
+      type: "training" | "match";
+      opponent?: string | null;
+      venue?: string | null;
+    }) =>
+      createSession({
+        data: {
+          block_id: blockId,
+          session_date: slot!.date,
+          session_type: payload.type,
+          week_number: null,
+          opponent: payload.opponent ?? null,
+          venue: payload.venue ?? null,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Session added");
+      qc.invalidateQueries({ queryKey: qk.sessions.blockSlots(blockId) });
+      qc.invalidateQueries({ queryKey: qk.sessions.list });
+      qc.invalidateQueries({ queryKey: qk.sessions.matchList });
+      setMatchOpen(false);
+      setOpponent("");
+      setVenue("");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  if (!slot) {
     return (
       <div className="bg-card p-4">
         <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
           {label}
         </div>
-        <p className="mt-1 text-sm text-muted-foreground/60">—</p>
+        <p className="mt-1 text-sm text-muted-foreground">—</p>
       </div>
     );
   }
 
+  if (!slot.session) {
+    const isSunday = slot.dayOfWeek === 0;
+    return (
+      <div className="bg-card p-4">
+        <div className="flex items-center justify-between">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {formatDateShort(slot.date)}
+          </div>
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
+            Not scheduled
+          </span>
+        </div>
+        {canEdit ? (
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={quickCreate.isPending}
+              onClick={() => quickCreate.mutate({ type: "training" })}
+            >
+              + Training
+            </Button>
+            {isSunday && (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={quickCreate.isPending}
+                onClick={() => setMatchOpen((v) => !v)}
+              >
+                + Match
+              </Button>
+            )}
+          </div>
+        ) : (
+          <p className="mt-1 text-sm text-muted-foreground/60">—</p>
+        )}
+        {matchOpen && (
+          <div className="mt-3 space-y-2 rounded-md border bg-muted/30 p-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Opponent</Label>
+              <Input
+                value={opponent}
+                onChange={(e) => setOpponent(e.target.value)}
+                placeholder="Team name"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Venue</Label>
+              <div className="flex gap-2">
+                {(["Home", "Away"] as const).map((v) => (
+                  <Button
+                    key={v}
+                    type="button"
+                    size="sm"
+                    variant={venue === v ? "default" : "outline"}
+                    onClick={() => setVenue(v)}
+                  >
+                    {v}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button size="sm" variant="ghost" onClick={() => setMatchOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                disabled={quickCreate.isPending || !opponent || !venue}
+                onClick={() =>
+                  quickCreate.mutate({ type: "match", opponent, venue })
+                }
+              >
+                Save match
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const session = slot.session;
   const isMatch = session.session_type === "match";
   const sessionDate = new Date(session.session_date + "T00:00:00");
   const isPast = sessionDate.getTime() < new Date().setHours(0, 0, 0, 0);
@@ -310,37 +447,30 @@ function SessionDialog({
   open,
   onClose,
   session,
+  defaultBlockId,
 }: {
   open: boolean;
   onClose: () => void;
-  session: Session | null;
+  session: SlotSession | null;
+  defaultBlockId: string | null;
 }) {
   const qc = useQueryClient();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const { data: blocks = [] } = useQuery({ queryKey: qk.blocks.all, queryFn: () => listBlocks() });
 
-  const [blockId, setBlockId] = useState(session?.block_id ?? "");
+  const [blockId, setBlockId] = useState(session?.block_id ?? defaultBlockId ?? "");
   const [date, setDate] = useState(session?.session_date ?? "");
   const [type, setType] = useState<"training" | "match">(session?.session_type ?? "match");
   const [opponent, setOpponent] = useState(session?.opponent ?? "");
   const [venue, setVenue] = useState<"Home" | "Away" | "">((session?.venue as any) ?? "");
-  const [weekNumber, setWeekNumber] = useState<string>(
-    session?.week_number ? String(session.week_number) : "",
-  );
 
-  useEffect(() => {
-    // auto-calc week number from block start_date when blank
-    if (!weekNumber && date && blockId) {
-      const b: any = blocks.find((x: any) => x.id === blockId);
-      if (b?.start_date) {
-        const start = new Date(b.start_date + "T00:00:00");
-        const d = new Date(date + "T00:00:00");
-        const diffDays = Math.floor((d.getTime() - start.getTime()) / 86400000);
-        if (diffDays >= 0) setWeekNumber(String(Math.floor(diffDays / 7) + 1));
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [date, blockId, blocks]);
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: qk.sessions.list });
+    qc.invalidateQueries({ queryKey: qk.sessions.matchList });
+    if (blockId) qc.invalidateQueries({ queryKey: qk.sessions.blockSlots(blockId) });
+    if (session?.block_id && session.block_id !== blockId)
+      qc.invalidateQueries({ queryKey: qk.sessions.blockSlots(session.block_id) });
+  };
 
   const create = useMutation({
     mutationFn: () =>
@@ -349,15 +479,14 @@ function SessionDialog({
           block_id: blockId,
           session_date: date,
           session_type: type,
-          week_number: weekNumber ? Number(weekNumber) : null,
+          week_number: null,
           opponent: type === "match" ? opponent || null : null,
           venue: type === "match" ? venue || null : null,
         },
       }),
     onSuccess: () => {
       toast.success("Session added");
-      qc.invalidateQueries({ queryKey: qk.sessions.list });
-      qc.invalidateQueries({ queryKey: qk.sessions.matchList });
+      invalidateAll();
       onClose();
     },
     onError: (e: any) => toast.error(e.message),
@@ -371,15 +500,14 @@ function SessionDialog({
           block_id: blockId,
           session_date: date,
           session_type: type,
-          week_number: weekNumber ? Number(weekNumber) : null,
+          week_number: null,
           opponent: type === "match" ? opponent || null : null,
           venue: type === "match" ? venue || null : null,
         },
       }),
     onSuccess: () => {
       toast.success("Session updated");
-      qc.invalidateQueries({ queryKey: qk.sessions.list });
-      qc.invalidateQueries({ queryKey: qk.sessions.matchList });
+      invalidateAll();
       onClose();
     },
     onError: (e: any) => toast.error(e.message),
@@ -389,8 +517,7 @@ function SessionDialog({
     mutationFn: () => deleteSession({ data: { id: session!.id } }),
     onSuccess: () => {
       toast.success("Session deleted");
-      qc.invalidateQueries({ queryKey: qk.sessions.list });
-      qc.invalidateQueries({ queryKey: qk.sessions.matchList });
+      invalidateAll();
       onClose();
     },
     onError: (e: any) => toast.error(e.message),
@@ -433,7 +560,7 @@ function SessionDialog({
                 <SelectValue placeholder="Select block" />
               </SelectTrigger>
               <SelectContent>
-                {blocks.map((b: any) => (
+                {(blocks as any[]).map((b) => (
                   <SelectItem key={b.id} value={b.id}>
                     {b.name ?? `Block ${b.block_number}`}
                   </SelectItem>
@@ -475,7 +602,12 @@ function SessionDialog({
                 type="button"
                 variant="destructive"
                 onClick={async () => {
-                  const ok = await confirm({ title: "Delete session?", description: "This session will be permanently removed.", confirmLabel: "Delete", destructive: true });
+                  const ok = await confirm({
+                    title: "Delete session?",
+                    description: "This session will be permanently removed.",
+                    confirmLabel: "Delete",
+                    destructive: true,
+                  });
                   if (ok) del.mutate();
                 }}
               >
