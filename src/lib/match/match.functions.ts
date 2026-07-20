@@ -342,48 +342,6 @@ export const submitRatings = createServerFn({ method: "POST" })
       .upsert(rows, { onConflict: "session_id,player_id" });
     if (error) throw new Error(error.message);
 
-    // Recalculate baseline for each player across active block's sessions
-    const { data: blockSessions } = await supabase
-      .from("sessions")
-      .select("id")
-      .eq("block_id", data.block_id);
-    const sessionIds = (blockSessions ?? []).map((s: any) => s.id);
-
-    if (sessionIds.length && playerIds.length) {
-      const { data: allRatings } = await supabase
-        .from("skill_ratings")
-        .select("player_id, tackling, rucking, carrying, handling, kicking, catching, iq")
-        .in("session_id", sessionIds)
-        .in("player_id", playerIds);
-
-      const byPlayer = new Map<string, any[]>();
-      for (const r of (allRatings ?? []) as any[]) {
-        if (!byPlayer.has(r.player_id)) byPlayer.set(r.player_id, []);
-        byPlayer.get(r.player_id)!.push(r);
-      }
-
-      for (const pid of playerIds) {
-        const list = byPlayer.get(pid) ?? [];
-        if (!list.length) continue;
-        const avgSkill = (key: string) => {
-          const vals = list
-            .map((x) => x[key])
-            .filter((v) => v != null)
-            .map(Number);
-          return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
-        };
-        const avg: Record<string, number> = {};
-        for (const k of SKILL_KEYS) {
-          const v = avgSkill(k);
-          if (v != null) avg[k] = v;
-        }
-        if (Object.keys(avg).length)
-          await supabase
-            .from("players")
-            .update(avg as any)
-            .eq("id", pid);
-      }
-    }
-
     return { ok: true, count: rows.length };
   });
+
