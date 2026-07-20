@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { getPlayer, getPlayerCurrentBlock } from "@/lib/players/players.functions";
 import { listPlayerSkillRatings } from "@/lib/skill-ratings/skill-ratings.functions";
 import {
@@ -10,7 +10,7 @@ import {
   updatePlayerNote,
   deletePlayerNote,
 } from "@/lib/feed/feed.functions";
-import { ChevronLeft, Pencil, Trash2, Plus } from "lucide-react";
+import { ChevronLeft, Pencil, Trash2, Plus, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -34,6 +34,10 @@ import { SKILLS, ATTRIBUTES } from "@/lib/skills";
 import { qk } from "@/lib/query-keys";
 import { useConfirm } from "@/components/confirm-dialog";
 
+type PlayerDto = Record<string, unknown> & { player_name: string };
+
+type Trend = { direction: "up" | "down" | "stable"; delta: number };
+
 function PlayerProfile() {
   const { playerId } = Route.useParams();
   const { data: player } = useSuspenseQuery(playerQuery(playerId));
@@ -53,6 +57,37 @@ function PlayerProfile() {
     queryKey: qk.players.notes(playerId),
     queryFn: () => listFn({ data: { player_id: playerId } }),
   });
+
+  const { data: weeklyRows = [] } = useQuery({
+    queryKey: qk.players.skillRatings(playerId),
+    queryFn: () => listPlayerSkillRatings({ data: { player_id: playerId } }),
+  });
+
+  const skillTrends = useMemo<Record<string, Trend>>(() => {
+    const trends: Record<string, Trend> = {};
+    if (!weeklyRows || weeklyRows.length === 0) {
+      for (const s of SKILLS) {
+        trends[s.key] = { direction: "stable", delta: 0 };
+      }
+      return trends;
+    }
+    const recent = weeklyRows.slice(0, 3);
+    for (const s of SKILLS) {
+      const vals = recent.map((r: any) => r[s.key]).filter((v: unknown) => v != null);
+      if (vals.length === 0) {
+        trends[s.key] = { direction: "stable", delta: 0 };
+        continue;
+      }
+      const avg = vals.reduce((a: number, b: number) => a + b, 0) / vals.length;
+      const baseline = (player as PlayerDto)[s.key] as number;
+      const delta = Math.round(avg - baseline);
+      trends[s.key] = {
+        direction: delta > 0 ? "up" : delta < 0 ? "down" : "stable",
+        delta,
+      };
+    }
+    return trends;
+  }, [weeklyRows, player]);
 
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
@@ -97,7 +132,7 @@ function PlayerProfile() {
 
       <header className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-accent">Player</p>
-        <h1 className="mt-1 text-3xl font-bold text-primary">{(player as any).player_name}</h1>
+        <h1 className="mt-1 text-3xl font-bold text-primary">{(player as PlayerDto).player_name}</h1>
       </header>
 
       <section className="mb-6 rounded-lg border bg-card p-4">
@@ -123,31 +158,7 @@ function PlayerProfile() {
         )}
       </section>
 
-      <section className="mb-6">
-        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Skills</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {SKILLS.map((s) => {
-            const value = (player as any)[s.key] as number;
-            return (
-              <div key={s.key} className="rounded-lg border bg-card p-4">
-                <p className="text-xs text-muted-foreground">{s.label}</p>
-                <div className="mt-1 flex items-baseline gap-2">
-                  <span className="text-2xl font-bold tabular-nums text-primary">{value}</span>
-                  <span className="text-xs text-muted-foreground">/ 5</span>
-                </div>
-                <div className="mt-2 flex gap-1">
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <span
-                      key={n}
-                      className={`h-2 flex-1 rounded-full ${n <= value ? "bg-accent" : "bg-muted"}`}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      <SkillsSection player={player as PlayerDto} trends={skillTrends} />
 
       <section className="mb-6">
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
@@ -155,7 +166,7 @@ function PlayerProfile() {
         </h2>
         <div className="grid grid-cols-3 gap-2">
           {ATTRIBUTES.map((a) => {
-            const value = (player as any)[a.key] as number;
+            const value = (player as PlayerDto)[a.key] as number;
             return (
               <div key={a.key} className="rounded-md border border-dashed bg-card/60 p-4">
                 <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -171,7 +182,7 @@ function PlayerProfile() {
         </div>
       </section>
 
-      <WeeklyHistory playerId={playerId} />
+      <WeeklyHistory playerId={playerId} player={player as PlayerDto} rows={weeklyRows} />
 
       <section>
         <div className="mb-3 flex items-center justify-between">
@@ -287,12 +298,74 @@ function PlayerProfile() {
   );
 }
 
-function WeeklyHistory({ playerId }: { playerId: string }) {
-  const { data: rows = [], isLoading } = useQuery({
-    queryKey: qk.players.skillRatings(playerId),
-    queryFn: () => listPlayerSkillRatings({ data: { player_id: playerId } }),
-  });
-  if (isLoading) return null;
+function SkillsSection({ player, trends }: { player: PlayerDto; trends: Record<string, Trend> }) {
+  return (
+    <section className="mb-6">
+      <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Skills</h2>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {SKILLS.map((s) => {
+          const value = player[s.key] as number;
+          const trend = trends[s.key] ?? { direction: "stable", delta: 0 };
+          return (
+            <div key={s.key} className="rounded-lg border bg-card p-4">
+              <p className="text-xs text-muted-foreground">{s.label}</p>
+              <div className="mt-1 flex items-baseline gap-2">
+                <span className="text-2xl font-bold tabular-nums text-primary">{value}</span>
+                <span className="text-xs text-muted-foreground">/ 5</span>
+              </div>
+              <div className="mt-2 flex gap-1">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <span
+                    key={n}
+                    className={`h-2 flex-1 rounded-full ${n <= value ? "bg-accent" : "bg-muted"}`}
+                  />
+                ))}
+              </div>
+              <div className="mt-1.5 flex items-center gap-1 text-[10px]">
+                {trend.direction === "up" && (
+                  <span className="flex items-center gap-0.5 font-semibold text-emerald-600">
+                    <TrendingUp className="h-3 w-3" /> +{trend.delta}
+                  </span>
+                )}
+                {trend.direction === "down" && (
+                  <span className="flex items-center gap-0.5 font-semibold text-rose-600">
+                    <TrendingDown className="h-3 w-3" /> −{Math.abs(trend.delta)}
+                  </span>
+                )}
+                {trend.direction === "stable" && (
+                  <span className="flex items-center gap-0.5 text-muted-foreground">
+                    <Minus className="h-3 w-3" /> at baseline
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function WeeklyHistory({
+  playerId,
+  player,
+  rows,
+}: {
+  playerId: string;
+  player: PlayerDto;
+  rows: any[];
+}) {
+  const getDelta = (skillKey: string, weeklyValue: number) => {
+    const baseline = player[skillKey] as number;
+    return weeklyValue - baseline;
+  };
+
+  const getBadgeClass = (delta: number) => {
+    if (delta > 0) return "bg-emerald-100 text-emerald-800 border-emerald-300";
+    if (delta < 0) return "bg-rose-100 text-rose-800 border-rose-300";
+    return "bg-muted text-muted-foreground border-border";
+  };
+
   return (
     <section className="mb-6">
       <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Weekly score history</h2>
@@ -319,14 +392,29 @@ function WeeklyHistory({ playerId }: { playerId: string }) {
                   {r.entered_by_name ? ` · entered by ${r.entered_by_name}` : ""}
                 </p>
                 <div className="grid grid-cols-7 gap-1 text-center text-xs">
-                  {SKILLS.map((s) => (
-                    <div key={s.key} className="rounded border bg-background p-1">
-                      <p className="text-[9px] uppercase tracking-wide text-muted-foreground">
-                        {s.short}
-                      </p>
-                      <p className="text-sm font-semibold tabular-nums">{r[s.key]}</p>
-                    </div>
-                  ))}
+                  {SKILLS.map((s) => {
+                    const weeklyValue = r[s.key] as number;
+                    const delta = getDelta(s.key, weeklyValue);
+                    return (
+                      <div
+                        key={s.key}
+                        className={`rounded border p-1 ${getBadgeClass(delta)}`}
+                        title={`Baseline ${s.label}: ${player[s.key]} · This week: ${weeklyValue} (${delta > 0 ? "+" : ""}${delta})`}
+                      >
+                        <p className="text-[9px] uppercase tracking-wide opacity-70">
+                          {s.short}
+                        </p>
+                        <p className="text-sm font-semibold tabular-nums">
+                          {weeklyValue}
+                          {delta !== 0 && (
+                            <span className="ml-0.5 text-[9px] font-bold">
+                              {delta > 0 ? `↑${delta}` : `↓${Math.abs(delta)}`}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               </li>
             ))}
