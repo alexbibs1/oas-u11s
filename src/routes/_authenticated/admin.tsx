@@ -1,6 +1,6 @@
 import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import React, { useState } from "react";
 import { getMyRole } from "@/lib/auth/roles.functions";
 import {
   listPlayers,
@@ -12,7 +12,7 @@ import {
 import { listCoaches, addCoach, removeCoach } from "@/lib/coaches/coaches.functions";
 import { inviteUser } from "@/lib/admin/invite.functions";
 import { listBlocks, createSession } from "@/lib/sessions/sessions.functions";
-import { ATTRIBUTES, SKILLS, REPEATABILITY_DESCRIPTORS, SKILL_DESCRIPTORS } from "@/lib/skills";
+import { ATTRIBUTES, SKILLS } from "@/lib/skills";
 import { listMatchWeeks, getWeekCompletion } from "@/lib/skill-ratings/skill-ratings.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
