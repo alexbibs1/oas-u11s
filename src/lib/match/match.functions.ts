@@ -46,6 +46,7 @@ export const getGroupDetail = createServerFn({ method: "GET" })
       .eq("group_id", data.group_id)
       .order("player_name", { referencedTable: "players", ascending: true });
     if (rErr) throw new Error(rErr.message);
+    const quartileMap = await fetchQuartileMap(sb);
     return {
       group: {
         id: (group as any).id,
@@ -58,6 +59,7 @@ export const getGroupDetail = createServerFn({ method: "GET" })
       players: (roster ?? [])
         .map((r: any) => r.players)
         .filter(Boolean)
+        .map((p: any) => ({ ...p, quartile: quartileMap.get(p.id) ?? null }))
         .sort((a: any, b: any) => a.player_name.localeCompare(b.player_name)),
     };
   });
