@@ -144,7 +144,7 @@ function quartileColor(q: number | null | undefined): string {
   }
 }
 
-type SortKey = "name" | "attendance" | SkillKey;
+type SortKey = "name" | "attendance" | "quartile" | SkillKey;
 
 type GroupState = { coach_ids: string[]; player_ids: string[] };
 
@@ -227,6 +227,10 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
       if (sortKey === "name") return a.player_name.localeCompare(b.player_name);
       if (sortKey === "attendance") {
         return (b.attendance_pct ?? -1) - (a.attendance_pct ?? -1);
+      }
+      if (sortKey === "quartile") {
+        // Q1 (strongest) first — ascending quartile number
+        return (a.quartile ?? 5) - (b.quartile ?? 5);
       }
       return (b[sortKey] ?? 0) - (a[sortKey] ?? 0);
     });
@@ -405,6 +409,11 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
                 label="Att%"
                 active={sortKey === "attendance"}
                 onClick={() => setSortKey("attendance")}
+              />
+              <SortBtn
+                label="Quart"
+                active={sortKey === "quartile"}
+                onClick={() => setSortKey("quartile")}
               />
               {SKILLS.map((s) => (
                 <SortBtn
