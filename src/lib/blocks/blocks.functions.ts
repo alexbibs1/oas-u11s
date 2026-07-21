@@ -1,6 +1,22 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { SKILL_KEYS, ATTRIBUTE_KEYS } from "@/lib/skills";
+
+function computeQuartileMap(players: Array<{ id: string; [k: string]: any }>) {
+  const allKeys = [...SKILL_KEYS, ...ATTRIBUTE_KEYS] as string[];
+  const scored = players.map((p) => {
+    const values = allKeys.map((k) => (p as any)[k] as number);
+    return { id: p.id, overall: values.reduce((a, b) => a + b, 0) / values.length };
+  });
+  scored.sort((a, b) => b.overall - a.overall);
+  const quartileSize = Math.max(1, Math.ceil(scored.length / 4));
+  const map = new Map<string, number>();
+  scored.forEach((p, i) => {
+    map.set(p.id, Math.min(Math.floor(i / quartileSize) + 1, 4));
+  });
+  return map;
+}
 
 async function assertBuilder(context: any) {
   const { data: isAdmin } = await context.supabase.rpc("has_role", {
