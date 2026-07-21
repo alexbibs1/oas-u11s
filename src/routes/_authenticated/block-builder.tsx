@@ -120,7 +120,7 @@ function BlockList({ onCreate, onEdit }: { onCreate: () => void; onEdit: (id: st
   );
 }
 
-import { SKILLS as SKILL_DEFS, ATTRIBUTES as ATTR_DEFS, SKILL_KEYS, ATTRIBUTE_KEYS } from "@/lib/skills";
+import { SKILLS as SKILL_DEFS, ATTRIBUTES as ATTR_DEFS, SKILL_KEYS } from "@/lib/skills";
 import { qk } from "@/lib/query-keys";
 
 const SKILLS = SKILL_KEYS;
