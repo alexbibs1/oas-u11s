@@ -718,11 +718,45 @@ function GroupColumn({
           </li>
         ))}
       </ul>
-      <div className="mt-2 border-t pt-2 text-[10px] text-muted-foreground">
+      <div className="mt-2 space-y-1 border-t pt-2 text-[10px] text-muted-foreground">
         <p>
           {groupPlayers.length} players · avg skill {avgSkill.toFixed(2)} · avg att{" "}
           {avgAtt === null ? "—" : `${avgAtt}%`}
         </p>
+        <p>
+          Quartiles:{" "}
+          <span className="font-semibold text-emerald-600">Q1 {groupPlayers.filter((p: any) => p.quartile === 1).length}</span>
+          {" · "}
+          <span className="font-semibold text-blue-600">Q2 {groupPlayers.filter((p: any) => p.quartile === 2).length}</span>
+          {" · "}
+          <span className="font-semibold text-amber-600">Q3 {groupPlayers.filter((p: any) => p.quartile === 3).length}</span>
+          {" · "}
+          <span className="font-semibold text-slate-600">Q4 {groupPlayers.filter((p: any) => p.quartile === 4).length}</span>
+        </p>
+        {groupPlayers.length > 0 && (
+          <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5">
+            {SKILL_DEFS.map((s) => {
+              const avg =
+                groupPlayers.reduce((a: number, p: any) => a + (p[s.key] ?? 0), 0) /
+                groupPlayers.length;
+              return (
+                <span key={s.key} className="text-muted-foreground">
+                  {s.short}: <span className="font-semibold text-foreground">{avg.toFixed(1)}</span>
+                </span>
+              );
+            })}
+            {ATTR_DEFS.map((a) => {
+              const avg =
+                groupPlayers.reduce((acc: number, p: any) => acc + (p[a.key] ?? 0), 0) /
+                groupPlayers.length;
+              return (
+                <span key={a.key} className="text-muted-foreground italic">
+                  {a.short}: <span className="font-semibold not-italic text-foreground">{avg.toFixed(1)}</span>
+                </span>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
