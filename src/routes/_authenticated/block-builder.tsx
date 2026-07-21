@@ -129,6 +129,21 @@ const SKILL_LABELS: Record<SkillKey, string> = Object.fromEntries(
   SKILL_DEFS.map((s) => [s.key, s.short]),
 ) as Record<SkillKey, string>;
 
+function quartileColor(q: number | null | undefined): string {
+  switch (q) {
+    case 1:
+      return "bg-emerald-100 text-emerald-800";
+    case 2:
+      return "bg-blue-100 text-blue-800";
+    case 3:
+      return "bg-amber-100 text-amber-800";
+    case 4:
+      return "bg-slate-200 text-slate-700";
+    default:
+      return "bg-muted text-muted-foreground";
+  }
+}
+
 type SortKey = "name" | "attendance" | SkillKey;
 
 type GroupState = { coach_ids: string[]; player_ids: string[] };
@@ -544,7 +559,16 @@ function PlayerCard({
         }`}
       >
         <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-sm font-medium">{player.player_name}</span>
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate text-sm font-medium">{player.player_name}</span>
+            {player.quartile != null && (
+              <span
+                className={`shrink-0 rounded px-1 py-0.5 text-[9px] font-bold ${quartileColor(player.quartile)}`}
+              >
+                Q{player.quartile}
+              </span>
+            )}
+          </span>
           <span
             className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${attColor(
               player.attendance_pct,
@@ -654,7 +678,16 @@ function GroupColumn({
           <li key={p.id}>
             <div className="rounded-md border border-border px-2 py-1">
               <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-xs font-medium">{p.player_name}</span>
+                <span className="flex min-w-0 items-center gap-1">
+                  <span className="truncate text-xs font-medium">{p.player_name}</span>
+                  {p.quartile != null && (
+                    <span
+                      className={`shrink-0 rounded px-1 py-0.5 text-[8px] font-bold ${quartileColor(p.quartile)}`}
+                    >
+                      Q{p.quartile}
+                    </span>
+                  )}
+                </span>
                 <button
                   type="button"
                   onClick={() => onUnassign(p.id)}
@@ -685,11 +718,45 @@ function GroupColumn({
           </li>
         ))}
       </ul>
-      <div className="mt-2 border-t pt-2 text-[10px] text-muted-foreground">
+      <div className="mt-2 space-y-1 border-t pt-2 text-[10px] text-muted-foreground">
         <p>
           {groupPlayers.length} players · avg skill {avgSkill.toFixed(2)} · avg att{" "}
           {avgAtt === null ? "—" : `${avgAtt}%`}
         </p>
+        <p>
+          Quartiles:{" "}
+          <span className="font-semibold text-emerald-600">Q1 {groupPlayers.filter((p: any) => p.quartile === 1).length}</span>
+          {" · "}
+          <span className="font-semibold text-blue-600">Q2 {groupPlayers.filter((p: any) => p.quartile === 2).length}</span>
+          {" · "}
+          <span className="font-semibold text-amber-600">Q3 {groupPlayers.filter((p: any) => p.quartile === 3).length}</span>
+          {" · "}
+          <span className="font-semibold text-slate-600">Q4 {groupPlayers.filter((p: any) => p.quartile === 4).length}</span>
+        </p>
+        {groupPlayers.length > 0 && (
+          <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5">
+            {SKILL_DEFS.map((s) => {
+              const avg =
+                groupPlayers.reduce((a: number, p: any) => a + (p[s.key] ?? 0), 0) /
+                groupPlayers.length;
+              return (
+                <span key={s.key} className="text-muted-foreground">
+                  {s.short}: <span className="font-semibold text-foreground">{avg.toFixed(1)}</span>
+                </span>
+              );
+            })}
+            {ATTR_DEFS.map((a) => {
+              const avg =
+                groupPlayers.reduce((acc: number, p: any) => acc + (p[a.key] ?? 0), 0) /
+                groupPlayers.length;
+              return (
+                <span key={a.key} className="text-muted-foreground italic">
+                  {a.short}: <span className="font-semibold not-italic text-foreground">{avg.toFixed(1)}</span>
+                </span>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

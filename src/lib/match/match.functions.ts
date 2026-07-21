@@ -1,6 +1,28 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { SKILL_KEYS, ATTRIBUTE_KEYS } from "@/lib/skills";
+
+async function fetchQuartileMap(sb: any): Promise<Map<string, number>> {
+  const allKeys = [...SKILL_KEYS, ...ATTRIBUTE_KEYS] as string[];
+  const { data: players } = await sb
+    .from("players")
+    .select(
+      "id, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability",
+    );
+  const scored = (players ?? []).map((p: any) => {
+    const values = allKeys.map((k) => (p as any)[k] as number);
+    return { id: p.id, overall: values.reduce((a: number, b: number) => a + b, 0) / values.length };
+  });
+  scored.sort((a: any, b: any) => b.overall - a.overall);
+  const quartileSize = Math.max(1, Math.ceil(scored.length / 4));
+  const map = new Map<string, number>();
+  scored.forEach((p: any, i: number) => {
+    map.set(p.id, Math.min(Math.floor(i / quartileSize) + 1, 4));
+  });
+  return map;
+}
+
 
 
 export const getGroupDetail = createServerFn({ method: "GET" })
@@ -24,6 +46,7 @@ export const getGroupDetail = createServerFn({ method: "GET" })
       .eq("group_id", data.group_id)
       .order("player_name", { referencedTable: "players", ascending: true });
     if (rErr) throw new Error(rErr.message);
+    const quartileMap = await fetchQuartileMap(sb);
     return {
       group: {
         id: (group as any).id,
@@ -36,6 +59,7 @@ export const getGroupDetail = createServerFn({ method: "GET" })
       players: (roster ?? [])
         .map((r: any) => r.players)
         .filter(Boolean)
+        .map((p: any) => ({ ...p, quartile: quartileMap.get(p.id) ?? null }))
         .sort((a: any, b: any) => a.player_name.localeCompare(b.player_name)),
     };
   });
