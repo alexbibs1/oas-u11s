@@ -131,21 +131,32 @@ export type Database = {
       }
       coaches: {
         Row: {
+          child_player_id: string | null
           coach_name: string
           created_at: string
           id: string
         }
         Insert: {
+          child_player_id?: string | null
           coach_name: string
           created_at?: string
           id?: string
         }
         Update: {
+          child_player_id?: string | null
           coach_name?: string
           created_at?: string
           id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "coaches_child_player_id_fkey"
+            columns: ["child_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       feed_posts: {
         Row: {
