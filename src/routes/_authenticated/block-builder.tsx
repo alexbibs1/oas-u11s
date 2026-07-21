@@ -120,7 +120,7 @@ function BlockList({ onCreate, onEdit }: { onCreate: () => void; onEdit: (id: st
   );
 }
 
-import { SKILLS as SKILL_DEFS, ATTRIBUTES as ATTR_DEFS, SKILL_KEYS } from "@/lib/skills";
+import { SKILLS as SKILL_DEFS, ATTRIBUTES as ATTR_DEFS, SKILL_KEYS, ATTRIBUTE_KEYS } from "@/lib/skills";
 import { qk } from "@/lib/query-keys";
 
 const SKILLS = SKILL_KEYS;
@@ -128,6 +128,21 @@ type SkillKey = (typeof SKILL_KEYS)[number];
 const SKILL_LABELS: Record<SkillKey, string> = Object.fromEntries(
   SKILL_DEFS.map((s) => [s.key, s.short]),
 ) as Record<SkillKey, string>;
+
+function quartileColor(q: number | null | undefined): string {
+  switch (q) {
+    case 1:
+      return "bg-emerald-100 text-emerald-800";
+    case 2:
+      return "bg-blue-100 text-blue-800";
+    case 3:
+      return "bg-amber-100 text-amber-800";
+    case 4:
+      return "bg-slate-200 text-slate-700";
+    default:
+      return "bg-muted text-muted-foreground";
+  }
+}
 
 type SortKey = "name" | "attendance" | SkillKey;
 
