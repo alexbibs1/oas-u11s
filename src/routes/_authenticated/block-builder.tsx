@@ -410,6 +410,11 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
                 active={sortKey === "attendance"}
                 onClick={() => setSortKey("attendance")}
               />
+              <SortBtn
+                label="Quart"
+                active={sortKey === "quartile"}
+                onClick={() => setSortKey("quartile")}
+              />
               {SKILLS.map((s) => (
                 <SortBtn
                   key={s}
