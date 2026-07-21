@@ -127,13 +127,19 @@ export const getBlockBuilderData = createServerFn({ method: "GET" })
       previous_group: prevGroupByPlayer.get(p.id) ?? null,
     }));
 
+    const quartileMap = computeQuartileMap(enrichedPlayers);
+    const playersWithQuartiles = enrichedPlayers.map((p: any) => ({
+      ...p,
+      quartile: quartileMap.get(p.id) ?? null,
+    }));
+
     const { data: coaches } = await sb
       .from("coaches")
       .select("id, coach_name")
       .order("coach_name", { ascending: true });
 
     return {
-      players: enrichedPlayers,
+      players: playersWithQuartiles,
       coaches: coaches ?? [],
       block,
       groups,
