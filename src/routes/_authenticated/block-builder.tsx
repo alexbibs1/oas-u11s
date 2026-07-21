@@ -678,7 +678,16 @@ function GroupColumn({
           <li key={p.id}>
             <div className="rounded-md border border-border px-2 py-1">
               <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-xs font-medium">{p.player_name}</span>
+                <span className="flex min-w-0 items-center gap-1">
+                  <span className="truncate text-xs font-medium">{p.player_name}</span>
+                  {p.quartile != null && (
+                    <span
+                      className={`shrink-0 rounded px-1 py-0.5 text-[8px] font-bold ${quartileColor(p.quartile)}`}
+                    >
+                      Q{p.quartile}
+                    </span>
+                  )}
+                </span>
                 <button
                   type="button"
                   onClick={() => onUnassign(p.id)}
