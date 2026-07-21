@@ -282,12 +282,35 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
     setGroups((prev) => {
       const next = [...prev];
       const has = next[groupIdx].coach_ids.includes(coachId);
-      next[groupIdx] = {
-        ...next[groupIdx],
-        coach_ids: has
-          ? next[groupIdx].coach_ids.filter((c) => c !== coachId)
-          : [...next[groupIdx].coach_ids, coachId],
-      };
+      if (has) {
+        next[groupIdx] = {
+          ...next[groupIdx],
+          coach_ids: next[groupIdx].coach_ids.filter((c) => c !== coachId),
+        };
+      } else {
+        next[groupIdx] = {
+          ...next[groupIdx],
+          coach_ids: [...next[groupIdx].coach_ids, coachId],
+        };
+        const coach = data?.coaches.find((c: any) => c.id === coachId);
+        const childId = coach?.child_player_id;
+        if (childId) {
+          for (let i = 0; i < next.length; i++) {
+            if (i !== groupIdx && next[i].player_ids.includes(childId)) {
+              next[i] = {
+                ...next[i],
+                player_ids: next[i].player_ids.filter((pid) => pid !== childId),
+              };
+            }
+          }
+          if (!next[groupIdx].player_ids.includes(childId)) {
+            next[groupIdx] = {
+              ...next[groupIdx],
+              player_ids: [...next[groupIdx].player_ids, childId],
+            };
+          }
+        }
+      }
       return next;
     });
   }

@@ -135,7 +135,7 @@ export const getBlockBuilderData = createServerFn({ method: "GET" })
 
     const { data: coaches } = await sb
       .from("coaches")
-      .select("id, coach_name")
+      .select("id, coach_name, child_player_id")
       .order("coach_name", { ascending: true });
 
     return {
