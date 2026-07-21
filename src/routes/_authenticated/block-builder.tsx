@@ -559,7 +559,16 @@ function PlayerCard({
         }`}
       >
         <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-sm font-medium">{player.player_name}</span>
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate text-sm font-medium">{player.player_name}</span>
+            {player.quartile != null && (
+              <span
+                className={`shrink-0 rounded px-1 py-0.5 text-[9px] font-bold ${quartileColor(player.quartile)}`}
+              >
+                Q{player.quartile}
+              </span>
+            )}
+          </span>
           <span
             className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${attColor(
               player.attendance_pct,
