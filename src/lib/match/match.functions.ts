@@ -144,10 +144,17 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
       (o: any) => defaultIds.has(o.player_id) || o.override_group_id === data.group_id,
     );
 
-    // Players moved OUT of this group (override target is absent or a different group)
+    // Only filter MOVED players (override_group_id is a different group, not null).
+    // Absent players (override_group_id = null) stay in defaultRoster so coaches
+    // can see them and toggle them back to present if they turn up late.
     const movedOutIds = new Set(
       (overrides ?? [])
-        .filter((o: any) => defaultIds.has(o.player_id) && o.override_group_id !== data.group_id)
+        .filter((o: any) => {
+          const isDefaultPlayer = defaultIds.has(o.player_id);
+          const target = o.override_group_id;
+          // Moved out = target is a non-null value that's a different group
+          return isDefaultPlayer && target !== null && target !== data.group_id;
+        })
         .map((o: any) => o.player_id),
     );
 
