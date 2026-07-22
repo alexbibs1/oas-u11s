@@ -73,55 +73,72 @@ function HomePage() {
           </div>
         )}
 
-        {summary?.myGroup ? (
-          <Link
-            to="/group/$groupId"
-            params={{ groupId: summary.myGroup.id }}
-            className="block rounded-lg border bg-card p-5 hover:bg-secondary"
-          >
-            <h2 className="text-sm font-semibold text-muted-foreground">Your group this block</h2>
-            <p className="mt-2 text-base font-semibold text-primary">
-              Group {summary.myGroup.group_number}
-            </p>
-            {summary.myGroup.coach_names && summary.myGroup.coach_names.length > 0 && (
-              <p className="text-xs text-muted-foreground">
-                Coach {summary.myGroup.coach_names.join(", ")}
-              </p>
+        <div>
+          <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Groups this block</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {summary?.myGroup ? (
+              <Link
+                to="/group/$groupId"
+                params={{ groupId: summary.myGroup.id }}
+                className="rounded-lg border-2 border-accent bg-card p-4 hover:bg-secondary"
+              >
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-accent">
+                  Your group
+                </p>
+                <p className="mt-1 text-base font-bold text-primary">
+                  Group {summary.myGroup.group_number}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {summary.myGroup.coach_names?.length
+                    ? summary.myGroup.coach_names.join(", ")
+                    : "No coach"}
+                </p>
+              </Link>
+            ) : (
+              <div className="rounded-lg border-2 border-dashed p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Your group
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">Not assigned</p>
+              </div>
             )}
-          </Link>
-        ) : (
-          <div className="rounded-lg border bg-card p-5">
-            <h2 className="text-sm font-semibold text-muted-foreground">Your group this block</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Not assigned to a group.</p>
-          </div>
-        )}
 
-        {summary?.otherGroups && summary.otherGroups.length > 0 && (
-          <div className="rounded-lg border bg-card p-5">
-            <h2 className="text-sm font-semibold text-muted-foreground">Other groups this block</h2>
-            <ul className="mt-3 space-y-3">
-              {summary.otherGroups.map((g: any) => (
-                <li key={g.id} className="border-t pt-3 first:border-t-0 first:pt-0">
-                  <Link
-                    to="/group/$groupId"
-                    params={{ groupId: g.id }}
-                    className="-mx-2 block rounded-md px-2 py-1 hover:bg-secondary"
-                  >
-                    <p className="text-sm font-semibold text-primary">
-                      Group {g.group_number}
-                      <span className="ml-2 text-xs font-normal text-muted-foreground">
-                        · {g.player_count} player{g.player_count === 1 ? "" : "s"}
-                      </span>
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {g.coach_names.length ? g.coach_names.join(", ") : "No coach assigned"}
-                    </p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {summary?.otherGroups?.map((g: any) => (
+              <Link
+                key={g.id}
+                to="/group/$groupId"
+                params={{ groupId: g.id }}
+                className="rounded-lg border bg-card p-4 hover:bg-secondary"
+              >
+                <p className="text-base font-semibold text-primary">Group {g.group_number}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {g.player_count} player{g.player_count === 1 ? "" : "s"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {g.coach_names.length ? g.coach_names.join(", ") : "No coach"}
+                </p>
+              </Link>
+            ))}
           </div>
-        )}
+
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <Link
+              to="/rules/u11"
+              className="flex items-center justify-center gap-2 rounded-lg border bg-card px-3 py-3 text-sm font-semibold text-primary hover:bg-secondary"
+            >
+              <BookOpen className="h-4 w-4" />
+              U11s Rules
+            </Link>
+            <Link
+              to="/rules/u11-vs-u10"
+              className="flex items-center justify-center gap-2 rounded-lg border bg-card px-3 py-3 text-sm font-semibold text-primary hover:bg-secondary"
+            >
+              <GitCompare className="h-4 w-4" />
+              Differences vs U10s
+            </Link>
+          </div>
+        </div>
+
 
 
         {next ? (
