@@ -133,7 +133,7 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
     // Existing ratings for this session+group (source of truth is skill_ratings)
     const { data: ratings, error: e4 } = await supabase
       .from("skill_ratings")
-      .select("player_id, group_id, carrying, handling, tackling, rucking, kicking, catching, iq")
+      .select("player_id, group_id, carrying, handling, tackling, rucking, kicking, catching, iq, player_of_the_day")
       .eq("session_id", data.session_id)
       .eq("group_id", data.group_id);
     if (e4) throw new Error(e4.message);
@@ -286,6 +286,7 @@ export const submitRatings = createServerFn({ method: "POST" })
           iq: z.number().int().min(1).max(5),
         }),
       ),
+      player_of_the_day_id: z.string().uuid().nullable().optional(),
     }),
   )
   .handler(async ({ context, data }) => {
@@ -365,6 +366,22 @@ export const submitRatings = createServerFn({ method: "POST" })
       .from("skill_ratings")
       .upsert(rows, { onConflict: "session_id,player_id" });
     if (error) throw new Error(error.message);
+
+    // Player of the Day: reset then set for this session+group.
+    await supabase
+      .from("skill_ratings")
+      .update({ player_of_the_day: false })
+      .eq("session_id", data.session_id)
+      .eq("group_id", data.group_id)
+      .eq("player_of_the_day", true);
+    if (data.player_of_the_day_id) {
+      await supabase
+        .from("skill_ratings")
+        .update({ player_of_the_day: true })
+        .eq("session_id", data.session_id)
+        .eq("group_id", data.group_id)
+        .eq("player_id", data.player_of_the_day_id);
+    }
 
     return { ok: true, count: rows.length };
   });

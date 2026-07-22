@@ -150,3 +150,16 @@ export const getPlayerCurrentBlock = createServerFn({ method: "GET" })
       .filter(Boolean) as string[];
     return { block, group: { id: g.id, group_number: g.group_number }, coaches };
   });
+
+export const getPlayerPotdCount = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ player_id: z.string().uuid() }))
+  .handler(async ({ context, data }) => {
+    const { count, error } = await context.supabase
+      .from("skill_ratings")
+      .select("id", { count: "exact", head: true })
+      .eq("player_id", data.player_id)
+      .eq("player_of_the_day", true);
+    if (error) throw new Error(error.message);
+    return { count: count ?? 0 };
+  });

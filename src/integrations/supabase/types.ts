@@ -503,6 +503,7 @@ export type Database = {
           kicking: number
           player_id: string
           player_name: string
+          player_of_the_day: boolean
           rucking: number
           session_id: string
           tackling: number
@@ -525,6 +526,7 @@ export type Database = {
           kicking: number
           player_id: string
           player_name: string
+          player_of_the_day?: boolean
           rucking: number
           session_id: string
           tackling: number
@@ -547,6 +549,7 @@ export type Database = {
           kicking?: number
           player_id?: string
           player_name?: string
+          player_of_the_day?: boolean
           rucking?: number
           session_id?: string
           tackling?: number

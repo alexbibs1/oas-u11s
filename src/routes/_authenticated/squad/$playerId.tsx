@@ -2,7 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { getPlayer, getPlayerCurrentBlock } from "@/lib/players/players.functions";
+import { getPlayer, getPlayerCurrentBlock, getPlayerPotdCount } from "@/lib/players/players.functions";
 import { listPlayerSkillRatings } from "@/lib/skill-ratings/skill-ratings.functions";
 import {
   listPlayerNotes,
@@ -10,7 +10,7 @@ import {
   updatePlayerNote,
   deletePlayerNote,
 } from "@/lib/feed/feed.functions";
-import { ChevronLeft, Pencil, Trash2, Plus, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { ChevronLeft, Pencil, Trash2, Plus, TrendingUp, TrendingDown, Minus, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -45,6 +45,11 @@ function PlayerProfile() {
     queryKey: qk.players.currentBlock(playerId),
     queryFn: () => getPlayerCurrentBlock({ data: { player_id: playerId } }),
   });
+  const { data: potd } = useQuery({
+    queryKey: qk.players.potdCount(playerId),
+    queryFn: () => getPlayerPotdCount({ data: { player_id: playerId } }),
+  });
+  const potdCount = potd?.count ?? 0;
   const qc = useQueryClient();
   const { confirm, dialog: confirmDialog } = useConfirm();
 
@@ -157,6 +162,20 @@ function PlayerProfile() {
           <p className="mt-1 text-sm text-muted-foreground">No active block.</p>
         )}
       </section>
+
+      {potdCount > 0 && (
+        <section className="mb-6 flex items-center gap-3 rounded-lg border border-accent/40 bg-accent/10 p-4">
+          <Trophy className="h-5 w-5 text-accent" />
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+              Player of the Day
+            </p>
+            <p className="text-sm font-bold text-primary">
+              {potdCount} {potdCount === 1 ? "win" : "wins"} this season
+            </p>
+          </div>
+        </section>
+      )}
 
       <SkillsSection player={player as PlayerDto} trends={skillTrends} />
 
