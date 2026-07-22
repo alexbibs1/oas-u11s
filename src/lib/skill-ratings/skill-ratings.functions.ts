@@ -163,6 +163,7 @@ const ratingsInput = z.object({
       iq: z.number().int().min(1).max(5),
     }),
   ),
+  player_of_the_day_id: z.string().uuid().nullable().optional(),
 });
 
 export const upsertWeekRatings = createServerFn({ method: "POST" })
@@ -301,6 +302,23 @@ export const upsertWeekRatings = createServerFn({ method: "POST" })
           changed_fields: u.changed,
         },
       });
+    }
+
+    // Player of the Day: set the flag on the chosen player's skill_rating row
+    // for this session+group. Clear any previous POTD first.
+    await sb
+      .from("skill_ratings")
+      .update({ player_of_the_day: false })
+      .eq("session_id", data.session_id)
+      .eq("group_id", data.group_id)
+      .eq("player_of_the_day", true);
+    if (data.player_of_the_day_id) {
+      await sb
+        .from("skill_ratings")
+        .update({ player_of_the_day: true })
+        .eq("session_id", data.session_id)
+        .eq("group_id", data.group_id)
+        .eq("player_id", data.player_of_the_day_id);
     }
 
     return { ok: true, inserted: inserts.length, updated: updates.length };
