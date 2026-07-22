@@ -69,7 +69,7 @@ type Slot = {
 };
 
 function CalendarPage() {
-  const { data: me } = useQuery({ queryKey: qk.me, queryFn: () => getMyRole() });
+  const { data: me } = useMyRole();
   const { data: blocks = [], isLoading: blocksLoading } = useQuery({
     queryKey: qk.blocks.all,
     queryFn: () => listBlocks(),
