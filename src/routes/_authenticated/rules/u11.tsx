@@ -1,9 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { ArrowLeft } from "lucide-react";
 import rulesContent from "@/content/u11-rules.md?raw";
-import { markdownComponents } from "@/components/markdown-components";
 
 export const Route = createFileRoute("/_authenticated/rules/u11")({
   head: () => ({
@@ -31,9 +28,9 @@ function U11RulesPage() {
         <h1 className="mt-1 text-3xl font-bold text-primary">U11s Rules of Play</h1>
       </header>
       <article className="rounded-lg border bg-card p-6">
-        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+        <p className="font-sans whitespace-pre-wrap text-sm leading-relaxed text-foreground">
           {rulesContent}
-        </ReactMarkdown>
+        </p>
       </article>
     </main>
   );
