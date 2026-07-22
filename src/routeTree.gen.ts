@@ -22,6 +22,8 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedSquadIndexRouteImport } from './routes/_authenticated/squad/index'
 import { Route as AuthenticatedSquadPlayerIdRouteImport } from './routes/_authenticated/squad/$playerId'
 import { Route as AuthenticatedSessionInfoSessionIdRouteImport } from './routes/_authenticated/session-info/$sessionId'
+import { Route as AuthenticatedRulesU11VsU10RouteImport } from './routes/_authenticated/rules/u11-vs-u10'
+import { Route as AuthenticatedRulesU11RouteImport } from './routes/_authenticated/rules/u11'
 import { Route as AuthenticatedMatchSummarySessionIdRouteImport } from './routes/_authenticated/match-summary/$sessionId'
 import { Route as AuthenticatedGroupGroupIdRouteImport } from './routes/_authenticated/group/$groupId'
 
@@ -92,6 +94,17 @@ const AuthenticatedSessionInfoSessionIdRoute =
     path: '/session-info/$sessionId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedRulesU11VsU10Route =
+  AuthenticatedRulesU11VsU10RouteImport.update({
+    id: '/rules/u11-vs-u10',
+    path: '/rules/u11-vs-u10',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRulesU11Route = AuthenticatedRulesU11RouteImport.update({
+  id: '/rules/u11',
+  path: '/rules/u11',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMatchSummarySessionIdRoute =
   AuthenticatedMatchSummarySessionIdRouteImport.update({
     id: '/match-summary/$sessionId',
@@ -117,6 +130,8 @@ export interface FileRoutesByFullPath {
   '/ratings': typeof AuthenticatedRatingsRoute
   '/group/$groupId': typeof AuthenticatedGroupGroupIdRoute
   '/match-summary/$sessionId': typeof AuthenticatedMatchSummarySessionIdRoute
+  '/rules/u11': typeof AuthenticatedRulesU11Route
+  '/rules/u11-vs-u10': typeof AuthenticatedRulesU11VsU10Route
   '/session-info/$sessionId': typeof AuthenticatedSessionInfoSessionIdRoute
   '/squad/$playerId': typeof AuthenticatedSquadPlayerIdRoute
   '/squad/': typeof AuthenticatedSquadIndexRoute
@@ -133,6 +148,8 @@ export interface FileRoutesByTo {
   '/ratings': typeof AuthenticatedRatingsRoute
   '/group/$groupId': typeof AuthenticatedGroupGroupIdRoute
   '/match-summary/$sessionId': typeof AuthenticatedMatchSummarySessionIdRoute
+  '/rules/u11': typeof AuthenticatedRulesU11Route
+  '/rules/u11-vs-u10': typeof AuthenticatedRulesU11VsU10Route
   '/session-info/$sessionId': typeof AuthenticatedSessionInfoSessionIdRoute
   '/squad/$playerId': typeof AuthenticatedSquadPlayerIdRoute
   '/squad': typeof AuthenticatedSquadIndexRoute
@@ -151,6 +168,8 @@ export interface FileRoutesById {
   '/_authenticated/ratings': typeof AuthenticatedRatingsRoute
   '/_authenticated/group/$groupId': typeof AuthenticatedGroupGroupIdRoute
   '/_authenticated/match-summary/$sessionId': typeof AuthenticatedMatchSummarySessionIdRoute
+  '/_authenticated/rules/u11': typeof AuthenticatedRulesU11Route
+  '/_authenticated/rules/u11-vs-u10': typeof AuthenticatedRulesU11VsU10Route
   '/_authenticated/session-info/$sessionId': typeof AuthenticatedSessionInfoSessionIdRoute
   '/_authenticated/squad/$playerId': typeof AuthenticatedSquadPlayerIdRoute
   '/_authenticated/squad/': typeof AuthenticatedSquadIndexRoute
@@ -169,6 +188,8 @@ export interface FileRouteTypes {
     | '/ratings'
     | '/group/$groupId'
     | '/match-summary/$sessionId'
+    | '/rules/u11'
+    | '/rules/u11-vs-u10'
     | '/session-info/$sessionId'
     | '/squad/$playerId'
     | '/squad/'
@@ -185,6 +206,8 @@ export interface FileRouteTypes {
     | '/ratings'
     | '/group/$groupId'
     | '/match-summary/$sessionId'
+    | '/rules/u11'
+    | '/rules/u11-vs-u10'
     | '/session-info/$sessionId'
     | '/squad/$playerId'
     | '/squad'
@@ -202,6 +225,8 @@ export interface FileRouteTypes {
     | '/_authenticated/ratings'
     | '/_authenticated/group/$groupId'
     | '/_authenticated/match-summary/$sessionId'
+    | '/_authenticated/rules/u11'
+    | '/_authenticated/rules/u11-vs-u10'
     | '/_authenticated/session-info/$sessionId'
     | '/_authenticated/squad/$playerId'
     | '/_authenticated/squad/'
@@ -306,6 +331,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSessionInfoSessionIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/rules/u11-vs-u10': {
+      id: '/_authenticated/rules/u11-vs-u10'
+      path: '/rules/u11-vs-u10'
+      fullPath: '/rules/u11-vs-u10'
+      preLoaderRoute: typeof AuthenticatedRulesU11VsU10RouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/rules/u11': {
+      id: '/_authenticated/rules/u11'
+      path: '/rules/u11'
+      fullPath: '/rules/u11'
+      preLoaderRoute: typeof AuthenticatedRulesU11RouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/match-summary/$sessionId': {
       id: '/_authenticated/match-summary/$sessionId'
       path: '/match-summary/$sessionId'
@@ -333,6 +372,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRatingsRoute: typeof AuthenticatedRatingsRoute
   AuthenticatedGroupGroupIdRoute: typeof AuthenticatedGroupGroupIdRoute
   AuthenticatedMatchSummarySessionIdRoute: typeof AuthenticatedMatchSummarySessionIdRoute
+  AuthenticatedRulesU11Route: typeof AuthenticatedRulesU11Route
+  AuthenticatedRulesU11VsU10Route: typeof AuthenticatedRulesU11VsU10Route
   AuthenticatedSessionInfoSessionIdRoute: typeof AuthenticatedSessionInfoSessionIdRoute
   AuthenticatedSquadPlayerIdRoute: typeof AuthenticatedSquadPlayerIdRoute
   AuthenticatedSquadIndexRoute: typeof AuthenticatedSquadIndexRoute
@@ -349,6 +390,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGroupGroupIdRoute: AuthenticatedGroupGroupIdRoute,
   AuthenticatedMatchSummarySessionIdRoute:
     AuthenticatedMatchSummarySessionIdRoute,
+  AuthenticatedRulesU11Route: AuthenticatedRulesU11Route,
+  AuthenticatedRulesU11VsU10Route: AuthenticatedRulesU11VsU10Route,
   AuthenticatedSessionInfoSessionIdRoute:
     AuthenticatedSessionInfoSessionIdRoute,
   AuthenticatedSquadPlayerIdRoute: AuthenticatedSquadPlayerIdRoute,
