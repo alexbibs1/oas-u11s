@@ -14,7 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, Plus, Pencil, Check } from "lucide-react";
+import { ChevronLeft, Plus, Pencil, Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/block-builder")({
   beforeLoad: async () => {
@@ -189,7 +190,9 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
       setEndDate("");
       setIsActive(false);
     }
-    const base: GroupState[] = [1, 2, 3, 4].map((n) => {
+    const hasGroup5 = data.groups.some((g) => g.group_number === 5);
+    const numbers = hasGroup5 ? [1, 2, 3, 4, 5] : [1, 2, 3, 4];
+    const base: GroupState[] = numbers.map((n) => {
       const g = data.groups.find((x) => x.group_number === n);
       return g
         ? { coach_ids: g.coach_ids, player_ids: g.player_ids }
@@ -461,18 +464,46 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
           </div>
 
           {/* Groups */}
-          <div className="grid gap-3 sm:grid-cols-2">
-            {groups.map((g, i) => (
-              <GroupColumn
-                key={i}
-                index={i}
-                group={g}
-                coaches={data.coaches}
-                playerMap={playerMap}
-                onUnassign={unassign}
-                onToggleCoach={(cid) => toggleCoach(i, cid)}
-              />
-            ))}
+          <div>
+            <div
+              className={cn(
+                "grid gap-3 sm:grid-cols-2",
+                groups.length === 5 && "sm:grid-cols-3",
+              )}
+            >
+              {groups.map((g, i) => (
+                <GroupColumn
+                  key={i}
+                  index={i}
+                  group={g}
+                  coaches={data.coaches}
+                  playerMap={playerMap}
+                  onUnassign={unassign}
+                  onToggleCoach={(cid) => toggleCoach(i, cid)}
+                />
+              ))}
+            </div>
+            <div className="mt-3">
+              {groups.length < 5 ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setGroups((prev) => [...prev, { coach_ids: [], player_ids: [] }])
+                  }
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-accent/40 bg-accent/5 px-4 py-3 text-sm font-semibold text-accent hover:bg-accent/10"
+                >
+                  <Plus className="h-4 w-4" /> Add a 5th group
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setGroups((prev) => prev.slice(0, 4))}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-destructive/40 bg-destructive/5 px-4 py-3 text-sm font-semibold text-destructive hover:bg-destructive/10"
+                >
+                  <X className="h-4 w-4" /> Remove group 5
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="lg:col-span-2 flex justify-between">
@@ -497,8 +528,10 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
                   Clear
                 </button>
               </div>
-              <div className="mt-2 grid grid-cols-4 gap-2">
-                {[0, 1, 2, 3].map((i) => (
+              <div
+                className={cn("mt-2 grid gap-2", groups.length === 5 ? "grid-cols-5" : "grid-cols-4")}
+              >
+                {groups.map((_, i) => (
                   <button
                     key={i}
                     type="button"
@@ -516,7 +549,7 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
 
       {step === 3 && (
         <section className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className={cn("grid gap-3 sm:grid-cols-2", groups.length === 5 && "sm:grid-cols-3")}>
             {groups.map((g, i) => (
               <GroupSummary
                 key={i}

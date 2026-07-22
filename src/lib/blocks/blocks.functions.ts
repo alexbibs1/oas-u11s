@@ -148,7 +148,7 @@ export const getBlockBuilderData = createServerFn({ method: "GET" })
   });
 
 const groupInput = z.object({
-  group_number: z.number().int().min(1).max(4),
+  group_number: z.number().int().min(1).max(5),
   coach_ids: z.array(z.string().uuid()),
   player_ids: z.array(z.string().uuid()),
 });
@@ -159,7 +159,7 @@ const saveBlockInput = z.object({
   start_date: z.string().min(8),
   end_date: z.string().min(8),
   is_active: z.boolean(),
-  groups: z.array(groupInput).max(4),
+  groups: z.array(groupInput).max(5),
 });
 
 export const saveBlock = createServerFn({ method: "POST" })
@@ -245,6 +245,21 @@ export const saveBlock = createServerFn({ method: "POST" })
           .insert(g.coach_ids.map((cid) => ({ group_id: groupId, coach_id: cid })));
         if (ce) throw new Error(ce.message);
       }
+    }
+
+    // Delete any existing groups for this block that are no longer in the payload
+    const keepNumbers = data.groups.map((g) => g.group_number);
+    const { data: existingGroups } = await sb
+      .from("groups")
+      .select("id, group_number")
+      .eq("block_id", blockId);
+    const toDelete = (existingGroups ?? []).filter(
+      (g: any) => !keepNumbers.includes(g.group_number),
+    );
+    for (const g of toDelete) {
+      await sb.from("group_players").delete().eq("group_id", g.id);
+      await sb.from("group_coaches").delete().eq("group_id", g.id);
+      await sb.from("groups").delete().eq("id", g.id);
     }
 
     return { ok: true, id: blockId };
