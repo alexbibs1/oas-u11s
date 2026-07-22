@@ -23,7 +23,7 @@ export const listMatchWeeks = createServerFn({ method: "GET" })
       .select("id, session_date, week_number, opponent, venue")
       .eq("block_id", (block as any).id)
       .eq("session_type", "match")
-      .order("session_date", { ascending: false });
+      .order("session_date", { ascending: true });
     const weeks = (sessions ?? []).map((s: any) => {
       const wk =
         s.week_number ??
