@@ -656,19 +656,30 @@ function CompletionTrackerSection() {
             return (
               <li
                 key={g.group_id}
-                className="flex items-center justify-between rounded-md border bg-background p-3"
+                className="rounded-md border bg-background p-3"
               >
-                <div>
-                  <p className="text-sm font-semibold">Group {g.group_number}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {g.coaches.length ? g.coaches.join(", ") : "No coaches"}
-                  </p>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold">Group {g.group_number}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {g.coaches.length ? g.coaches.join(", ") : "No coaches"}
+                    </p>
+                  </div>
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${palette}`}
+                  >
+                    {label}
+                  </span>
                 </div>
-                <span
-                  className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${palette}`}
-                >
-                  {label}
-                </span>
+                {(g.status === "submitted" || g.status === "partial") && activeId && (
+                  <Link
+                    to="/match-summary/$sessionId"
+                    params={{ sessionId: activeId }}
+                    className="mt-2 inline-block text-xs font-medium text-primary hover:underline"
+                  >
+                    View ratings →
+                  </Link>
+                )}
               </li>
             );
           })}

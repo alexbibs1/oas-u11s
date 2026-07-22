@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getMatchSummary } from "@/lib/sessions/sessions.functions";
-import { ChevronLeft, MapPin } from "lucide-react";
+import { ChevronLeft, MapPin, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDateLong } from "@/lib/dates";
 
@@ -70,6 +70,17 @@ function MatchSummaryPage() {
               </p>
             </Link>
 
+            {g.playerOfTheDay && (
+              <div className="mb-3 flex items-center gap-2 rounded-md border border-accent/40 bg-accent/10 px-3 py-2">
+                <Trophy className="h-4 w-4 text-accent" />
+                <div className="text-xs">
+                  <p className="font-semibold uppercase tracking-wider text-accent">
+                    Player of the Day
+                  </p>
+                  <p className="text-sm font-bold text-primary">{g.playerOfTheDay.name}</p>
+                </div>
+              </div>
+            )}
             {!g.hasOverrides ? (
               <p className="text-sm italic text-muted-foreground">No register submitted.</p>
             ) : (
