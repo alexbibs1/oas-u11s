@@ -259,7 +259,7 @@ export const getMatchSummary = createServerFn({ method: "GET" })
 
     const { data: ratings } = await sb
       .from("skill_ratings")
-      .select("player_id, group_id, tackling, rucking, carrying, handling, kicking, catching, iq")
+      .select("player_id, group_id, tackling, rucking, carrying, handling, kicking, catching, iq, player_of_the_day")
       .eq("session_id", data.session_id);
 
     const playerIds = new Set<string>();
@@ -303,6 +303,10 @@ export const getMatchSummary = createServerFn({ method: "GET" })
 
       const groupRatings = (ratings ?? []).filter((r: any) => r.group_id === g.id);
       const ratingMap = new Map(groupRatings.map((r: any) => [r.player_id, r]));
+      const potdRow = groupRatings.find((r: any) => r.player_of_the_day);
+      const potd = potdRow
+        ? { id: potdRow.player_id, name: pMap.get(potdRow.player_id) ?? "—" }
+        : null;
 
       return {
         id: g.id,
@@ -320,6 +324,7 @@ export const getMatchSummary = createServerFn({ method: "GET" })
           scores: ratingMap.get(p.id) ?? null,
         })),
         hasRatings: groupRatings.length > 0,
+        playerOfTheDay: potd,
       };
     });
 
