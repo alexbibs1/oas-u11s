@@ -247,6 +247,21 @@ export const saveBlock = createServerFn({ method: "POST" })
       }
     }
 
+    // Delete any existing groups for this block that are no longer in the payload
+    const keepNumbers = data.groups.map((g) => g.group_number);
+    const { data: existingGroups } = await sb
+      .from("groups")
+      .select("id, group_number")
+      .eq("block_id", blockId);
+    const toDelete = (existingGroups ?? []).filter(
+      (g: any) => !keepNumbers.includes(g.group_number),
+    );
+    for (const g of toDelete) {
+      await sb.from("group_players").delete().eq("group_id", g.id);
+      await sb.from("group_coaches").delete().eq("group_id", g.id);
+      await sb.from("groups").delete().eq("id", g.id);
+    }
+
     return { ok: true, id: blockId };
   });
 
