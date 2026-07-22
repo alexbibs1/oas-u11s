@@ -87,7 +87,8 @@ export const listGroupsForBlock = createServerFn({ method: "GET" })
 
 /**
  * Returns the effective player roster for (session, group):
- * - Players whose default group is this group, MINUS those whose override moves them elsewhere or marks absent
+ * - Players whose default group is this group, MINUS those whose override moves them elsewhere
+ * - Absent players stay visible so they can be toggled back to present
  * - PLUS players moved IN by override to this group
  * Also returns existing overrides, ratings, and locked status.
  */
