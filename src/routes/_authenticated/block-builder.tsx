@@ -528,8 +528,10 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
                   Clear
                 </button>
               </div>
-              <div className="mt-2 grid grid-cols-4 gap-2">
-                {[0, 1, 2, 3].map((i) => (
+              <div
+                className={cn("mt-2 grid gap-2", groups.length === 5 ? "grid-cols-5" : "grid-cols-4")}
+              >
+                {groups.map((_, i) => (
                   <button
                     key={i}
                     type="button"
