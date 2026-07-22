@@ -190,7 +190,9 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
       setEndDate("");
       setIsActive(false);
     }
-    const base: GroupState[] = [1, 2, 3, 4].map((n) => {
+    const hasGroup5 = data.groups.some((g) => g.group_number === 5);
+    const numbers = hasGroup5 ? [1, 2, 3, 4, 5] : [1, 2, 3, 4];
+    const base: GroupState[] = numbers.map((n) => {
       const g = data.groups.find((x) => x.group_number === n);
       return g
         ? { coach_ids: g.coach_ids, player_ids: g.player_ids }
