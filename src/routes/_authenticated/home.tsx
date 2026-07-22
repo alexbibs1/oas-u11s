@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getMyRole } from "@/lib/auth/roles.functions";
+import { useMyRole } from "@/lib/auth/view-as";
 import { getHomeSummary } from "@/lib/feed/feed.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ function fmtDate(d: string | null | undefined) {
 
 function HomePage() {
   const navigate = useNavigate();
-  const { data: me } = useQuery({ queryKey: qk.me, queryFn: () => getMyRole() });
+  const { data: me } = useMyRole();
   const { data: summary } = useQuery({
     queryKey: qk.feed.homeSummary,
     queryFn: () => getHomeSummary(),

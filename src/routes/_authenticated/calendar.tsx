@@ -8,7 +8,7 @@ import {
   updateSession,
   deleteSession,
 } from "@/lib/sessions/sessions.functions";
-import { getMyRole } from "@/lib/auth/roles.functions";
+import { useMyRole } from "@/lib/auth/view-as";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,7 +69,7 @@ type Slot = {
 };
 
 function CalendarPage() {
-  const { data: me } = useQuery({ queryKey: qk.me, queryFn: () => getMyRole() });
+  const { data: me } = useMyRole();
   const { data: blocks = [], isLoading: blocksLoading } = useQuery({
     queryKey: qk.blocks.all,
     queryFn: () => listBlocks(),

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight } from "lucide-react";
 import { getGroupDetail } from "@/lib/match/match.functions";
-import { getMyRole } from "@/lib/auth/roles.functions";
+import { useMyRole } from "@/lib/auth/view-as";
 import { SKILLS, ATTRIBUTES } from "@/lib/skills";
 import { Button } from "@/components/ui/button";
 
@@ -31,10 +31,7 @@ function GroupDetailPage() {
     queryKey: ["group-detail", groupId],
     queryFn: () => getGroupDetail({ data: { group_id: groupId } }),
   });
-  const { data: me } = useQuery({
-    queryKey: ["my-role"],
-    queryFn: () => getMyRole(),
-  });
+  const { data: me } = useMyRole();
 
   if (isLoading || !data) {
     return (
