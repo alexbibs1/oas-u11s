@@ -464,18 +464,46 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
           </div>
 
           {/* Groups */}
-          <div className="grid gap-3 sm:grid-cols-2">
-            {groups.map((g, i) => (
-              <GroupColumn
-                key={i}
-                index={i}
-                group={g}
-                coaches={data.coaches}
-                playerMap={playerMap}
-                onUnassign={unassign}
-                onToggleCoach={(cid) => toggleCoach(i, cid)}
-              />
-            ))}
+          <div>
+            <div
+              className={cn(
+                "grid gap-3 sm:grid-cols-2",
+                groups.length === 5 && "sm:grid-cols-3",
+              )}
+            >
+              {groups.map((g, i) => (
+                <GroupColumn
+                  key={i}
+                  index={i}
+                  group={g}
+                  coaches={data.coaches}
+                  playerMap={playerMap}
+                  onUnassign={unassign}
+                  onToggleCoach={(cid) => toggleCoach(i, cid)}
+                />
+              ))}
+            </div>
+            <div className="mt-3">
+              {groups.length < 5 ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setGroups((prev) => [...prev, { coach_ids: [], player_ids: [] }])
+                  }
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-accent/40 bg-accent/5 px-4 py-3 text-sm font-semibold text-accent hover:bg-accent/10"
+                >
+                  <Plus className="h-4 w-4" /> Add a 5th group
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setGroups((prev) => prev.slice(0, 4))}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-destructive/40 bg-destructive/5 px-4 py-3 text-sm font-semibold text-destructive hover:bg-destructive/10"
+                >
+                  <X className="h-4 w-4" /> Remove group 5
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="lg:col-span-2 flex justify-between">
