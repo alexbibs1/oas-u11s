@@ -420,6 +420,7 @@ function RateStep({ session, group, onDone }: { session: any; group: any; onDone
 
   const [scores, setScores] = useState<Record<string, any>>({});
   const [activeDescriptor, setActiveDescriptor] = useState<string | null>(null);
+  const [potdId, setPotdId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!ctx) return;
@@ -434,6 +435,8 @@ function RateStep({ session, group, onDone }: { session: any; group: any; onDone
       init[p.id] = entry;
     }
     setScores(init);
+    const existingPotd = (ctx.ratings as any[]).find((r) => r.player_of_the_day);
+    setPotdId(existingPotd?.player_id ?? null);
   }, [ctx, presentPlayers]);
 
   const hasExisting = (ctx?.ratings as any[] | undefined)?.length ?? 0;
@@ -449,6 +452,7 @@ function RateStep({ session, group, onDone }: { session: any; group: any; onDone
             player_id: p.id,
             ...scores[p.id],
           })),
+          player_of_the_day_id: potdId,
         },
       }),
     onSuccess: () => {

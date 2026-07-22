@@ -7,6 +7,7 @@ export const qk = {
     notes: (playerId: string) => ["player-notes", playerId] as const,
     currentBlock: (playerId: string) => ["player-current-block", playerId] as const,
     skillRatings: (playerId: string) => ["player-skill-ratings", playerId] as const,
+    potdCount: (playerId: string) => ["player-potd-count", playerId] as const,
   },
   coaches: { all: ["coaches"] as const, list: ["coaches"] as const },
   blocks: {
