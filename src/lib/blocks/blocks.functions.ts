@@ -148,7 +148,7 @@ export const getBlockBuilderData = createServerFn({ method: "GET" })
   });
 
 const groupInput = z.object({
-  group_number: z.number().int().min(1).max(4),
+  group_number: z.number().int().min(1).max(5),
   coach_ids: z.array(z.string().uuid()),
   player_ids: z.array(z.string().uuid()),
 });
@@ -159,7 +159,7 @@ const saveBlockInput = z.object({
   start_date: z.string().min(8),
   end_date: z.string().min(8),
   is_active: z.boolean(),
-  groups: z.array(groupInput).max(4),
+  groups: z.array(groupInput).max(5),
 });
 
 export const saveBlock = createServerFn({ method: "POST" })
