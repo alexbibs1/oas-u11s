@@ -31,10 +31,7 @@ function GroupDetailPage() {
     queryKey: ["group-detail", groupId],
     queryFn: () => getGroupDetail({ data: { group_id: groupId } }),
   });
-  const { data: me } = useQuery({
-    queryKey: ["my-role"],
-    queryFn: () => getMyRole(),
-  });
+  const { data: me } = useMyRole();
 
   if (isLoading || !data) {
     return (
