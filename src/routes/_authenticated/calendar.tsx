@@ -8,7 +8,7 @@ import {
   updateSession,
   deleteSession,
 } from "@/lib/sessions/sessions.functions";
-import { getMyRole } from "@/lib/auth/roles.functions";
+import { useMyRole } from "@/lib/auth/view-as";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
