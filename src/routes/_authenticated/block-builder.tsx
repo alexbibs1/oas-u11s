@@ -549,7 +549,7 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
 
       {step === 3 && (
         <section className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className={cn("grid gap-3 sm:grid-cols-2", groups.length === 5 && "sm:grid-cols-3")}>
             {groups.map((g, i) => (
               <GroupSummary
                 key={i}
