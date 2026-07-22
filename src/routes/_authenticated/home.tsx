@@ -21,7 +21,7 @@ function fmtDate(d: string | null | undefined) {
 
 function HomePage() {
   const navigate = useNavigate();
-  const { data: me } = useQuery({ queryKey: qk.me, queryFn: () => getMyRole() });
+  const { data: me } = useMyRole();
   const { data: summary } = useQuery({
     queryKey: qk.feed.homeSummary,
     queryFn: () => getHomeSummary(),
