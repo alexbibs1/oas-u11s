@@ -1,5 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { markdownComponents } from "@/components/markdown-components";
 import differencesContent from "@/content/u11-vs-u10.md?raw";
 
 export const Route = createFileRoute("/_authenticated/rules/u11-vs-u10")({
@@ -28,9 +31,9 @@ function U11VsU10Page() {
         <h1 className="mt-1 text-3xl font-bold text-primary">Differences: U11s vs U10s</h1>
       </header>
       <article className="rounded-lg border bg-card p-6">
-        <p className="font-sans whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
           {differencesContent}
-        </p>
+        </ReactMarkdown>
       </article>
     </main>
   );
