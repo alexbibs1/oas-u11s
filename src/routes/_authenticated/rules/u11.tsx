@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ArrowLeft } from "lucide-react";
 import rulesContent from "@/content/u11-rules.md?raw";
+import { markdownComponents } from "@/components/markdown-components";
 
 export const Route = createFileRoute("/_authenticated/rules/u11")({
   head: () => ({
@@ -29,8 +30,10 @@ function U11RulesPage() {
         <p className="text-xs font-semibold uppercase tracking-widest text-accent">Rules</p>
         <h1 className="mt-1 text-3xl font-bold text-primary">U11s Rules of Play</h1>
       </header>
-      <article className="rounded-lg border bg-card p-6 prose prose-sm max-w-none prose-headings:text-primary prose-headings:font-semibold prose-h1:text-2xl prose-h2:text-lg prose-h2:mt-6 prose-p:text-muted-foreground prose-li:text-muted-foreground prose-strong:text-foreground">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{rulesContent}</ReactMarkdown>
+      <article className="rounded-lg border bg-card p-6">
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+          {rulesContent}
+        </ReactMarkdown>
       </article>
     </main>
   );
