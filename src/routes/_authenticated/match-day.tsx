@@ -535,6 +535,23 @@ function RateStep({ session, group, onDone }: { session: any; group: any; onDone
           </li>
         ))}
       </ul>
+      <div className="rounded-lg border bg-card p-4">
+        <label className="mb-2 block text-sm font-semibold text-primary">
+          Player of the Day
+        </label>
+        <select
+          value={potdId ?? ""}
+          onChange={(e) => setPotdId(e.target.value || null)}
+          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+        >
+          <option value="">— None —</option>
+          {presentPlayers.map((p: any) => (
+            <option key={p.id} value={p.id}>
+              {p.player_name}
+            </option>
+          ))}
+        </select>
+      </div>
       <Button className="w-full" onClick={handleSubmit} disabled={submit.isPending}>
         {submit.isPending ? "Saving…" : "Submit Ratings"}
       </Button>

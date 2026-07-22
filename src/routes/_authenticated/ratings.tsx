@@ -155,6 +155,7 @@ function RatingsEntry({
     queryFn: () => getGroupRosterForWeek({ data: { session_id: sessionId, group_id: groupId } }),
   });
   const [scores, setScores] = useState<Scores>({});
+  const [potdId, setPotdId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!data) return;
@@ -168,6 +169,8 @@ function RatingsEntry({
       }
     }
     setScores(init);
+    const existingPotd = (data.existing as any[]).find((e) => e.player_of_the_day);
+    setPotdId(existingPotd?.player_id ?? null);
   }, [data]);
 
   const submit = useMutation({
@@ -186,6 +189,7 @@ function RatingsEntry({
             catching: scores[p.id]?.catching ?? 3,
             iq: scores[p.id]?.iq ?? 3,
           })),
+          player_of_the_day_id: potdId,
         },
       }),
     onSuccess: (r: any) => {
@@ -247,6 +251,24 @@ function RatingsEntry({
           </li>
         ))}
       </ul>
+
+      <div className="rounded-lg border bg-card p-4">
+        <label className="mb-2 block text-sm font-semibold text-primary">
+          Player of the Day
+        </label>
+        <select
+          value={potdId ?? ""}
+          onChange={(e) => setPotdId(e.target.value || null)}
+          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+        >
+          <option value="">— None —</option>
+          {(data.players as any[]).map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.player_name}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <Button className="w-full" disabled={submit.isPending} onClick={() => submit.mutate()}>
         {submit.isPending ? "Saving…" : "Save ratings"}
