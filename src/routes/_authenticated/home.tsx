@@ -5,6 +5,7 @@ import { getHomeSummary } from "@/lib/feed/feed.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { qk } from "@/lib/query-keys";
+import { BookOpen, GitCompare } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/home")({
   component: HomePage,
