@@ -130,11 +130,7 @@ function GroupDetailPage() {
                 </p>
               </div>
             </>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              A balanced group has a mix across all four quartiles.
-            </p>
-          )}
+          ) : null}
         </section>
       )}
 
@@ -168,7 +164,7 @@ function GroupDetailPage() {
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
                       Skills
                     </p>
-                    <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[12px] text-muted-foreground">
+                    <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[13px] text-muted-foreground">
                       {SKILLS.map((s) => (
                         <span key={s.key} className="tabular-nums">
                           {s.short}{" "}
@@ -179,7 +175,7 @@ function GroupDetailPage() {
                     <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
                       Attributes
                     </p>
-                    <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground/80">
+                    <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[13px] text-muted-foreground/80">
                       {ATTRIBUTES.map((a) => (
                         <span key={a.key} className="tabular-nums italic">
                           {a.short} <span className="font-medium not-italic">{p[a.key]}</span>

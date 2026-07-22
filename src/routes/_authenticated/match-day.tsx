@@ -119,7 +119,7 @@ function MatchDayPage() {
         <div className="rounded-lg border bg-card p-6 text-center">
           <p className="text-lg font-semibold text-primary">Ratings submitted</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Baseline scores updated for the active block.
+            Weekly ratings saved for this match.
           </p>
           <Button className="mt-6" onClick={back}>
             Done
