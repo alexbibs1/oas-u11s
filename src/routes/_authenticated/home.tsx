@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getMyRole } from "@/lib/auth/roles.functions";
+import { useMyRole } from "@/lib/auth/view-as";
 import { getHomeSummary } from "@/lib/feed/feed.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
