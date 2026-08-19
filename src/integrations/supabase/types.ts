@@ -673,6 +673,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      test_hello: { Args: never; Returns: string }
     }
     Enums: {
       app_role: "block_builder" | "coach"
