@@ -110,6 +110,12 @@ export const getGroupRosterForWeek = createServerFn({ method: "GET" })
       .from("session_player_overrides")
       .select("player_id, override_group_id")
       .eq("session_id", data.session_id);
+    const { data: registration } = await sb
+      .from("session_registrations")
+      .select("session_id")
+      .eq("session_id", data.session_id)
+      .eq("group_id", data.group_id)
+      .maybeSingle();
     const absentOrMoved = new Set(
       (overrides ?? [])
         .filter((o: any) => o.override_group_id === null || o.override_group_id !== data.group_id)
@@ -145,6 +151,7 @@ export const getGroupRosterForWeek = createServerFn({ method: "GET" })
     return {
       players: [...players, ...extra].sort((a, b) => a.player_name.localeCompare(b.player_name)),
       existing: existingByPlayer ?? [],
+      registerSubmitted: !!registration,
     };
   });
 
@@ -224,6 +231,17 @@ export const upsertWeekRatings = createServerFn({ method: "POST" })
     if (!isAdmin && !isAssignedCoach) {
       throw new Error("Forbidden: you are not a coach for this group");
     }
+
+    const { data: reg } = await sb
+      .from("session_registrations")
+      .select("session_id")
+      .eq("session_id", data.session_id)
+      .eq("group_id", data.group_id)
+      .maybeSingle();
+    if (!reg) {
+      throw new Error("Register must be submitted before ratings can be entered");
+    }
+
     const myName =
       ((myRole as any)?.coaches?.coach_name as string | undefined) ??
       ((context as any).claims?.email as string | undefined) ??

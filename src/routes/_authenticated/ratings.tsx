@@ -202,6 +202,25 @@ function RatingsEntry({
   });
 
   if (isLoading || !data) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (!data.registerSubmitted) {
+    return (
+      <div className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">
+        <p className="font-semibold text-primary">Register not yet submitted</p>
+        <p className="mt-1">
+          The attendance register for this group hasn't been submitted yet. Please complete the
+          register on Match Day before entering ratings.
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-4"
+          onClick={() => (window.location.href = "/match-day")}
+        >
+          Go to Match Day
+        </Button>
+      </div>
+    );
+  }
   if (!data.players.length)
     return (
       <p className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">
