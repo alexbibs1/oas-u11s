@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { getPlayer, getPlayerCurrentBlock, getPlayerPotdCount } from "@/lib/players/players.functions";
 import { listPlayerSkillRatings } from "@/lib/skill-ratings/skill-ratings.functions";
 import {
@@ -108,21 +109,29 @@ function PlayerProfile() {
   const addM = useMutation({
     mutationFn: (note: string) => createFn({ data: { player_id: playerId, note } }),
     onSuccess: () => {
+      toast.success("Note added");
       setDraft("");
       setAdding(false);
       invalidate();
     },
+    onError: (e: any) => toast.error(`Failed to add note: ${e.message}`),
   });
   const updateM = useMutation({
     mutationFn: (v: { id: string; note: string }) => updateFn({ data: v }),
     onSuccess: () => {
+      toast.success("Note updated");
       setEditingId(null);
       invalidate();
     },
+    onError: (e: any) => toast.error(`Failed to update note: ${e.message}`),
   });
   const deleteM = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { id } }),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      toast.success("Note deleted");
+      invalidate();
+    },
+    onError: (e: any) => toast.error(`Failed to delete note: ${e.message}`),
   });
 
   return (
