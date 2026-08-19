@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { listMatchSessions } from "@/lib/sessions/sessions.functions";
@@ -115,15 +115,25 @@ function MatchDayPage() {
       {step === "rate" && session && group && (
         <RateStep session={session} group={group} onDone={() => setStep("done")} />
       )}
-      {step === "done" && (
+      {step === "done" && session && (
         <div className="rounded-lg border bg-card p-6 text-center">
           <p className="text-lg font-semibold text-primary">Ratings submitted</p>
           <p className="mt-2 text-sm text-muted-foreground">
             Weekly ratings saved for this match.
           </p>
-          <Button className="mt-6" onClick={back}>
-            Done
-          </Button>
+          <div className="mt-6 flex flex-col gap-3">
+            <Button asChild>
+              <Link
+                to="/match-summary/$sessionId"
+                params={{ sessionId: session.id }}
+              >
+                View match summary
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/home">Back to home</Link>
+            </Button>
+          </div>
         </div>
       )}
     </main>
