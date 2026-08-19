@@ -151,6 +151,7 @@ function RatingsEntry({
   onDone: () => void;
 }) {
   const qc = useQueryClient();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const { data, isLoading } = useQuery({
     queryKey: qk.groups.rosterForWeek(sessionId, groupId),
     queryFn: () => getGroupRosterForWeek({ data: { session_id: sessionId, group_id: groupId } }),
@@ -173,6 +174,21 @@ function RatingsEntry({
     const existingPotd = (data.existing as any[]).find((e) => e.player_of_the_day);
     setPotdId(existingPotd?.player_id ?? null);
   }, [data]);
+
+  const hasExisting = (data?.existing as any[] | undefined)?.length ?? 0;
+
+  const handleSubmit = async () => {
+    if (hasExisting) {
+      const ok = await confirm({
+        title: "Overwrite existing ratings?",
+        description: "Ratings already exist for this group/session. Submitting will overwrite them.",
+        confirmLabel: "Overwrite",
+        destructive: true,
+      });
+      if (!ok) return;
+    }
+    submit.mutate();
+  };
 
   const submit = useMutation({
     mutationFn: () =>
@@ -290,9 +306,10 @@ function RatingsEntry({
         </select>
       </div>
 
-      <Button className="w-full" disabled={submit.isPending} onClick={() => submit.mutate()}>
+      <Button className="w-full" disabled={submit.isPending} onClick={() => handleSubmit()}>
         {submit.isPending ? "Saving…" : "Save ratings"}
       </Button>
+      {confirmDialog}
     </div>
   );
 }
