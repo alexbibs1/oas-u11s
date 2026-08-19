@@ -673,6 +673,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_coach_for_group: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_coach_for_session_block: {
+        Args: { _session_id: string; _user_id: string }
+        Returns: boolean
+      }
+      test_hello: { Args: never; Returns: string }
+      test_hello3: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "block_builder" | "coach"
