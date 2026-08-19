@@ -197,6 +197,31 @@ export const saveRegister = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const supabase = context.supabase;
 
+    // Authorization: must be admin OR a coach assigned to this group
+    const { data: group, error: gErr } = await supabase
+      .from("groups")
+      .select("id, group_coaches:group_coaches ( coach_id )")
+      .eq("id", data.group_id)
+      .single();
+    if (gErr) throw new Error(gErr.message);
+    const coachIds = ((group as any).group_coaches ?? [])
+      .map((gc: any) => gc.coach_id)
+      .filter(Boolean) as string[];
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "block_builder",
+    });
+    const { data: myRole } = await supabase
+      .from("user_roles")
+      .select("coach_id")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    const myCoachId = (myRole as any)?.coach_id as string | null | undefined;
+    const isAssignedCoach = !!myCoachId && coachIds.includes(myCoachId);
+    if (!isAdmin && !isAssignedCoach) {
+      throw new Error("Forbidden: you are not a coach for this group");
+    }
+
     // Fetch current overrides for all submitted players so we can detect
     // moved-in players (their current override targets this group) and
     // preserve their override when they're marked "present".
