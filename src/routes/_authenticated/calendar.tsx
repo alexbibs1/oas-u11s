@@ -433,7 +433,7 @@ function SlotCell({
             e.stopPropagation();
             onEdit(session);
           }}
-          className="absolute right-2 top-2 rounded p-1.5 text-muted-foreground opacity-0 transition group-hover:opacity-100 hover:bg-muted"
+          className="absolute right-2 top-2 rounded p-1.5 text-muted-foreground opacity-100 transition md:opacity-0 md:group-hover:opacity-100 hover:bg-muted"
           aria-label="Edit session"
         >
           <Pencil className="h-3.5 w-3.5" />
