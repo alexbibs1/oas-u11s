@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+import { toast } from "sonner";
 import {
   listFeed,
   createFeedPost,
@@ -26,7 +27,7 @@ function FeedPage() {
   const updateFn = useServerFn(updateFeedPost);
   const deleteFn = useServerFn(deleteFeedPost);
 
-  const { data: posts = [] } = useQuery({
+  const { data: posts = [], isLoading } = useQuery({
     queryKey: qk.feed.all,
     queryFn: () => listFn({ data: {} }),
   });
@@ -41,21 +42,29 @@ function FeedPage() {
   const createM = useMutation({
     mutationFn: (content: string) => createFn({ data: { content } }),
     onSuccess: () => {
+      toast.success("Post published");
       setDraft("");
       setComposing(false);
       invalidate();
     },
+    onError: (e: any) => toast.error(`Failed to post: ${e.message}`),
   });
   const updateM = useMutation({
     mutationFn: (v: { id: string; content: string }) => updateFn({ data: v }),
     onSuccess: () => {
+      toast.success("Post updated");
       setEditingId(null);
       invalidate();
     },
+    onError: (e: any) => toast.error(`Failed to update: ${e.message}`),
   });
   const deleteM = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { id } }),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      toast.success("Post deleted");
+      invalidate();
+    },
+    onError: (e: any) => toast.error(`Failed to delete: ${e.message}`),
   });
 
   return (
@@ -101,6 +110,11 @@ function FeedPage() {
       </section>
 
       <section className="space-y-3">
+        {isLoading && (
+          <p className="rounded-lg border border-dashed bg-card/50 p-6 text-center text-sm text-muted-foreground">
+            Loading…
+          </p>
+        )}
         {posts.length === 0 && (
           <p className="rounded-lg border border-dashed bg-card/50 p-6 text-center text-sm text-muted-foreground">
             No posts yet.
