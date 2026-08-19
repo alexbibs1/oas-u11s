@@ -82,7 +82,14 @@ function MatchSummaryPage() {
               </div>
             )}
             {!g.hasOverrides ? (
-              <p className="text-sm italic text-muted-foreground">No register submitted.</p>
+              <div className="rounded-md border border-dashed p-4 text-center">
+                <p className="text-sm text-muted-foreground">No register submitted.</p>
+                <Button asChild variant="outline" size="sm" className="mt-3">
+                  <Link to="/match-day" search={{ sessionId: data.session.id }}>
+                    Submit register
+                  </Link>
+                </Button>
+              </div>
             ) : (
               <div className="space-y-3">
                 <PlayerList label="Present" items={g.present} />
@@ -94,9 +101,14 @@ function MatchSummaryPage() {
                     Ratings
                   </p>
                   {!g.hasRatings ? (
-                    <p className="text-xs italic text-muted-foreground">
-                      Ratings not yet submitted.
-                    </p>
+                    <div className="rounded-md border border-dashed p-3 text-center">
+                      <p className="text-xs text-muted-foreground">Ratings not yet submitted.</p>
+                      <Button asChild variant="outline" size="sm" className="mt-2">
+                        <Link to="/match-day" search={{ sessionId: data.session.id }}>
+                          Submit ratings
+                        </Link>
+                      </Button>
+                    </div>
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full text-xs">
