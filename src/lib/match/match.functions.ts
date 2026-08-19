@@ -416,6 +416,7 @@ export const submitRatings = createServerFn({ method: "POST" })
       catching: r.catching,
       iq: r.iq,
       entered_by: context.userId,
+      entered_by_name: enteredByName,
     }));
 
     const { error } = await supabase
