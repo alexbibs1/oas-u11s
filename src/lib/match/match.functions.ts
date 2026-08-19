@@ -282,6 +282,19 @@ export const saveRegister = createServerFn({ method: "POST" })
       const { error: insErr } = await supabase.from("session_player_overrides").insert(rows);
       if (insErr) throw new Error(insErr.message);
     }
+
+    await supabase
+      .from("session_registrations")
+      .upsert(
+        {
+          session_id: data.session_id,
+          group_id: data.group_id,
+          submitted_by: context.userId,
+          submitted_at: new Date().toISOString(),
+        },
+        { onConflict: "session_id,group_id" },
+      );
+
     return { ok: true };
   });
 
@@ -357,6 +370,16 @@ export const submitRatings = createServerFn({ method: "POST" })
     const coachNames = ((group as any).group_coaches ?? [])
       .map((gc: any) => gc.coaches?.coach_name)
       .filter(Boolean) as string[];
+
+    const { data: reg } = await supabase
+      .from("session_registrations")
+      .select("session_id")
+      .eq("session_id", data.session_id)
+      .eq("group_id", data.group_id)
+      .maybeSingle();
+    if (!reg) {
+      throw new Error("Register must be submitted before ratings can be entered");
+    }
 
     // Caller info + authorization: must be admin OR a coach assigned to this group
     const { data: isAdmin } = await supabase.rpc("has_role", {
