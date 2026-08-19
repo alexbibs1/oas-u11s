@@ -445,6 +445,48 @@ export type Database = {
           },
         ]
       }
+      session_registrations: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          session_id: string
+          submitted_at: string
+          submitted_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          session_id: string
+          submitted_at?: string
+          submitted_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          session_id?: string
+          submitted_at?: string
+          submitted_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_registrations_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_registrations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessions: {
         Row: {
           block_id: string
