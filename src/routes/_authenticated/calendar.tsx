@@ -391,7 +391,7 @@ function SlotCell({
       if (isPast) {
         navigate({ to: "/match-summary/$sessionId", params: { sessionId: session.id } });
       } else {
-        navigate({ to: "/match-day", search: { sessionId: session.id } });
+        navigate({ to: "/match-day", search: { sessionId: session.id, blockId: undefined } });
       }
     } else {
       navigate({ to: "/session-info/$sessionId", params: { sessionId: session.id } });
