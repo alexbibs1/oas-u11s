@@ -139,11 +139,7 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
       .eq("group_id", data.group_id);
     if (e4) throw new Error(e4.message);
 
-    // Locked = any override row exists for any player whose default group is this group_id
     const defaultIds = new Set((defaultRoster ?? []).map((r: any) => r.player_id));
-    const lockedByOverride = (overrides ?? []).some(
-      (o: any) => defaultIds.has(o.player_id) || o.override_group_id === data.group_id,
-    );
 
     // Only filter MOVED players (override_group_id is a different group, not null).
     // Absent players (override_group_id = null) stay in defaultRoster so coaches
