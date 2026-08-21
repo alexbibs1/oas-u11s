@@ -377,9 +377,10 @@ function RegisterStep({
         );
       })()}
 
-      <Button className="w-full" disabled={save.isPending} onClick={() => save.mutate()}>
+      <Button className="w-full" disabled={save.isPending} onClick={() => handleSave()}>
         {save.isPending ? "Saving…" : "Confirm Register"}
       </Button>
+      {confirmDialog}
     </div>
   );
 }
