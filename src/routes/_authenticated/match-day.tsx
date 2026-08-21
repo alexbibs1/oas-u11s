@@ -226,6 +226,7 @@ function RegisterStep({
   onProceed: () => void;
 }) {
   const qc = useQueryClient();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const { data: ctx, isLoading } = useQuery({
     queryKey: qk.match.context(session.id, group.id),
     queryFn: () => getMatchDayContext({ data: { session_id: session.id, group_id: group.id } }),
