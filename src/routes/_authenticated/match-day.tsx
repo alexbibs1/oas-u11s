@@ -260,6 +260,17 @@ function RegisterStep({
     setState(init);
   }, [ctx, group.id]);
 
+  const handleSave = async () => {
+    const ok = await confirm({
+      title: "Confirm register?",
+      description:
+        "This will save the attendance register for this group. You can still amend it later by coming back to Match Day.",
+      confirmLabel: "Confirm",
+    });
+    if (!ok) return;
+    save.mutate();
+  };
+
   const save = useMutation({
     mutationFn: () =>
       saveRegister({
