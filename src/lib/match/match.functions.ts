@@ -171,7 +171,6 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
       movedInPlayers: dedupedMovedIn,
       overrides: overrides ?? [],
       ratings: ratings ?? [],
-      locked: lockedByOverride,
     };
   });
 
