@@ -79,7 +79,10 @@ function GroupDetailPage() {
 
       <div className="mb-6">
         <Button asChild className="w-full">
-          <Link to="/match-day" search={{ sessionId: undefined }}>
+          <Link
+            to="/match-day"
+            search={{ sessionId: undefined, blockId: (group.block as any)?.id }}
+          >
             Start Match Day
           </Link>
         </Button>

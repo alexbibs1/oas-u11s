@@ -17,6 +17,7 @@ import { formatDateLong } from "@/lib/dates";
 export const Route = createFileRoute("/_authenticated/match-day")({
   validateSearch: (s: Record<string, unknown>) => ({
     sessionId: typeof s.sessionId === "string" ? s.sessionId : undefined,
+    blockId: typeof s.blockId === "string" ? s.blockId : undefined,
   }),
   component: MatchDayPage,
 });
@@ -28,7 +29,7 @@ import { qk } from "@/lib/query-keys";
 import { useConfirm } from "@/components/confirm-dialog";
 
 function MatchDayPage() {
-  const { sessionId: preselectId } = Route.useSearch();
+  const { sessionId: preselectId, blockId: preselectBlockId } = Route.useSearch();
   const router = useRouter();
   const [step, setStep] = useState<Step>("session");
   const [session, setSession] = useState<any | null>(null);
@@ -225,6 +226,7 @@ function RegisterStep({
   onProceed: () => void;
 }) {
   const qc = useQueryClient();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const { data: ctx, isLoading } = useQuery({
     queryKey: qk.match.context(session.id, group.id),
     queryFn: () => getMatchDayContext({ data: { session_id: session.id, group_id: group.id } }),
@@ -257,6 +259,17 @@ function RegisterStep({
     }
     setState(init);
   }, [ctx, group.id]);
+
+  const handleSave = async () => {
+    const ok = await confirm({
+      title: "Confirm register?",
+      description:
+        "This will save the attendance register for this group. You can still amend it later by coming back to Match Day.",
+      confirmLabel: "Confirm",
+    });
+    if (!ok) return;
+    save.mutate();
+  };
 
   const save = useMutation({
     mutationFn: () =>
@@ -364,9 +377,10 @@ function RegisterStep({
         );
       })()}
 
-      <Button className="w-full" disabled={save.isPending} onClick={() => save.mutate()}>
+      <Button className="w-full" disabled={save.isPending} onClick={() => handleSave()}>
         {save.isPending ? "Saving…" : "Confirm Register"}
       </Button>
+      {confirmDialog}
     </div>
   );
 }

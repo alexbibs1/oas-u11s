@@ -139,11 +139,7 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
       .eq("group_id", data.group_id);
     if (e4) throw new Error(e4.message);
 
-    // Locked = any override row exists for any player whose default group is this group_id
     const defaultIds = new Set((defaultRoster ?? []).map((r: any) => r.player_id));
-    const lockedByOverride = (overrides ?? []).some(
-      (o: any) => defaultIds.has(o.player_id) || o.override_group_id === data.group_id,
-    );
 
     // Only filter MOVED players (override_group_id is a different group, not null).
     // Absent players (override_group_id = null) stay in defaultRoster so coaches
@@ -175,7 +171,6 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
       movedInPlayers: dedupedMovedIn,
       overrides: overrides ?? [],
       ratings: ratings ?? [],
-      locked: lockedByOverride,
     };
   });
 
@@ -298,20 +293,6 @@ export const saveRegister = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const unlockRegister = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ session_id: z.string().uuid(), group_id: z.string().uuid() }))
-  .handler(async ({ context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "block_builder",
-    });
-    if (!isAdmin) throw new Error("Forbidden: block_builder role required");
-    // No-op: the "lock" is a UI concept. Coaches can re-save the register at
-    // any time; saveRegister's delete-then-insert handles updates. We do NOT
-    // delete override rows here — that would undo all player moves.
-    return { ok: true };
-  });
 
 export const submitRatings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
