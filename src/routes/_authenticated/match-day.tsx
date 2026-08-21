@@ -17,6 +17,7 @@ import { formatDateLong } from "@/lib/dates";
 export const Route = createFileRoute("/_authenticated/match-day")({
   validateSearch: (s: Record<string, unknown>) => ({
     sessionId: typeof s.sessionId === "string" ? s.sessionId : undefined,
+    blockId: typeof s.blockId === "string" ? s.blockId : undefined,
   }),
   component: MatchDayPage,
 });
