@@ -293,20 +293,6 @@ export const saveRegister = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const unlockRegister = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ session_id: z.string().uuid(), group_id: z.string().uuid() }))
-  .handler(async ({ context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "block_builder",
-    });
-    if (!isAdmin) throw new Error("Forbidden: block_builder role required");
-    // No-op: the "lock" is a UI concept. Coaches can re-save the register at
-    // any time; saveRegister's delete-then-insert handles updates. We do NOT
-    // delete override rows here — that would undo all player moves.
-    return { ok: true };
-  });
 
 export const submitRatings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
