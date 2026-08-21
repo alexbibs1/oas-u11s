@@ -29,7 +29,7 @@ import { qk } from "@/lib/query-keys";
 import { useConfirm } from "@/components/confirm-dialog";
 
 function MatchDayPage() {
-  const { sessionId: preselectId } = Route.useSearch();
+  const { sessionId: preselectId, blockId: preselectBlockId } = Route.useSearch();
   const router = useRouter();
   const [step, setStep] = useState<Step>("session");
   const [session, setSession] = useState<any | null>(null);
