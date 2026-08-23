@@ -55,6 +55,17 @@ function MatchSummaryPage() {
       </header>
 
       {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {isError && (
+        <div className="rounded-lg border bg-card p-5 text-center">
+          <p className="text-lg font-semibold text-primary">Session not found</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            This session may have been deleted, or the link is incorrect.
+          </p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={() => goBack()}>
+            Go back
+          </Button>
+        </div>
+      )}
 
       <div className="space-y-6 pb-24">
         {data?.groups.map((g) => (
