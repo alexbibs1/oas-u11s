@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/session-info/$sessionId")(
 function SessionInfoPage() {
   const { sessionId } = Route.useParams();
   const router = useRouter();
-  const { data: session } = useQuery({
+  const { data: session, isLoading, isError } = useQuery({
     queryKey: qk.sessions.detail(sessionId),
     queryFn: () => getSession({ data: { id: sessionId } }),
   });
@@ -29,6 +29,33 @@ function SessionInfoPage() {
     else router.navigate({ to: "/calendar" });
   };
 
+  if (isLoading) {
+    return (
+      <main className="mx-auto max-w-2xl px-5 pt-8">
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      </main>
+    );
+  }
+
+  if (isError || !session) {
+    return (
+      <main className="mx-auto max-w-2xl px-5 pt-8">
+        <p className="text-lg font-semibold text-primary">Session not found</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          This session may have been deleted, or the link is incorrect.
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-4"
+          onClick={() => router.navigate({ to: "/calendar" })}
+        >
+          Go to calendar
+        </Button>
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto max-w-2xl px-5 pt-8 pb-24">
       <header className="mb-6 flex items-center gap-3">
@@ -40,9 +67,9 @@ function SessionInfoPage() {
             Training Session
           </p>
           <h1 className="mt-1 text-2xl font-bold text-primary">
-            {session ? formatDateLong(session.session_date) : "…"}
+            {formatDateLong(session.session_date)}
           </h1>
-          {session && <p className="text-xs text-muted-foreground">{session.block_name}</p>}
+          <p className="text-xs text-muted-foreground">{session.block_name}</p>
         </div>
       </header>
 
