@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Pencil, Trash2, UserCircle2 } from "lucide-react";
 import { qk } from "@/lib/query-keys";
 import { useConfirm } from "@/components/confirm-dialog";
+import { QueryError } from "@/components/query-error";
 
 export const Route = createFileRoute("/_authenticated/feed")({
   component: FeedPage,
@@ -27,7 +28,7 @@ function FeedPage() {
   const updateFn = useServerFn(updateFeedPost);
   const deleteFn = useServerFn(deleteFeedPost);
 
-  const { data: posts = [], isLoading } = useQuery({
+  const { data: posts = [], isLoading, isError, refetch } = useQuery({
     queryKey: qk.feed.all,
     queryFn: () => listFn({ data: {} }),
   });
@@ -110,12 +111,13 @@ function FeedPage() {
       </section>
 
       <section className="space-y-3">
+        {isError && <QueryError onRetry={() => refetch()} />}
         {isLoading && (
           <p className="rounded-lg border border-dashed bg-card/50 p-6 text-center text-sm text-muted-foreground">
             Loading…
           </p>
         )}
-        {posts.length === 0 && (
+        {!isError && posts.length === 0 && (
           <p className="rounded-lg border border-dashed bg-card/50 p-6 text-center text-sm text-muted-foreground">
             No posts yet.
           </p>

@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { formatDateShort } from "@/lib/dates";
 import { qk } from "@/lib/query-keys";
 import { useConfirm } from "@/components/confirm-dialog";
+import { QueryError } from "@/components/query-error";
 
 export const Route = createFileRoute("/_authenticated/calendar")({
   component: CalendarPage,
@@ -70,7 +71,12 @@ type Slot = {
 
 function CalendarPage() {
   const { data: me } = useMyRole();
-  const { data: blocks = [], isLoading: blocksLoading } = useQuery({
+  const {
+    data: blocks = [],
+    isLoading: blocksLoading,
+    isError: blocksError,
+    refetch: refetchBlocks,
+  } = useQuery({
     queryKey: qk.blocks.all,
     queryFn: () => listBlocks(),
   });
@@ -92,7 +98,12 @@ function CalendarPage() {
     [blocks, selectedBlockId],
   );
 
-  const { data: blockData, isLoading: slotsLoading } = useQuery({
+  const {
+    data: blockData,
+    isLoading: slotsLoading,
+    isError: slotsError,
+    refetch: refetchSlots,
+  } = useQuery({
     queryKey: selectedBlockId ? qk.sessions.blockSlots(selectedBlockId) : ["block-slots", "none"],
     queryFn: () => getBlockSlots({ data: { block_id: selectedBlockId! } }),
     enabled: !!selectedBlockId,
@@ -136,7 +147,15 @@ function CalendarPage() {
         <p className="text-sm text-muted-foreground">Loading…</p>
       )}
 
-      {!blocksLoading && !blocks.length && (
+      {blocksError && (
+        <QueryError message="Couldn't load blocks" onRetry={() => refetchBlocks()} />
+      )}
+
+      {slotsError && !blocksError && (
+        <QueryError message="Couldn't load sessions" onRetry={() => refetchSlots()} />
+      )}
+
+      {!blocksLoading && !blocksError && !blocks.length && (
         <p className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">
           No blocks yet.
         </p>

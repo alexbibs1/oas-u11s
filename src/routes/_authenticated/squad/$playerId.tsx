@@ -34,6 +34,7 @@ export const Route = createFileRoute("/_authenticated/squad/$playerId")({
 import { SKILLS, ATTRIBUTES } from "@/lib/skills";
 import { qk } from "@/lib/query-keys";
 import { useConfirm } from "@/components/confirm-dialog";
+import { QueryError } from "@/components/query-error";
 
 type PlayerDto = Record<string, unknown> & { player_name: string };
 
@@ -42,11 +43,11 @@ type Trend = { direction: "up" | "down" | "stable"; delta: number };
 function PlayerProfile() {
   const { playerId } = Route.useParams();
   const { data: player } = useSuspenseQuery(playerQuery(playerId));
-  const { data: currentBlock } = useQuery({
+  const { data: currentBlock, isError: blockError } = useQuery({
     queryKey: qk.players.currentBlock(playerId),
     queryFn: () => getPlayerCurrentBlock({ data: { player_id: playerId } }),
   });
-  const { data: potd } = useQuery({
+  const { data: potd, isError: potdError } = useQuery({
     queryKey: qk.players.potdCount(playerId),
     queryFn: () => getPlayerPotdCount({ data: { player_id: playerId } }),
   });
@@ -59,12 +60,12 @@ function PlayerProfile() {
   const updateFn = useServerFn(updatePlayerNote);
   const deleteFn = useServerFn(deletePlayerNote);
 
-  const { data: notes = [] } = useQuery({
+  const { data: notes = [], isError: notesError, refetch: refetchNotes } = useQuery({
     queryKey: qk.players.notes(playerId),
     queryFn: () => listFn({ data: { player_id: playerId } }),
   });
 
-  const { data: weeklyRows = [] } = useQuery({
+  const { data: weeklyRows = [], isError: weeklyError } = useQuery({
     queryKey: qk.players.skillRatings(playerId),
     queryFn: () => listPlayerSkillRatings({ data: { player_id: playerId } }),
   });

@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { qk } from "@/lib/query-keys";
 import { BookOpen, GitCompare } from "lucide-react";
+import { QueryError } from "@/components/query-error";
 
 export const Route = createFileRoute("/_authenticated/home")({
   component: HomePage,
@@ -23,10 +24,17 @@ function fmtDate(d: string | null | undefined) {
 function HomePage() {
   const navigate = useNavigate();
   const { data: me } = useMyRole();
-  const { data: summary } = useQuery({
+  const { data: summary, isError, refetch } = useQuery({
     queryKey: qk.feed.homeSummary,
     queryFn: () => getHomeSummary(),
   });
+
+  if (isError)
+    return (
+      <main className="mx-auto max-w-2xl px-5 pt-8 pb-32">
+        <QueryError onRetry={() => refetch()} />
+      </main>
+    );
 
   const displayName = me?.coachName ?? me?.username ?? "Coach";
   const block = summary?.block;
