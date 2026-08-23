@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/session-info/$sessionId")(
 function SessionInfoPage() {
   const { sessionId } = Route.useParams();
   const router = useRouter();
-  const { data: session } = useQuery({
+  const { data: session, isLoading, isError } = useQuery({
     queryKey: qk.sessions.detail(sessionId),
     queryFn: () => getSession({ data: { id: sessionId } }),
   });
