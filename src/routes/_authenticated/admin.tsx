@@ -704,7 +704,9 @@ function AuditLogSection() {
       <p className="mb-4 text-xs text-muted-foreground">
         Most recent 50 changes to permanent player records.
       </p>
-      {rows.length === 0 ? (
+      {logError ? (
+        <QueryError message="Couldn't load audit log" onRetry={() => refetchLog()} />
+      ) : rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">No audit entries yet.</p>
       ) : (
         <ul className="max-h-80 space-y-2 overflow-auto text-xs">

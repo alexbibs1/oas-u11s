@@ -211,6 +211,12 @@ function PlayerProfile() {
         </div>
       </section>
 
+      {(blockError || potdError || weeklyError) && (
+        <div className="mb-4">
+          <QueryError message="Couldn't load some player data" />
+        </div>
+      )}
+
       <WeeklyHistory playerId={playerId} player={player as PlayerDto} rows={weeklyRows} />
 
       <section>
@@ -254,7 +260,10 @@ function PlayerProfile() {
           </div>
         )}
 
-        {notes.length === 0 && !adding && (
+        {notesError && (
+          <QueryError message="Couldn't load notes" onRetry={() => refetchNotes()} />
+        )}
+        {!notesError && notes.length === 0 && !adding && (
           <div className="rounded-lg border border-dashed bg-card/50 p-5 text-sm text-muted-foreground">
             No notes yet.
           </div>
