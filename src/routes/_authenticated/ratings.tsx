@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { qk } from "@/lib/query-keys";
 import { useConfirm } from "@/components/confirm-dialog";
+import { QueryError } from "@/components/query-error";
 
 export const Route = createFileRoute("/_authenticated/ratings")({
   component: RatingsPage,
@@ -66,10 +67,11 @@ function RatingsPage() {
 }
 
 function WeekPicker({ onPick }: { onPick: (id: string) => void }) {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: qk.sessions.matchWeeks,
     queryFn: () => listMatchWeeks(),
   });
+  if (isError) return <QueryError onRetry={() => refetch()} />;
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (!data?.block)
     return (
@@ -109,10 +111,11 @@ function WeekPicker({ onPick }: { onPick: (id: string) => void }) {
 }
 
 function GroupPicker({ sessionId, onPick }: { sessionId: string; onPick: (id: string) => void }) {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: qk.groups.myForWeek(sessionId),
     queryFn: () => getMyGroupsForWeek({ data: { session_id: sessionId } }),
   });
+  if (isError) return <QueryError onRetry={() => refetch()} />;
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (!data?.groups.length)
     return (
@@ -152,7 +155,7 @@ function RatingsEntry({
 }) {
   const qc = useQueryClient();
   const { confirm, dialog: confirmDialog } = useConfirm();
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: qk.groups.rosterForWeek(sessionId, groupId),
     queryFn: () => getGroupRosterForWeek({ data: { session_id: sessionId, group_id: groupId } }),
   });
@@ -218,6 +221,7 @@ function RatingsEntry({
     onError: (e: any) => toast.error(e.message),
   });
 
+  if (isError) return <QueryError onRetry={() => refetch()} />;
   if (isLoading || !data) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (!data.registerSubmitted) {
     return (
