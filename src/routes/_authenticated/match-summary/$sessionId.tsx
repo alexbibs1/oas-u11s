@@ -15,7 +15,7 @@ import { qk } from "@/lib/query-keys";
 function MatchSummaryPage() {
   const { sessionId } = Route.useParams();
   const router = useRouter();
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: qk.sessions.matchSummary(sessionId),
     queryFn: () => getMatchSummary({ data: { session_id: sessionId } }),
   });
