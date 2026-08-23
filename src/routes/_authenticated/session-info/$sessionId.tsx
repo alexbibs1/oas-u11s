@@ -67,9 +67,9 @@ function SessionInfoPage() {
             Training Session
           </p>
           <h1 className="mt-1 text-2xl font-bold text-primary">
-            {session ? formatDateLong(session.session_date) : "…"}
+            {formatDateLong(session.session_date)}
           </h1>
-          {session && <p className="text-xs text-muted-foreground">{session.block_name}</p>}
+          <p className="text-xs text-muted-foreground">{session.block_name}</p>
         </div>
       </header>
 
