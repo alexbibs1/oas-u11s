@@ -5,6 +5,7 @@ import { getGroupDetail } from "@/lib/match/match.functions";
 import { useMyRole } from "@/lib/auth/view-as";
 import { SKILLS, ATTRIBUTES } from "@/lib/skills";
 import { Button } from "@/components/ui/button";
+import { QueryError } from "@/components/query-error";
 
 export const Route = createFileRoute("/_authenticated/group/$groupId")({
   component: GroupDetailPage,
@@ -27,11 +28,19 @@ function quartileColor(q: number | null | undefined): string {
 
 function GroupDetailPage() {
   const { groupId } = Route.useParams();
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["group-detail", groupId],
     queryFn: () => getGroupDetail({ data: { group_id: groupId } }),
   });
   const { data: me } = useMyRole();
+
+  if (isError) {
+    return (
+      <main className="mx-auto max-w-2xl px-5 pt-8">
+        <QueryError onRetry={() => refetch()} />
+      </main>
+    );
+  }
 
   if (isLoading || !data) {
     return (

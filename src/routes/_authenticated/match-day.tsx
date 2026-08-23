@@ -27,6 +27,7 @@ type Step = "session" | "group" | "register" | "rate" | "done";
 import { SKILLS, SKILL_DESCRIPTORS as DESCRIPTORS } from "@/lib/skills";
 import { qk } from "@/lib/query-keys";
 import { useConfirm } from "@/components/confirm-dialog";
+import { QueryError } from "@/components/query-error";
 
 function MatchDayPage() {
   const { sessionId: preselectId, blockId: preselectBlockId } = Route.useSearch();
@@ -142,10 +143,11 @@ function MatchDayPage() {
 }
 
 function SessionStep({ onPick }: { onPick: (s: any) => void }) {
-  const { data: sessions = [], isLoading } = useQuery({
+  const { data: sessions = [], isLoading, isError, refetch } = useQuery({
     queryKey: qk.sessions.matchList,
     queryFn: () => listMatchSessions(),
   });
+  if (isError) return <QueryError onRetry={() => refetch()} />;
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (!sessions.length)
     return (
@@ -184,10 +186,11 @@ function SessionStep({ onPick }: { onPick: (s: any) => void }) {
 }
 
 function GroupStep({ blockId, onPick }: { blockId: string; onPick: (g: any) => void }) {
-  const { data: groups = [], isLoading } = useQuery({
+  const { data: groups = [], isLoading, isError, refetch } = useQuery({
     queryKey: qk.groups.forBlock(blockId),
     queryFn: () => listGroupsForBlock({ data: { block_id: blockId } }),
   });
+  if (isError) return <QueryError onRetry={() => refetch()} />;
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (!groups.length)
     return (
@@ -227,7 +230,7 @@ function RegisterStep({
 }) {
   const qc = useQueryClient();
   const { confirm, dialog: confirmDialog } = useConfirm();
-  const { data: ctx, isLoading } = useQuery({
+  const { data: ctx, isLoading, isError, refetch } = useQuery({
     queryKey: qk.match.context(session.id, group.id),
     queryFn: () => getMatchDayContext({ data: { session_id: session.id, group_id: group.id } }),
     staleTime: 0,
@@ -293,6 +296,7 @@ function RegisterStep({
     onError: (e: any) => toast.error(e.message),
   });
 
+  if (isError) return <QueryError onRetry={() => refetch()} />;
   if (isLoading || !ctx) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
   const otherGroups = (allGroups as any[]).filter((g) => g.id !== group.id);
@@ -425,7 +429,7 @@ function PillBtn({
 
 function RateStep({ session, group, onDone }: { session: any; group: any; onDone: () => void }) {
   const { confirm, dialog: confirmDialog } = useConfirm();
-  const { data: ctx, isLoading } = useQuery({
+  const { data: ctx, isLoading, isError, refetch } = useQuery({
     queryKey: qk.match.context(session.id, group.id),
     queryFn: () => getMatchDayContext({ data: { session_id: session.id, group_id: group.id } }),
     staleTime: 0,
@@ -499,6 +503,7 @@ function RateStep({ session, group, onDone }: { session: any; group: any; onDone
     submit.mutate();
   };
 
+  if (isError) return <QueryError onRetry={() => refetch()} />;
   if (isLoading || !ctx) return <p className="text-sm text-muted-foreground">Loading…</p>;
   if (!presentPlayers.length)
     return (

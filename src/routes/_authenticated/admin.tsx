@@ -38,6 +38,7 @@ import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { qk } from "@/lib/query-keys";
 import { useConfirm } from "@/components/confirm-dialog";
+import { QueryError } from "@/components/query-error";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
@@ -605,7 +606,7 @@ function AttributesSection() {
 
 
 function CompletionTrackerSection() {
-  const { data: weeks } = useQuery({
+  const { data: weeks, isError: weeksError, refetch: refetchWeeks } = useQuery({
     queryKey: qk.sessions.matchWeeks,
     queryFn: () => listMatchWeeks(),
   });
@@ -622,7 +623,9 @@ function CompletionTrackerSection() {
       <p className="mb-3 text-xs text-muted-foreground">
         Per-group status for a selected match week.
       </p>
-      {weeks?.weeks?.length ? (
+      {weeksError ? (
+        <QueryError message="Couldn't load match weeks" onRetry={() => refetchWeeks()} />
+      ) : weeks?.weeks?.length ? (
         <select
           value={activeId ?? ""}
           onChange={(e) => setSelected(e.target.value)}
@@ -690,7 +693,7 @@ function CompletionTrackerSection() {
 }
 
 function AuditLogSection() {
-  const { data: rows = [] } = useQuery({
+  const { data: rows = [], isError: logError, refetch: refetchLog } = useQuery({
     queryKey: qk.auditLog,
     queryFn: () => listAuditLog({ data: { limit: 50 } }),
   });
@@ -701,7 +704,9 @@ function AuditLogSection() {
       <p className="mb-4 text-xs text-muted-foreground">
         Most recent 50 changes to permanent player records.
       </p>
-      {rows.length === 0 ? (
+      {logError ? (
+        <QueryError message="Couldn't load audit log" onRetry={() => refetchLog()} />
+      ) : rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">No audit entries yet.</p>
       ) : (
         <ul className="max-h-80 space-y-2 overflow-auto text-xs">
