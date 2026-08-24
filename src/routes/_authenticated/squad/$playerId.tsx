@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -42,6 +42,11 @@ type Trend = { direction: "up" | "down" | "stable"; delta: number };
 
 function PlayerProfile() {
   const { playerId } = Route.useParams();
+  const router = useRouter();
+  const goBack = () => {
+    if (window.history.length > 1) router.history.back();
+    else router.navigate({ to: "/squad" });
+  };
   const { data: player } = useSuspenseQuery(playerQuery(playerId));
   const { data: currentBlock, isError: blockError } = useQuery({
     queryKey: qk.players.currentBlock(playerId),
@@ -137,13 +142,13 @@ function PlayerProfile() {
 
   return (
     <main className="mx-auto max-w-2xl px-5 pt-8 pb-32">
-      <Link
-        to="/squad"
+      <button
+        onClick={goBack}
         className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ChevronLeft className="h-4 w-4" />
-        Squad
-      </Link>
+        Back
+      </button>
 
       <header className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-accent">Player</p>

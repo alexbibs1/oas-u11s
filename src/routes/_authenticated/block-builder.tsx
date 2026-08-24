@@ -217,6 +217,10 @@ function BlockEditor({ blockId, onDone }: { blockId: string | null; onDone: () =
       toast.error("Add a block name, start date and end date first");
       return;
     }
+    if (nextEndDate < nextStartDate) {
+      toast.error("End date must be after start date");
+      return;
+    }
     setStep(2);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }

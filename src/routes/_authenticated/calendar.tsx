@@ -595,6 +595,7 @@ function SessionDialog({
                   value={opponent}
                   onChange={(e) => setOpponent(e.target.value)}
                   placeholder="Team name"
+                  required
                 />
               </div>
               <div className="space-y-2">
@@ -636,7 +637,14 @@ function SessionDialog({
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={create.isPending || update.isPending}>
+            <Button
+              type="submit"
+              disabled={
+                create.isPending ||
+                update.isPending ||
+                (type === "match" && (!opponent.trim() || !venue))
+              }
+            >
               {session ? "Save" : "Add"}
             </Button>
           </DialogFooter>

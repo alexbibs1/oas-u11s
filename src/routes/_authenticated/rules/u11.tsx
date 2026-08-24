@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -18,14 +18,20 @@ export const Route = createFileRoute("/_authenticated/rules/u11")({
 });
 
 function U11RulesPage() {
+  const router = useRouter();
+  const goBack = () => {
+    if (window.history.length > 1) router.history.back();
+    else router.navigate({ to: "/home" });
+  };
+
   return (
     <main className="mx-auto max-w-2xl px-5 pt-8 pb-32">
-      <Link
-        to="/home"
+      <button
+        onClick={goBack}
         className="mb-4 inline-flex items-center gap-1 text-sm font-semibold text-accent hover:underline"
       >
-        <ArrowLeft className="h-4 w-4" /> Home
-      </Link>
+        <ArrowLeft className="h-4 w-4" /> Back
+      </button>
       <header className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-accent">Rules</p>
         <h1 className="mt-1 text-3xl font-bold text-primary">U11s Rules of Play</h1>
