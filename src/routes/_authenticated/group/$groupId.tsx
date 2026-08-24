@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight } from "lucide-react";
 import { getGroupDetail } from "@/lib/match/match.functions";
@@ -28,6 +28,11 @@ function quartileColor(q: number | null | undefined): string {
 
 function GroupDetailPage() {
   const { groupId } = Route.useParams();
+  const router = useRouter();
+  const goBack = () => {
+    if (window.history.length > 1) router.history.back();
+    else router.navigate({ to: "/home" });
+  };
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["group-detail", groupId],
     queryFn: () => getGroupDetail({ data: { group_id: groupId } }),
@@ -74,9 +79,9 @@ function GroupDetailPage() {
   return (
     <main className="mx-auto max-w-2xl px-5 pt-8 pb-32">
       <header className="mb-6">
-        <Link to="/home" className="text-xs font-semibold text-accent hover:underline">
-          ← Back to home
-        </Link>
+        <button onClick={goBack} className="text-xs font-semibold text-accent hover:underline">
+          ← Back
+        </button>
         <p className="mt-3 text-xs font-semibold uppercase tracking-widest text-accent">
           {(group.block as any)?.name ?? `Block ${(group.block as any)?.block_number ?? ""}`}
         </p>
