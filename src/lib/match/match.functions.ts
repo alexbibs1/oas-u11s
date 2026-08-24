@@ -159,7 +159,7 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
 
     const filteredDefaultRoster = (defaultRoster ?? [])
       .map((r: any) => r.players)
-      .filter((p: any) => p && !movedOutIds.has(p.id))
+      .filter((p: any) => p && p.is_active !== false && !movedOutIds.has(p.id))
       .sort((a: any, b: any) => a.player_name.localeCompare(b.player_name));
 
     // Dedupe movedIn: exclude any players already appearing in defaultRoster
