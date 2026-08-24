@@ -327,6 +327,7 @@ function RegisterStep({
                   <PillBtn
                     active={s.status === "move"}
                     color="amber"
+                    disabled={otherGroups.length === 0}
                     onClick={() =>
                       setState({
                         ...state,
@@ -339,6 +340,9 @@ function RegisterStep({
                   >
                     <ArrowRightLeft className="h-3.5 w-3.5" /> Move
                   </PillBtn>
+                  {otherGroups.length === 0 && (
+                    <span className="text-xs text-muted-foreground">No other groups</span>
+                  )}
                 </div>
               </div>
               {s.status === "move" && (
@@ -526,7 +530,7 @@ function RateStep({ session, group, onDone }: { session: any; group: any; onDone
                     {[1, 2, 3, 4, 5].map((n) => {
                       const val = scores[p.id]?.[sk.key];
                       const active = val === n;
-                      const id = `${p.id}-${sk.key}-${n}`;
+                      const id = `${p.id}|${sk.key}|${n}`;
                       return (
                         <button
                           key={n}
@@ -555,9 +559,9 @@ function RateStep({ session, group, onDone }: { session: any; group: any; onDone
                   </div>
                 </div>
               ))}
-              {activeDescriptor?.startsWith(`${p.id}-`) && (
+              {activeDescriptor?.startsWith(`${p.id}|`) && (
                 <p className="pt-1 text-right text-xs italic text-accent">
-                  {DESCRIPTORS[Number(activeDescriptor.split("-").pop())]}
+                  {DESCRIPTORS[Number(activeDescriptor.split("|").pop())]}
                 </p>
               )}
             </div>
