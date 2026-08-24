@@ -103,7 +103,7 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
     const { data: defaultRoster, error: e1 } = await supabase
       .from("group_players")
       .select(
-        "player_id, players:player_id ( id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability )",
+        "player_id, players:player_id ( id, player_name, is_active, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability )",
       )
       .eq("group_id", data.group_id);
     if (e1) throw new Error(e1.message);
