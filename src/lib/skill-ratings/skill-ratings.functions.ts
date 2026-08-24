@@ -133,7 +133,8 @@ export const getGroupRosterForWeek = createServerFn({ method: "GET" })
       const { data: ex } = await sb
         .from("players")
         .select(`id, player_name, ${SKILL_FIELDS}`)
-        .in("id", movedIn);
+        .in("id", movedIn)
+        .eq("is_active", true);
       extra = ex ?? [];
     }
 
