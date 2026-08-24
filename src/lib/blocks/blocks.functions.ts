@@ -58,6 +58,7 @@ export const getBlockBuilderData = createServerFn({ method: "GET" })
       .select(
         "id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability",
       )
+      .eq("is_active", true)
       .order("player_name", { ascending: true });
 
     // Attendance reliability across all sessions
