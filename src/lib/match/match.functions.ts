@@ -127,7 +127,8 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
         .select(
           "id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability",
         )
-        .in("id", movedInIds);
+        .in("id", movedInIds)
+        .eq("is_active", true);
       if (e3) throw new Error(e3.message);
       movedInPlayers = pl ?? [];
     }
