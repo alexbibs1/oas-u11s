@@ -163,3 +163,86 @@ export const getPlayerPotdCount = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return { count: count ?? 0 };
   });
+
+export const bulkAddPlayers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ names: z.array(z.string().min(1).max(120)).min(1).max(100) }))
+  .handler(async ({ context, data }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "block_builder",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+    const cleaned = [...new Set(data.names.map((n) => n.trim()).filter(Boolean))];
+    const { data: existing } = await context.supabase.from("players").select("player_name");
+    const existingNames = new Set(
+      (existing ?? []).map((p: any) => p.player_name.toLowerCase()),
+    );
+    const toInsert = cleaned.filter((n) => !existingNames.has(n.toLowerCase()));
+    const skipped = cleaned.length - toInsert.length;
+    if (!toInsert.length) return { added: 0, skipped };
+    const { error } = await context.supabase
+      .from("players")
+      .insert(toInsert.map((player_name) => ({ player_name })));
+    if (error) throw new Error(error.message);
+    return { added: toInsert.length, skipped };
+  });
+
+export const deactivatePlayer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid(), active: z.boolean() }))
+  .handler(async ({ context, data }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "block_builder",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+    const { error } = await context.supabase
+      .from("players")
+      .update({ is_active: data.active })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("audit_log").insert({
+      changed_by: context.userId,
+      table_name: "players",
+      record_id: data.id,
+      operation: "update",
+      old_values: { is_active: !data.active },
+      new_values: { is_active: data.active },
+      metadata: { change: data.active ? "reactivated" : "deactivated" },
+    });
+    return { ok: true };
+  });
+
+export const renamePlayer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ id: z.string().uuid(), player_name: z.string().min(1).max(120) }))
+  .handler(async ({ context, data }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "block_builder",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+    const { data: existing } = await context.supabase
+      .from("players")
+      .select("player_name")
+      .eq("id", data.id)
+      .single();
+    const { error } = await context.supabase
+      .from("players")
+      .update({ player_name: data.player_name.trim() })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("audit_log").insert({
+      changed_by: context.userId,
+      table_name: "players",
+      record_id: data.id,
+      operation: "update",
+      old_values: { player_name: (existing as any)?.player_name ?? null },
+      new_values: { player_name: data.player_name.trim() },
+      metadata: { change: "renamed" },
+    });
+    return { ok: true };
+  });
