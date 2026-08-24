@@ -126,7 +126,7 @@ export const getGroupRosterForWeek = createServerFn({ method: "GET" })
       .map((o: any) => o.player_id);
     const players = (roster ?? [])
       .map((r: any) => r.players)
-      .filter((p: any) => p && !absentOrMoved.has(p.id));
+      .filter((p: any) => p && p.is_active !== false && !absentOrMoved.has(p.id));
 
     let extra: any[] = [];
     if (movedIn.length) {
