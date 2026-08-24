@@ -104,7 +104,7 @@ export const getGroupRosterForWeek = createServerFn({ method: "GET" })
     const sb = context.supabase;
     const { data: roster } = await sb
       .from("group_players")
-      .select(`player_id, players:player_id ( id, player_name, ${SKILL_FIELDS} )`)
+      .select(`player_id, players:player_id ( id, player_name, is_active, ${SKILL_FIELDS} )`)
       .eq("group_id", data.group_id);
     const { data: overrides } = await sb
       .from("session_player_overrides")
@@ -126,14 +126,15 @@ export const getGroupRosterForWeek = createServerFn({ method: "GET" })
       .map((o: any) => o.player_id);
     const players = (roster ?? [])
       .map((r: any) => r.players)
-      .filter((p: any) => p && !absentOrMoved.has(p.id));
+      .filter((p: any) => p && p.is_active !== false && !absentOrMoved.has(p.id));
 
     let extra: any[] = [];
     if (movedIn.length) {
       const { data: ex } = await sb
         .from("players")
         .select(`id, player_name, ${SKILL_FIELDS}`)
-        .in("id", movedIn);
+        .in("id", movedIn)
+        .eq("is_active", true);
       extra = ex ?? [];
     }
 
