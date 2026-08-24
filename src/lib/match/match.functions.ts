@@ -9,7 +9,8 @@ async function fetchQuartileMap(sb: any): Promise<Map<string, number>> {
     .from("players")
     .select(
       "id, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability",
-    );
+    )
+    .eq("is_active", true);
   const scored = (players ?? []).map((p: any) => {
     const values = allKeys.map((k) => (p as any)[k] as number);
     return { id: p.id, overall: values.reduce((a: number, b: number) => a + b, 0) / values.length };
@@ -126,7 +127,8 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
         .select(
           "id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability",
         )
-        .in("id", movedInIds);
+        .in("id", movedInIds)
+        .eq("is_active", true);
       if (e3) throw new Error(e3.message);
       movedInPlayers = pl ?? [];
     }

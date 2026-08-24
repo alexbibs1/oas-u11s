@@ -17,7 +17,9 @@ import { SKILLS, ATTRIBUTES } from "@/lib/skills";
 import { qk } from "@/lib/query-keys";
 
 function SquadPage() {
-  const { data: players } = useSuspenseQuery(playersQuery);
+  const { data: allPlayers } = useSuspenseQuery(playersQuery);
+  // Hide deactivated players from the squad list (missing is_active treated as active)
+  const players = allPlayers.filter((p: any) => p.is_active !== false);
 
   return (
     <main className="mx-auto max-w-2xl px-5 pt-8">

@@ -356,6 +356,7 @@ export type Database = {
           handling: number
           id: string
           iq: number
+          is_active: boolean
           kicking: number
           player_name: string
           repeatability: number
@@ -371,6 +372,7 @@ export type Database = {
           handling?: number
           id?: string
           iq?: number
+          is_active?: boolean
           kicking?: number
           player_name: string
           repeatability?: number
@@ -386,6 +388,7 @@ export type Database = {
           handling?: number
           id?: string
           iq?: number
+          is_active?: boolean
           kicking?: number
           player_name?: string
           repeatability?: number
