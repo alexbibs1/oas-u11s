@@ -17,7 +17,8 @@ import { SKILLS, ATTRIBUTES } from "@/lib/skills";
 import { qk } from "@/lib/query-keys";
 
 function SquadPage() {
-  const { data: players } = useSuspenseQuery(playersQuery);
+  const { data: allPlayers } = useSuspenseQuery(playersQuery);
+  const players = (allPlayers as any[]).filter((p) => p.is_active !== false);
 
   return (
     <main className="mx-auto max-w-2xl px-5 pt-8">

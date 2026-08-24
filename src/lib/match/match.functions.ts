@@ -9,7 +9,8 @@ async function fetchQuartileMap(sb: any): Promise<Map<string, number>> {
     .from("players")
     .select(
       "id, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability",
-    );
+    )
+    .eq("is_active", true);
   const scored = (players ?? []).map((p: any) => {
     const values = allKeys.map((k) => (p as any)[k] as number);
     return { id: p.id, overall: values.reduce((a: number, b: number) => a + b, 0) / values.length };
@@ -102,7 +103,7 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
     const { data: defaultRoster, error: e1 } = await supabase
       .from("group_players")
       .select(
-        "player_id, players:player_id ( id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability )",
+        "player_id, players:player_id ( id, player_name, is_active, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability )",
       )
       .eq("group_id", data.group_id);
     if (e1) throw new Error(e1.message);
@@ -126,7 +127,8 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
         .select(
           "id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability",
         )
-        .in("id", movedInIds);
+        .in("id", movedInIds)
+        .eq("is_active", true);
       if (e3) throw new Error(e3.message);
       movedInPlayers = pl ?? [];
     }
@@ -157,7 +159,7 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
 
     const filteredDefaultRoster = (defaultRoster ?? [])
       .map((r: any) => r.players)
-      .filter((p: any) => p && !movedOutIds.has(p.id))
+      .filter((p: any) => p && p.is_active !== false && !movedOutIds.has(p.id))
       .sort((a: any, b: any) => a.player_name.localeCompare(b.player_name));
 
     // Dedupe movedIn: exclude any players already appearing in defaultRoster
