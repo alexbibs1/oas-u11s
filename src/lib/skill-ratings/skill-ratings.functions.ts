@@ -104,7 +104,7 @@ export const getGroupRosterForWeek = createServerFn({ method: "GET" })
     const sb = context.supabase;
     const { data: roster } = await sb
       .from("group_players")
-      .select(`player_id, players:player_id ( id, player_name, ${SKILL_FIELDS} )`)
+      .select(`player_id, players:player_id ( id, player_name, is_active, ${SKILL_FIELDS} )`)
       .eq("group_id", data.group_id);
     const { data: overrides } = await sb
       .from("session_player_overrides")
