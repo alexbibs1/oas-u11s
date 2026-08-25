@@ -37,7 +37,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trash2, Pencil, UserX, RotateCcw, ListPlus, X } from "lucide-react";
+import { Trash2, Pencil, UserX, RotateCcw, ListPlus, X, ChevronDown, ChevronRight, ChevronsUpDown } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { qk } from "@/lib/query-keys";
@@ -689,12 +689,23 @@ function AttributesSection() {
   });
   const [pendingChanges, setPendingChanges] = useState<PendingAttr[]>([]);
   const [showReview, setShowReview] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
 
   const update = useMutation({
     mutationFn: (v: { id: string; attribute: AttrKey; value: number }) =>
       updatePlayerAttribute({ data: v }),
     onError: (e: any) => toast.error(e.message),
   });
+
+  const toggleExpanded = (id: string) => {
+    setExpandedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  const pendingCountFor = (id: string) =>
+    pendingChanges.filter((c) => c.playerId === id).length;
 
   const renderRow = (p: any, def: { key: string; label: string }) => {
     const current = (p[def.key] as number | undefined) ?? 0;
@@ -773,6 +784,14 @@ function AttributesSection() {
     }
   };
 
+  const filteredPlayers = search.trim()
+    ? players.filter((p: any) =>
+        p.player_name.toLowerCase().includes(search.trim().toLowerCase()),
+      )
+    : players;
+
+  const allExpanded = filteredPlayers.length > 0 && filteredPlayers.every((p: any) => expandedIds.includes(p.id));
+
   return (
     <div className="rounded-lg border bg-card p-5">
       <div className="mb-1 flex items-center justify-between">
@@ -782,24 +801,76 @@ function AttributesSection() {
         </span>
       </div>
       <p className="mb-4 text-xs text-muted-foreground">
-        Edit freely; review and confirm all changes at once. Every saved change is audited.
+        Tap a player to edit their baseline skills and attributes. Review and confirm all changes at once — every saved change is audited.
       </p>
-      <ul className="space-y-3">
-        {players.map((p: any) => (
-          <li key={p.id} className="rounded-md border bg-background p-3">
-            <p className="mb-2 text-sm font-medium">{p.player_name}</p>
 
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Skills
-            </p>
-            <div className="space-y-2">{SKILLS.map((s) => renderRow(p, s))}</div>
+      <div className="mb-3 flex items-center gap-2">
+        <Input
+          placeholder="Search players…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="h-8 text-sm"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            setExpandedIds(allExpanded ? [] : filteredPlayers.map((p: any) => p.id))
+          }
+        >
+          <ChevronsUpDown className="h-3.5 w-3.5" />
+          {allExpanded ? "Collapse all" : "Expand all"}
+        </Button>
+      </div>
 
-            <p className="mb-1 mt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Attributes
-            </p>
-            <div className="space-y-2">{ATTRIBUTES.map((a) => renderRow(p, a))}</div>
-          </li>
-        ))}
+      <ul className="space-y-1">
+        {filteredPlayers.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            {search.trim() ? "No players match your search." : "No players yet."}
+          </p>
+        )}
+        {filteredPlayers.map((p: any) => {
+          const expanded = expandedIds.includes(p.id);
+          const pendingCount = pendingCountFor(p.id);
+          return (
+            <li key={p.id} className="overflow-hidden rounded-md border bg-background">
+              <button
+                type="button"
+                onClick={() => toggleExpanded(p.id)}
+                className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left transition hover:bg-secondary"
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="truncate text-sm font-medium">{p.player_name}</span>
+                  {pendingCount > 0 && (
+                    <span className="shrink-0 rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                      {pendingCount}
+                    </span>
+                  )}
+                </span>
+                {expanded ? (
+                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                )}
+              </button>
+
+              {expanded && (
+                <div className="border-t px-3 py-3">
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Skills
+                  </p>
+                  <div className="space-y-2">{SKILLS.map((s) => renderRow(p, s))}</div>
+
+                  <p className="mb-1 mt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Attributes
+                  </p>
+                  <div className="space-y-2">{ATTRIBUTES.map((a) => renderRow(p, a))}</div>
+                </div>
+              )}
+            </li>
+          );
+        })}
       </ul>
 
       {pendingChanges.length > 0 && (

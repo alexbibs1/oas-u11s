@@ -9,61 +9,41 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRatingsRouteImport } from './routes/_authenticated/ratings'
-import { Route as AuthenticatedMatchDayRouteImport } from './routes/_authenticated/match-day'
-import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
-import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
-import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
-import { Route as AuthenticatedBlockBuilderRouteImport } from './routes/_authenticated/block-builder'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedBlockBuilderRouteImport } from './routes/_authenticated/block-builder'
+import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
+import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
+import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
+import { Route as AuthenticatedMatchDayRouteImport } from './routes/_authenticated/match-day'
+import { Route as AuthenticatedRatingsRouteImport } from './routes/_authenticated/ratings'
+import { Route as AuthenticatedGroupGroupIdRouteImport } from './routes/_authenticated/group/$groupId'
+import { Route as AuthenticatedMatchSummarySessionIdRouteImport } from './routes/_authenticated/match-summary/$sessionId'
+import { Route as AuthenticatedRulesU11RouteImport } from './routes/_authenticated/rules/u11'
+import { Route as AuthenticatedRulesU11VsU10RouteImport } from './routes/_authenticated/rules/u11-vs-u10'
+import { Route as AuthenticatedSessionInfoSessionIdRouteImport } from './routes/_authenticated/session-info/$sessionId'
 import { Route as AuthenticatedSquadIndexRouteImport } from './routes/_authenticated/squad/index'
 import { Route as AuthenticatedSquadPlayerIdRouteImport } from './routes/_authenticated/squad/$playerId'
-import { Route as AuthenticatedSessionInfoSessionIdRouteImport } from './routes/_authenticated/session-info/$sessionId'
-import { Route as AuthenticatedRulesU11VsU10RouteImport } from './routes/_authenticated/rules/u11-vs-u10'
-import { Route as AuthenticatedRulesU11RouteImport } from './routes/_authenticated/rules/u11'
-import { Route as AuthenticatedMatchSummarySessionIdRouteImport } from './routes/_authenticated/match-summary/$sessionId'
-import { Route as AuthenticatedGroupGroupIdRouteImport } from './routes/_authenticated/group/$groupId'
 
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRatingsRoute = AuthenticatedRatingsRouteImport.update({
-  id: '/ratings',
-  path: '/ratings',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedMatchDayRoute = AuthenticatedMatchDayRouteImport.update({
-  id: '/match-day',
-  path: '/match-day',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
-  id: '/home',
-  path: '/home',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedFeedRoute = AuthenticatedFeedRouteImport.update({
-  id: '/feed',
-  path: '/feed',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
-  id: '/calendar',
-  path: '/calendar',
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedBlockBuilderRoute =
@@ -72,11 +52,60 @@ const AuthenticatedBlockBuilderRoute =
     path: '/block-builder',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFeedRoute = AuthenticatedFeedRouteImport.update({
+  id: '/feed',
+  path: '/feed',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMatchDayRoute = AuthenticatedMatchDayRouteImport.update({
+  id: '/match-day',
+  path: '/match-day',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRatingsRoute = AuthenticatedRatingsRouteImport.update({
+  id: '/ratings',
+  path: '/ratings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGroupGroupIdRoute =
+  AuthenticatedGroupGroupIdRouteImport.update({
+    id: '/group/$groupId',
+    path: '/group/$groupId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMatchSummarySessionIdRoute =
+  AuthenticatedMatchSummarySessionIdRouteImport.update({
+    id: '/match-summary/$sessionId',
+    path: '/match-summary/$sessionId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRulesU11Route = AuthenticatedRulesU11RouteImport.update({
+  id: '/rules/u11',
+  path: '/rules/u11',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRulesU11VsU10Route =
+  AuthenticatedRulesU11VsU10RouteImport.update({
+    id: '/rules/u11-vs-u10',
+    path: '/rules/u11-vs-u10',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSessionInfoSessionIdRoute =
+  AuthenticatedSessionInfoSessionIdRouteImport.update({
+    id: '/session-info/$sessionId',
+    path: '/session-info/$sessionId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSquadIndexRoute = AuthenticatedSquadIndexRouteImport.update({
   id: '/squad/',
   path: '/squad/',
@@ -86,35 +115,6 @@ const AuthenticatedSquadPlayerIdRoute =
   AuthenticatedSquadPlayerIdRouteImport.update({
     id: '/squad/$playerId',
     path: '/squad/$playerId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSessionInfoSessionIdRoute =
-  AuthenticatedSessionInfoSessionIdRouteImport.update({
-    id: '/session-info/$sessionId',
-    path: '/session-info/$sessionId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedRulesU11VsU10Route =
-  AuthenticatedRulesU11VsU10RouteImport.update({
-    id: '/rules/u11-vs-u10',
-    path: '/rules/u11-vs-u10',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedRulesU11Route = AuthenticatedRulesU11RouteImport.update({
-  id: '/rules/u11',
-  path: '/rules/u11',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedMatchSummarySessionIdRoute =
-  AuthenticatedMatchSummarySessionIdRouteImport.update({
-    id: '/match-summary/$sessionId',
-    path: '/match-summary/$sessionId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedGroupGroupIdRoute =
-  AuthenticatedGroupGroupIdRouteImport.update({
-    id: '/group/$groupId',
-    path: '/group/$groupId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
@@ -240,11 +240,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -254,46 +254,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/ratings': {
-      id: '/_authenticated/ratings'
-      path: '/ratings'
-      fullPath: '/ratings'
-      preLoaderRoute: typeof AuthenticatedRatingsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/match-day': {
-      id: '/_authenticated/match-day'
-      path: '/match-day'
-      fullPath: '/match-day'
-      preLoaderRoute: typeof AuthenticatedMatchDayRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/home': {
-      id: '/_authenticated/home'
-      path: '/home'
-      fullPath: '/home'
-      preLoaderRoute: typeof AuthenticatedHomeRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/feed': {
-      id: '/_authenticated/feed'
-      path: '/feed'
-      fullPath: '/feed'
-      preLoaderRoute: typeof AuthenticatedFeedRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/calendar': {
-      id: '/_authenticated/calendar'
-      path: '/calendar'
-      fullPath: '/calendar'
-      preLoaderRoute: typeof AuthenticatedCalendarRouteImport
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/block-builder': {
@@ -303,11 +275,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBlockBuilderRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+    '/_authenticated/calendar': {
+      id: '/_authenticated/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof AuthenticatedCalendarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/feed': {
+      id: '/_authenticated/feed'
+      path: '/feed'
+      fullPath: '/feed'
+      preLoaderRoute: typeof AuthenticatedFeedRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/home': {
+      id: '/_authenticated/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof AuthenticatedHomeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/match-day': {
+      id: '/_authenticated/match-day'
+      path: '/match-day'
+      fullPath: '/match-day'
+      preLoaderRoute: typeof AuthenticatedMatchDayRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ratings': {
+      id: '/_authenticated/ratings'
+      path: '/ratings'
+      fullPath: '/ratings'
+      preLoaderRoute: typeof AuthenticatedRatingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/group/$groupId': {
+      id: '/_authenticated/group/$groupId'
+      path: '/group/$groupId'
+      fullPath: '/group/$groupId'
+      preLoaderRoute: typeof AuthenticatedGroupGroupIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/match-summary/$sessionId': {
+      id: '/_authenticated/match-summary/$sessionId'
+      path: '/match-summary/$sessionId'
+      fullPath: '/match-summary/$sessionId'
+      preLoaderRoute: typeof AuthenticatedMatchSummarySessionIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/rules/u11': {
+      id: '/_authenticated/rules/u11'
+      path: '/rules/u11'
+      fullPath: '/rules/u11'
+      preLoaderRoute: typeof AuthenticatedRulesU11RouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/rules/u11-vs-u10': {
+      id: '/_authenticated/rules/u11-vs-u10'
+      path: '/rules/u11-vs-u10'
+      fullPath: '/rules/u11-vs-u10'
+      preLoaderRoute: typeof AuthenticatedRulesU11VsU10RouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/session-info/$sessionId': {
+      id: '/_authenticated/session-info/$sessionId'
+      path: '/session-info/$sessionId'
+      fullPath: '/session-info/$sessionId'
+      preLoaderRoute: typeof AuthenticatedSessionInfoSessionIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/squad/': {
@@ -322,41 +357,6 @@ declare module '@tanstack/react-router' {
       path: '/squad/$playerId'
       fullPath: '/squad/$playerId'
       preLoaderRoute: typeof AuthenticatedSquadPlayerIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/session-info/$sessionId': {
-      id: '/_authenticated/session-info/$sessionId'
-      path: '/session-info/$sessionId'
-      fullPath: '/session-info/$sessionId'
-      preLoaderRoute: typeof AuthenticatedSessionInfoSessionIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/rules/u11-vs-u10': {
-      id: '/_authenticated/rules/u11-vs-u10'
-      path: '/rules/u11-vs-u10'
-      fullPath: '/rules/u11-vs-u10'
-      preLoaderRoute: typeof AuthenticatedRulesU11VsU10RouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/rules/u11': {
-      id: '/_authenticated/rules/u11'
-      path: '/rules/u11'
-      fullPath: '/rules/u11'
-      preLoaderRoute: typeof AuthenticatedRulesU11RouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/match-summary/$sessionId': {
-      id: '/_authenticated/match-summary/$sessionId'
-      path: '/match-summary/$sessionId'
-      fullPath: '/match-summary/$sessionId'
-      preLoaderRoute: typeof AuthenticatedMatchSummarySessionIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/group/$groupId': {
-      id: '/_authenticated/group/$groupId'
-      path: '/group/$groupId'
-      fullPath: '/group/$groupId'
-      preLoaderRoute: typeof AuthenticatedGroupGroupIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
   }
