@@ -96,7 +96,7 @@ function MatchSummaryPage() {
               <div className="rounded-md border border-dashed p-4 text-center">
                 <p className="text-sm text-muted-foreground">No register submitted.</p>
                 <Button asChild variant="outline" size="sm" className="mt-3">
-                  <Link to="/match-day" search={{ sessionId: data.session.id, blockId: undefined }}>
+                  <Link to="/match-day" search={{ sessionId: data.session.id, blockId: undefined, groupId: undefined }}>
                     Submit register
                   </Link>
                 </Button>
@@ -115,7 +115,7 @@ function MatchSummaryPage() {
                     <div className="rounded-md border border-dashed p-3 text-center">
                       <p className="text-xs text-muted-foreground">Ratings not yet submitted.</p>
                       <Button asChild variant="outline" size="sm" className="mt-2">
-                        <Link to="/match-day" search={{ sessionId: data.session.id, blockId: undefined }}>
+                        <Link to="/match-day" search={{ sessionId: data.session.id, blockId: undefined, groupId: undefined }}>
                           Submit ratings
                         </Link>
                       </Button>

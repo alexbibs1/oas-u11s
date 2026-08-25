@@ -410,7 +410,7 @@ function SlotCell({
       if (isPast) {
         navigate({ to: "/match-summary/$sessionId", params: { sessionId: session.id } });
       } else {
-        navigate({ to: "/match-day", search: { sessionId: session.id, blockId: undefined } });
+        navigate({ to: "/match-day", search: { sessionId: session.id, blockId: undefined, groupId: undefined } });
       }
     } else {
       navigate({ to: "/session-info/$sessionId", params: { sessionId: session.id } });

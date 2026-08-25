@@ -18,6 +18,7 @@ export const Route = createFileRoute("/_authenticated/match-day")({
   validateSearch: (s: Record<string, unknown>) => ({
     sessionId: typeof s.sessionId === "string" ? s.sessionId : undefined,
     blockId: typeof s.blockId === "string" ? s.blockId : undefined,
+    groupId: typeof s.groupId === "string" ? s.groupId : undefined,
   }),
   component: MatchDayPage,
 });
@@ -30,7 +31,7 @@ import { useConfirm } from "@/components/confirm-dialog";
 import { QueryError } from "@/components/query-error";
 
 function MatchDayPage() {
-  const { sessionId: preselectId, blockId: preselectBlockId } = Route.useSearch();
+  const { sessionId: preselectId, blockId: preselectBlockId, groupId: preselectGroupId } = Route.useSearch();
   const router = useRouter();
   const [step, setStep] = useState<Step>("session");
   const [session, setSession] = useState<any | null>(null);
@@ -42,15 +43,45 @@ function MatchDayPage() {
     enabled: !!preselectId,
   });
 
+  // When arriving from a group page (groupId passed): skip the group picker —
+  // the coach has already chosen their group, so go straight to the register.
+  const { data: preselectGroups } = useQuery({
+    queryKey: ["match-day-preselect-groups", preselectId],
+    queryFn: () =>
+      listGroupsForBlock({ data: { block_id: preselectSessions!.find((s: any) => s.id === preselectId)!.block_id } }),
+    enabled: !!preselectId && !!preselectGroupId && !!preselectSessions?.length,
+  });
+
+  const [autoAdvanced, setAutoAdvanced] = useState(false);
+
   useEffect(() => {
     if (preselectId && !session && preselectSessions?.length) {
       const found = preselectSessions.find((s: any) => s.id === preselectId);
       if (found && found.block_is_active) {
         setSession(found);
-        setStep("group");
+        // No groupId: normal flow, pick a group next
+        if (!preselectGroupId) setStep("group");
       }
     }
-  }, [preselectId, preselectSessions, session]);
+  }, [preselectId, preselectSessions, session, preselectGroupId]);
+
+  // With groupId: once we have the session AND the groups list, find the
+  // coach's group and jump straight to the register step.
+  useEffect(() => {
+    if (
+      preselectGroupId &&
+      !autoAdvanced &&
+      session &&
+      preselectGroups?.length
+    ) {
+      const g = preselectGroups.find((x: any) => x.id === preselectGroupId);
+      if (g) {
+        setGroup({ id: g.id, group_number: g.group_number });
+        setStep("register");
+        setAutoAdvanced(true);
+      }
+    }
+  }, [preselectGroupId, autoAdvanced, session, preselectGroups]);
 
   const back = () => {
     if (step === "session") {
@@ -62,6 +93,13 @@ function MatchDayPage() {
       setStep("session");
       setGroup(null);
     } else if (step === "register" || step === "rate") {
+      // If we auto-advanced past the group picker (arrived with groupId),
+      // going back exits the flow instead of showing the skipped step.
+      if (preselectGroupId) {
+        if (window.history.length > 1) router.history.back();
+        else router.navigate({ to: "/home" });
+        return;
+      }
       setStep("group");
     } else if (step === "done") {
       setStep("session");
@@ -98,7 +136,9 @@ function MatchDayPage() {
         <SessionStep
           onPick={(s) => {
             setSession(s);
-            setStep("group");
+            // Arrived with a preselected group: the auto-advance effect will
+            // jump to the register once groups load. Otherwise pick a group.
+            if (!preselectGroupId) setStep("group");
           }}
         />
       )}

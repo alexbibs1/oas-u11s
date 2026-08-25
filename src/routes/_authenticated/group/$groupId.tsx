@@ -95,7 +95,7 @@ function GroupDetailPage() {
         <Button asChild className="w-full">
           <Link
             to="/match-day"
-            search={{ sessionId: undefined, blockId: (group.block as any)?.id }}
+            search={{ sessionId: undefined, blockId: (group.block as any)?.id, groupId: group.id }}
           >
             Start Match Day
           </Link>
