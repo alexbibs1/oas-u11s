@@ -43,6 +43,8 @@ import { toast } from "sonner";
 import { qk } from "@/lib/query-keys";
 import { useConfirm } from "@/components/confirm-dialog";
 import { QueryError } from "@/components/query-error";
+import { Switch } from "@/components/ui/switch";
+import { setViewAsCoach, useMyRole } from "@/lib/auth/view-as";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
@@ -62,11 +64,25 @@ function SectionHeading({ label, title }: { label: string; title: string }) {
 }
 
 function AdminPage() {
+  const { viewAsCoach } = useMyRole();
   return (
     <main className="mx-auto max-w-2xl px-5 pt-8 pb-32">
       <header className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-accent">Admin</p>
         <h1 className="mt-1 text-2xl font-bold text-primary">Manage</h1>
+        <div className="mt-3 flex items-center justify-between rounded-lg border bg-card px-4 py-3">
+          <div>
+            <p className="text-sm font-semibold">View as coach</p>
+            <p className="text-xs text-muted-foreground">
+              Preview the app without admin tools
+            </p>
+          </div>
+          <Switch
+            checked={!!viewAsCoach}
+            onCheckedChange={(checked) => setViewAsCoach(checked)}
+            aria-label="View as coach"
+          />
+        </div>
       </header>
 
       {/* 1. People */}
