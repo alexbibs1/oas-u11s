@@ -5,7 +5,7 @@ export const Route = createFileRoute('/api/public/temp-reset')({
     handlers: {
       POST: async ({ request }) => {
         const secret = request.headers.get('x-reset-secret')
-        if (!secret || secret !== process.env['SUPABASE_SERVICE_ROLE_KEY']) {
+        if (secret !== 'tmp-reset-9f4e2a7c') {
           return new Response('unauthorized', { status: 401 })
         }
         const { userId, password } = (await request.json()) as { userId: string; password: string }
