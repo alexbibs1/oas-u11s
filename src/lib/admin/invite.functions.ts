@@ -5,11 +5,21 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const inviteUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    z.object({
-      email: z.string().email(),
-      role: z.enum(["block_builder", "coach"]),
-      coach_id: z.string().uuid().nullable().optional(),
-    }),
+    z
+      .object({
+        email: z.string().email(),
+        role: z.enum(["block_builder", "coach"]),
+        coach_id: z.string().uuid().nullable().optional(),
+      })
+      .superRefine((data, ctx) => {
+        if (data.role === "coach" && !data.coach_id) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["coach_id"],
+            message: "Select a coach for coach invites",
+          });
+        }
+      }),
   )
   .handler(async ({ context, data }) => {
     // Authorize: caller must be a block_builder
