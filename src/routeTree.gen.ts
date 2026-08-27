@@ -20,6 +20,7 @@ import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedBlockBuilderRouteImport } from './routes/_authenticated/block-builder'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedSquadIndexRouteImport } from './routes/_authenticated/squad/index'
+import { Route as ApiPublicTempResetRouteImport } from './routes/api/public/temp-reset'
 import { Route as AuthenticatedSquadPlayerIdRouteImport } from './routes/_authenticated/squad/$playerId'
 import { Route as AuthenticatedSessionInfoSessionIdRouteImport } from './routes/_authenticated/session-info/$sessionId'
 import { Route as AuthenticatedRulesU11VsU10RouteImport } from './routes/_authenticated/rules/u11-vs-u10'
@@ -82,6 +83,11 @@ const AuthenticatedSquadIndexRoute = AuthenticatedSquadIndexRouteImport.update({
   path: '/squad/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicTempResetRoute = ApiPublicTempResetRouteImport.update({
+  id: '/api/public/temp-reset',
+  path: '/api/public/temp-reset',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSquadPlayerIdRoute =
   AuthenticatedSquadPlayerIdRouteImport.update({
     id: '/squad/$playerId',
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/rules/u11-vs-u10': typeof AuthenticatedRulesU11VsU10Route
   '/session-info/$sessionId': typeof AuthenticatedSessionInfoSessionIdRoute
   '/squad/$playerId': typeof AuthenticatedSquadPlayerIdRoute
+  '/api/public/temp-reset': typeof ApiPublicTempResetRoute
   '/squad/': typeof AuthenticatedSquadIndexRoute
 }
 export interface FileRoutesByTo {
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/rules/u11-vs-u10': typeof AuthenticatedRulesU11VsU10Route
   '/session-info/$sessionId': typeof AuthenticatedSessionInfoSessionIdRoute
   '/squad/$playerId': typeof AuthenticatedSquadPlayerIdRoute
+  '/api/public/temp-reset': typeof ApiPublicTempResetRoute
   '/squad': typeof AuthenticatedSquadIndexRoute
 }
 export interface FileRoutesById {
@@ -172,6 +180,7 @@ export interface FileRoutesById {
   '/_authenticated/rules/u11-vs-u10': typeof AuthenticatedRulesU11VsU10Route
   '/_authenticated/session-info/$sessionId': typeof AuthenticatedSessionInfoSessionIdRoute
   '/_authenticated/squad/$playerId': typeof AuthenticatedSquadPlayerIdRoute
+  '/api/public/temp-reset': typeof ApiPublicTempResetRoute
   '/_authenticated/squad/': typeof AuthenticatedSquadIndexRoute
 }
 export interface FileRouteTypes {
@@ -192,6 +201,7 @@ export interface FileRouteTypes {
     | '/rules/u11-vs-u10'
     | '/session-info/$sessionId'
     | '/squad/$playerId'
+    | '/api/public/temp-reset'
     | '/squad/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -210,6 +220,7 @@ export interface FileRouteTypes {
     | '/rules/u11-vs-u10'
     | '/session-info/$sessionId'
     | '/squad/$playerId'
+    | '/api/public/temp-reset'
     | '/squad'
   id:
     | '__root__'
@@ -229,6 +240,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rules/u11-vs-u10'
     | '/_authenticated/session-info/$sessionId'
     | '/_authenticated/squad/$playerId'
+    | '/api/public/temp-reset'
     | '/_authenticated/squad/'
   fileRoutesById: FileRoutesById
 }
@@ -236,6 +248,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicTempResetRoute: typeof ApiPublicTempResetRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -316,6 +329,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/squad/'
       preLoaderRoute: typeof AuthenticatedSquadIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/temp-reset': {
+      id: '/api/public/temp-reset'
+      path: '/api/public/temp-reset'
+      fullPath: '/api/public/temp-reset'
+      preLoaderRoute: typeof ApiPublicTempResetRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/squad/$playerId': {
       id: '/_authenticated/squad/$playerId'
@@ -405,6 +425,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicTempResetRoute: ApiPublicTempResetRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
