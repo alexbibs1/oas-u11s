@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { qk } from "@/lib/query-keys";
 import { BookOpen, GitCompare } from "lucide-react";
 import { QueryError } from "@/components/query-error";
+import { formatDateShort, formatUK } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/home")({
   component: HomePage,
@@ -14,11 +15,12 @@ export const Route = createFileRoute("/_authenticated/home")({
 
 function fmtDate(d: string | null | undefined) {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString(undefined, {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
+  return formatDateShort(d);
+}
+
+function fmtDateUK(d: string | null | undefined) {
+  if (!d) return "—";
+  return formatUK(d);
 }
 
 function HomePage() {
@@ -198,7 +200,7 @@ function HomePage() {
                 <li key={p.id} className="border-t pt-3 first:border-t-0 first:pt-0">
                   <p className="text-xs text-muted-foreground">
                     <span className="font-semibold text-foreground">{p.coach_name ?? "Coach"}</span>{" "}
-                    · {new Date(p.created_at).toLocaleDateString()}
+                    · {fmtDateUK(p.created_at)}
                   </p>
                   <p className="mt-1 line-clamp-2 text-sm">{p.content}</p>
                   {p.is_player_note && p.player_name && (

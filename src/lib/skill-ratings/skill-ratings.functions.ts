@@ -14,7 +14,7 @@ export const listMatchWeeks = createServerFn({ method: "GET" })
       .from("blocks")
       .select("id, name, block_number, start_date, end_date")
       .eq("is_active", true)
-      .order("block_number", { ascending: false })
+      .order("start_date", { ascending: false })
       .limit(1)
       .maybeSingle();
     if (!block) return { block: null, weeks: [] };

@@ -15,6 +15,7 @@ import { Pencil, Trash2, UserCircle2 } from "lucide-react";
 import { qk } from "@/lib/query-keys";
 import { useConfirm } from "@/components/confirm-dialog";
 import { QueryError } from "@/components/query-error";
+import { formatUKDateTime } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/feed")({
   component: FeedPage,
@@ -130,7 +131,7 @@ function FeedPage() {
                 <div>
                   <p className="text-sm font-semibold text-primary">{p.coach_name ?? "Coach"}</p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(p.created_at).toLocaleString()}
+                    {formatUKDateTime(p.created_at)}
                   </p>
                 </div>
               </div>

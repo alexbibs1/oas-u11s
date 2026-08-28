@@ -220,7 +220,7 @@ export const getPlayerCurrentBlock = createServerFn({ method: "GET" })
       .from("blocks")
       .select("id, name, block_number")
       .eq("is_active", true)
-      .order("block_number", { ascending: false })
+      .order("start_date", { ascending: false })
       .limit(1)
       .maybeSingle();
     if (!block) return { block: null, group: null, coaches: [] as string[] };

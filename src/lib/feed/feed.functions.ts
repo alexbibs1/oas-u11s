@@ -215,7 +215,7 @@ export const getHomeSummary = createServerFn({ method: "GET" })
       sb.from("blocks")
         .select("id, name, block_number, start_date, end_date, is_active")
         .eq("is_active", true)
-        .order("block_number", { ascending: false })
+        .order("start_date", { ascending: false })
         .limit(1)
         .maybeSingle(),
       sb.from("user_roles").select("coach_id").eq("user_id", context.userId),

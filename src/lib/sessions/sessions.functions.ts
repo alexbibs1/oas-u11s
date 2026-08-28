@@ -136,7 +136,7 @@ export const listBlocks = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("blocks")
       .select("*")
-      .order("block_number", { ascending: false });
+      .order("start_date", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
   });

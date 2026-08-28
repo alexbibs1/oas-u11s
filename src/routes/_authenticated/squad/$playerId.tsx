@@ -14,6 +14,7 @@ import {
 import { ChevronLeft, Pencil, Trash2, Plus, TrendingUp, TrendingDown, Minus, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { formatUKDateTime } from "@/lib/dates";
 
 const playerQuery = (id: string) => ({
   queryKey: qk.players.detail(id),
@@ -281,7 +282,7 @@ function PlayerProfile() {
                 <div>
                   <p className="text-sm font-semibold text-primary">{n.coach_name ?? "Coach"}</p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(n.created_at).toLocaleString()}
+                    {formatUKDateTime(n.created_at)}
                   </p>
                 </div>
                 {n.canEdit && editingId !== n.id && (

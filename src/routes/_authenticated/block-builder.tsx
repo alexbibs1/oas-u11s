@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, Plus, Pencil, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatDateRangeUK } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/block-builder")({
   beforeLoad: async () => {
@@ -95,7 +96,7 @@ function BlockList({ onCreate, onEdit }: { onCreate: () => void; onEdit: (id: st
                   {b.is_active && <Badge>Active</Badge>}
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {b.start_date ?? "—"} → {b.end_date ?? "—"} · {b.group_count} groups
+                  {formatDateRangeUK(b.start_date, b.end_date)} · {b.group_count} groups
                 </p>
               </div>
               <div className="flex shrink-0 gap-2">

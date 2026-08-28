@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Pencil, MapPin } from "lucide-react";
 import { toast } from "sonner";
-import { formatDateShort } from "@/lib/dates";
+import { formatDateShort, formatUK } from "@/lib/dates";
 import { qk } from "@/lib/query-keys";
 import { useConfirm } from "@/components/confirm-dialog";
 import { QueryError } from "@/components/query-error";
@@ -195,7 +195,7 @@ function CalendarPage() {
                 >
                   <div className="px-4 pt-3 pb-1 text-[11px] uppercase tracking-wider text-muted-foreground">
                     Week of{" "}
-                    {wsDate.toLocaleDateString(undefined, { day: "numeric", month: "short" })}
+                    {formatUK(wsDate)}
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-border/40">
                     <SlotCell
@@ -218,9 +218,7 @@ function CalendarPage() {
                   {others.map((o) => (
                     <div key={o.date} className="border-t bg-card">
                       <SlotCell
-                        label={new Date(o.date + "T00:00:00").toLocaleDateString(undefined, {
-                          weekday: "short",
-                        })}
+                        label={formatDateShort(o.date)}
                         slot={o}
                         blockId={currentBlock.id}
                         color={color}

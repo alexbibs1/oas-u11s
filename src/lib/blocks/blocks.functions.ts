@@ -33,7 +33,7 @@ export const listBlocksWithMeta = createServerFn({ method: "GET" })
     const { data: blocks, error } = await sb
       .from("blocks")
       .select("id, block_number, name, start_date, end_date, is_active")
-      .order("block_number", { ascending: false });
+      .order("start_date", { ascending: false });
     if (error) throw new Error(error.message);
 
     const { data: groups } = await sb.from("groups").select("id, block_id");
@@ -73,8 +73,8 @@ export const getBlockBuilderData = createServerFn({ method: "GET" })
     // Previous block — most recent block with groups, excluding the editing block
     const { data: allBlocks } = await sb
       .from("blocks")
-      .select("id, block_number")
-      .order("block_number", { ascending: false });
+      .select("id, block_number, start_date")
+      .order("start_date", { ascending: false });
     const prevBlock = (allBlocks ?? []).find((b: any) => b.id !== data.block_id);
     const prevGroupByPlayer = new Map<string, number>();
     if (prevBlock) {

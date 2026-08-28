@@ -46,6 +46,7 @@ import { useConfirm } from "@/components/confirm-dialog";
 import { QueryError } from "@/components/query-error";
 import { Switch } from "@/components/ui/switch";
 import { setViewAsCoach, useMyRole } from "@/lib/auth/view-as";
+import { formatUKDateTime } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
@@ -1195,7 +1196,7 @@ function AuditLogSection() {
                       : ` · ${attr ?? r.operation}`}
                   </span>
                   <span className="text-muted-foreground">
-                    {new Date(r.created_at).toLocaleString()}
+                    {formatUKDateTime(r.created_at)}
                   </span>
                 </div>
                 {isSkillRatings && changed ? (
