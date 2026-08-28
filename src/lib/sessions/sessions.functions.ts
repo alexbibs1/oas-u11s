@@ -74,7 +74,7 @@ export const getBlockSlots = createServerFn({ method: "GET" })
       weekMap.get(ws)!.push(slot);
     }
     const weeks = Array.from(weekMap.keys())
-      .sort()
+      .sort((a, b) => b.localeCompare(a))
       .map((ws) => ({ weekStart: ws, items: weekMap.get(ws)! }));
 
     return { block, weeks };
@@ -89,7 +89,7 @@ export const listMatchSessions = createServerFn({ method: "GET" })
         "id, session_date, session_type, week_number, block_id, opponent, venue, blocks:block_id ( id, name, block_number, is_active )",
       )
       .eq("session_type", "match")
-      .order("session_date", { ascending: true });
+      .order("session_date", { ascending: false });
     if (error) throw new Error(error.message);
     return (data ?? []).map((s: any) => ({
       id: s.id,
@@ -112,7 +112,7 @@ export const listAllSessions = createServerFn({ method: "GET" })
       .select(
         "id, session_date, session_type, week_number, block_id, opponent, venue, blocks:block_id ( id, name, block_number, is_active, start_date, end_date )",
       )
-      .order("session_date", { ascending: true });
+      .order("session_date", { ascending: false });
     if (error) throw new Error(error.message);
     return (data ?? []).map((s: any) => ({
       id: s.id,
