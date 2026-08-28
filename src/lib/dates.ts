@@ -55,3 +55,19 @@ export function formatDateLong(input: string | Date): string {
   const d = toDate(input);
   return `${WEEKDAYS_SHORT[d.getDay()]} ${ordinal(d.getDate())} ${MONTHS_LONG[d.getMonth()]} ${d.getFullYear()}`;
 }
+
+/** "23/11/2026" — compact UK numeric date (dd/mm/yyyy). */
+export function formatUK(input: string | Date): string {
+  const d = toDate(input);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
+/** "23/11/2026, 19:05" — UK date with 24h time. */
+export function formatUKDateTime(input: string | Date): string {
+  const d = toDate(input);
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${formatUK(d)}, ${hh}:${mi}`;
+}
