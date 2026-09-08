@@ -7,7 +7,7 @@ export const SKILLS = [
   { key: "rucking", label: "Rucking", short: "Ruc" },
   { key: "kicking", label: "Kicking", short: "Kic" },
   { key: "catching", label: "Catching", short: "Cat" },
-  { key: "iq", label: "IQ", short: "IQ" },
+  { key: "iq", label: "Game Sense", short: "GS" },
 ] as const;
 
 export type SkillKey = (typeof SKILLS)[number]["key"];
