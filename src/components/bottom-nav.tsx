@@ -3,7 +3,7 @@ import { Home, Users, Shield, ClipboardCheck, Calendar, Newspaper, Star } from "
 import { useMyRole } from "@/lib/auth/view-as";
 
 export function BottomNav() {
-  const { data: me, realIsBlockBuilder, viewAsCoach } = useMyRole();
+  const { data: me, realIsAdmin, viewAsCoach } = useMyRole();
 
   const items = [
     { to: "/home", label: "Home", Icon: Home },
@@ -12,7 +12,7 @@ export function BottomNav() {
     { to: "/match-day", label: "Match Day", Icon: ClipboardCheck },
     { to: "/ratings", label: "Ratings", Icon: Star },
     { to: "/squad", label: "Squad", Icon: Users },
-    ...(me?.isBlockBuilder || (realIsBlockBuilder && viewAsCoach)
+    ...(me?.isAdmin || (realIsAdmin && viewAsCoach)
       ? [{ to: "/admin", label: "Admin", Icon: Shield }]
       : []),
   ] as const;

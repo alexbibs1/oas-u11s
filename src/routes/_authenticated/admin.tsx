@@ -15,9 +15,10 @@ import {
 import { listCoaches, addCoach, removeCoach } from "@/lib/coaches/coaches.functions";
 import { inviteUser } from "@/lib/admin/invite.functions";
 import { linkCoachToUser, resetCoachPassword } from "@/lib/admin/coach-accounts.functions";
-import { listBlocks, createSession } from "@/lib/sessions/sessions.functions";
+import { createSession, listMatchSessions } from "@/lib/sessions/sessions.functions";
+import { updatePlayerTier, listSquadWithQuartile } from "@/lib/players/players.functions";
 import { ATTRIBUTES, SKILLS } from "@/lib/skills";
-import { listMatchWeeks, getWeekCompletion } from "@/lib/skill-ratings/skill-ratings.functions";
+import { getMatchCompletion } from "@/lib/match/match.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,7 +52,7 @@ import { formatUKDateTime } from "@/lib/dates";
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
     const me = await getMyRole();
-    if (!me.isBlockBuilder) throw redirect({ to: "/home" });
+    if (!me.isAdmin) throw redirect({ to: "/home" });
   },
   component: AdminPage,
 });
@@ -97,18 +98,21 @@ function AdminPage() {
       {/* 2. Structure */}
       <section className="mb-8">
         <SectionHeading label="2 · Structure" title="Structure" />
-        <Link
-          to="/block-builder"
-          className="flex items-center justify-between rounded-lg border bg-card p-4 hover:bg-secondary"
-        >
-          <div>
-            <p className="text-sm font-semibold">Block Builder</p>
-            <p className="text-xs text-muted-foreground">
-              Configure blocks, groups and assignments
-            </p>
-          </div>
-          <span className="text-xs text-muted-foreground">Open →</span>
-        </Link>
+        <div className="space-y-3">
+          <Link
+            to="/match-teams"
+            className="flex items-center justify-between rounded-lg border bg-card p-4 hover:bg-secondary"
+          >
+            <div>
+              <p className="text-sm font-semibold">Match Teams</p>
+              <p className="text-xs text-muted-foreground">
+                Pick up to 5 teams for a fixture
+              </p>
+            </div>
+            <span className="text-xs text-muted-foreground">Open →</span>
+          </Link>
+          <TiersSection />
+        </div>
       </section>
 
       {/* 3. Sessions */}
@@ -144,20 +148,19 @@ function AdminPage() {
 
 function SessionsSection() {
   const qc = useQueryClient();
-  const { data: blocks = [] } = useQuery({ queryKey: qk.blocks.all, queryFn: () => listBlocks() });
-  const [blockId, setBlockId] = useState("");
   const [date, setDate] = useState("");
   const [type, setType] = useState<"training" | "match">("match");
 
   const m = useMutation({
     mutationFn: () =>
       createSession({
-        data: { block_id: blockId, session_date: date, session_type: type },
+        data: { session_date: date, session_type: type },
       }),
     onSuccess: () => {
       toast.success("Session created");
       setDate("");
       qc.invalidateQueries({ queryKey: qk.sessions.matchList });
+      qc.invalidateQueries({ queryKey: qk.sessions.list });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -169,24 +172,9 @@ function SessionsSection() {
         className="space-y-3"
         onSubmit={(e) => {
           e.preventDefault();
-          if (blockId && date) m.mutate();
+          if (date) m.mutate();
         }}
       >
-        <div className="space-y-2">
-          <Label>Block</Label>
-          <Select value={blockId} onValueChange={setBlockId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select block…" />
-            </SelectTrigger>
-            <SelectContent>
-              {blocks.map((b: any) => (
-                <SelectItem key={b.id} value={b.id}>
-                  {b.name ?? `Block ${b.block_number}`} {b.is_active ? "(active)" : ""}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label htmlFor="session-date">Date</Label>
@@ -211,10 +199,64 @@ function SessionsSection() {
             </Select>
           </div>
         </div>
-        <Button type="submit" disabled={m.isPending || !blockId || !date} className="w-full">
+        <Button type="submit" disabled={m.isPending || !date} className="w-full">
           {m.isPending ? "Creating…" : "Create session"}
         </Button>
       </form>
+    </div>
+  );
+}
+
+function TiersSection() {
+  const qc = useQueryClient();
+  const { data: players = [], isLoading } = useQuery({
+    queryKey: qk.players.squad,
+    queryFn: () => listSquadWithQuartile(),
+  });
+
+  const update = useMutation({
+    mutationFn: (v: { id: string; tier: "developing" | "intermediate" | "advanced" | null }) =>
+      updatePlayerTier({ data: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.players.squad });
+      toast.success("Tier updated");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <div className="rounded-lg border bg-card p-5">
+      <h3 className="mb-1 text-sm font-semibold">Training tiers</h3>
+      <p className="mb-4 text-xs text-muted-foreground">
+        Developing / Intermediate / Advanced. Admin only — other coaches never see this label.
+      </p>
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      ) : (
+        <ul className="max-h-96 space-y-1.5 overflow-auto">
+          {(players as any[]).map((p) => (
+            <li key={p.id} className="flex items-center justify-between gap-2 rounded-md border bg-background px-3 py-2">
+              <span className="truncate text-sm font-medium">{p.player_name}</span>
+              <Select
+                value={p.tier ?? "unassigned"}
+                onValueChange={(v) =>
+                  update.mutate({ id: p.id, tier: v === "unassigned" ? null : (v as any) })
+                }
+              >
+                <SelectTrigger className="h-8 w-40 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  <SelectItem value="developing">Developing</SelectItem>
+                  <SelectItem value="intermediate">Intermediate</SelectItem>
+                  <SelectItem value="advanced">Advanced</SelectItem>
+                </SelectContent>
+              </Select>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -267,7 +309,7 @@ function InviteSection() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="coach">Coach</SelectItem>
-                <SelectItem value="block_builder">Block builder</SelectItem>
+                <SelectItem value="block_builder">Admin</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -541,8 +583,8 @@ function PlayersSection() {
     const ok = await confirm({
       title: `${making === "deactivat" ? "Deactivate" : "Reactivate"} ${p.player_name}?`,
       description: making === "deactivat"
-        ? "Deactivating keeps all their ratings and history but hides them from squad lists and group assignment."
-        : "Reactivating makes the player visible in squad lists and available for group assignment again.",
+        ? "Deactivating keeps all their ratings and history but hides them from squad lists and team assignment."
+        : "Reactivating makes the player visible in squad lists and available for team assignment again.",
       confirmLabel: making === "deactivat" ? "Deactivate" : "Reactivate",
       destructive: making === "deactivat",
     });
@@ -1077,66 +1119,66 @@ function AttributesSection() {
 
 
 function CompletionTrackerSection() {
-  const { data: weeks, isError: weeksError, refetch: refetchWeeks } = useQuery({
-    queryKey: qk.sessions.matchWeeks,
-    queryFn: () => listMatchWeeks(),
+  const { data: matches, isError: matchesError, refetch: refetchMatches } = useQuery({
+    queryKey: qk.sessions.matchList,
+    queryFn: () => listMatchSessions(),
   });
   const [selected, setSelected] = useState<string | null>(null);
-  const activeId = selected ?? weeks?.weeks?.[0]?.id ?? null;
+  const activeId = selected ?? matches?.[0]?.id ?? null;
   const { data: tracker } = useQuery({
-    queryKey: qk.sessions.weekCompletion.detail(activeId),
-    queryFn: () => getWeekCompletion({ data: { session_id: activeId! } }),
+    queryKey: qk.sessions.completion.detail(activeId),
+    queryFn: () => getMatchCompletion({ data: { session_id: activeId! } }),
     enabled: !!activeId,
   });
   return (
     <div className="rounded-lg border bg-card p-5">
-      <h3 className="mb-1 text-sm font-semibold">Weekly rating completion</h3>
+      <h3 className="mb-1 text-sm font-semibold">Match rating completion</h3>
       <p className="mb-3 text-xs text-muted-foreground">
-        Per-group status for a selected match week.
+        Per-team status for a selected match.
       </p>
-      {weeksError ? (
-        <QueryError message="Couldn't load match weeks" onRetry={() => refetchWeeks()} />
-      ) : weeks?.weeks?.length ? (
+      {matchesError ? (
+        <QueryError message="Couldn't load matches" onRetry={() => refetchMatches()} />
+      ) : matches?.length ? (
         <select
           value={activeId ?? ""}
           onChange={(e) => setSelected(e.target.value)}
           className="mb-4 w-full rounded-md border bg-background px-2 py-1 text-sm"
         >
-          {weeks.weeks.map((w: any) => (
-            <option key={w.id} value={w.id}>
-              Week {w.week_number ?? "—"} · {w.session_date}
-              {w.opponent ? ` · ${w.opponent}` : ""}
+          {matches.map((s: any) => (
+            <option key={s.id} value={s.id}>
+              {s.session_date}
+              {s.opponent ? ` · vs ${s.opponent}` : ""}
             </option>
           ))}
         </select>
       ) : (
-        <p className="text-xs text-muted-foreground">No match weeks yet.</p>
+        <p className="text-xs text-muted-foreground">No matches yet.</p>
       )}
       {tracker && (
         <ul className="space-y-2">
-          {tracker.groups.map((g: any) => {
+          {tracker.teams.map((t: any) => {
             const palette =
-              g.status === "submitted"
+              t.status === "submitted"
                 ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                : g.status === "partial"
+                : t.status === "partial"
                   ? "bg-amber-100 text-amber-800 border-amber-300"
                   : "bg-slate-100 text-slate-700 border-slate-300";
             const label =
-              g.status === "submitted"
+              t.status === "submitted"
                 ? "Submitted"
-                : g.status === "partial"
-                  ? `Partial (${g.rated}/${g.expected})`
+                : t.status === "partial"
+                  ? `Partial (${t.rated}/${t.expected})`
                   : "Not started";
             return (
               <li
-                key={g.group_id}
+                key={t.team_id}
                 className="rounded-md border bg-background p-3"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold">Group {g.group_number}</p>
+                    <p className="text-sm font-semibold">Team {t.team_number}</p>
                     <p className="text-xs text-muted-foreground">
-                      {g.coaches.length ? g.coaches.join(", ") : "No coaches"}
+                      {t.coaches.length ? t.coaches.join(", ") : "No coaches"}
                     </p>
                   </div>
                   <span
@@ -1145,7 +1187,7 @@ function CompletionTrackerSection() {
                     {label}
                   </span>
                 </div>
-                {(g.status === "submitted" || g.status === "partial") && activeId && (
+                {(t.status === "submitted" || t.status === "partial") && activeId && (
                   <Link
                     to="/match-summary/$sessionId"
                     params={{ sessionId: activeId }}

@@ -13,11 +13,11 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRatingsRouteImport } from './routes/_authenticated/ratings'
+import { Route as AuthenticatedMatchTeamsRouteImport } from './routes/_authenticated/match-teams'
 import { Route as AuthenticatedMatchDayRouteImport } from './routes/_authenticated/match-day'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
-import { Route as AuthenticatedBlockBuilderRouteImport } from './routes/_authenticated/block-builder'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedSquadIndexRouteImport } from './routes/_authenticated/squad/index'
 import { Route as AuthenticatedSquadPlayerIdRouteImport } from './routes/_authenticated/squad/$playerId'
@@ -25,7 +25,6 @@ import { Route as AuthenticatedSessionInfoSessionIdRouteImport } from './routes/
 import { Route as AuthenticatedRulesU11VsU10RouteImport } from './routes/_authenticated/rules/u11-vs-u10'
 import { Route as AuthenticatedRulesU11RouteImport } from './routes/_authenticated/rules/u11'
 import { Route as AuthenticatedMatchSummarySessionIdRouteImport } from './routes/_authenticated/match-summary/$sessionId'
-import { Route as AuthenticatedGroupGroupIdRouteImport } from './routes/_authenticated/group/$groupId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -44,6 +43,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthenticatedRatingsRoute = AuthenticatedRatingsRouteImport.update({
   id: '/ratings',
   path: '/ratings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMatchTeamsRoute = AuthenticatedMatchTeamsRouteImport.update({
+  id: '/match-teams',
+  path: '/match-teams',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMatchDayRoute = AuthenticatedMatchDayRouteImport.update({
@@ -66,12 +70,6 @@ const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedBlockBuilderRoute =
-  AuthenticatedBlockBuilderRouteImport.update({
-    id: '/block-builder',
-    path: '/block-builder',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -111,24 +109,17 @@ const AuthenticatedMatchSummarySessionIdRoute =
     path: '/match-summary/$sessionId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedGroupGroupIdRoute =
-  AuthenticatedGroupGroupIdRouteImport.update({
-    id: '/group/$groupId',
-    path: '/group/$groupId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
-  '/block-builder': typeof AuthenticatedBlockBuilderRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/feed': typeof AuthenticatedFeedRoute
   '/home': typeof AuthenticatedHomeRoute
   '/match-day': typeof AuthenticatedMatchDayRoute
+  '/match-teams': typeof AuthenticatedMatchTeamsRoute
   '/ratings': typeof AuthenticatedRatingsRoute
-  '/group/$groupId': typeof AuthenticatedGroupGroupIdRoute
   '/match-summary/$sessionId': typeof AuthenticatedMatchSummarySessionIdRoute
   '/rules/u11': typeof AuthenticatedRulesU11Route
   '/rules/u11-vs-u10': typeof AuthenticatedRulesU11VsU10Route
@@ -140,13 +131,12 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
-  '/block-builder': typeof AuthenticatedBlockBuilderRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/feed': typeof AuthenticatedFeedRoute
   '/home': typeof AuthenticatedHomeRoute
   '/match-day': typeof AuthenticatedMatchDayRoute
+  '/match-teams': typeof AuthenticatedMatchTeamsRoute
   '/ratings': typeof AuthenticatedRatingsRoute
-  '/group/$groupId': typeof AuthenticatedGroupGroupIdRoute
   '/match-summary/$sessionId': typeof AuthenticatedMatchSummarySessionIdRoute
   '/rules/u11': typeof AuthenticatedRulesU11Route
   '/rules/u11-vs-u10': typeof AuthenticatedRulesU11VsU10Route
@@ -160,13 +150,12 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
-  '/_authenticated/block-builder': typeof AuthenticatedBlockBuilderRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/feed': typeof AuthenticatedFeedRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/match-day': typeof AuthenticatedMatchDayRoute
+  '/_authenticated/match-teams': typeof AuthenticatedMatchTeamsRoute
   '/_authenticated/ratings': typeof AuthenticatedRatingsRoute
-  '/_authenticated/group/$groupId': typeof AuthenticatedGroupGroupIdRoute
   '/_authenticated/match-summary/$sessionId': typeof AuthenticatedMatchSummarySessionIdRoute
   '/_authenticated/rules/u11': typeof AuthenticatedRulesU11Route
   '/_authenticated/rules/u11-vs-u10': typeof AuthenticatedRulesU11VsU10Route
@@ -180,13 +169,12 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/admin'
-    | '/block-builder'
     | '/calendar'
     | '/feed'
     | '/home'
     | '/match-day'
+    | '/match-teams'
     | '/ratings'
-    | '/group/$groupId'
     | '/match-summary/$sessionId'
     | '/rules/u11'
     | '/rules/u11-vs-u10'
@@ -198,13 +186,12 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/admin'
-    | '/block-builder'
     | '/calendar'
     | '/feed'
     | '/home'
     | '/match-day'
+    | '/match-teams'
     | '/ratings'
-    | '/group/$groupId'
     | '/match-summary/$sessionId'
     | '/rules/u11'
     | '/rules/u11-vs-u10'
@@ -217,13 +204,12 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/admin'
-    | '/_authenticated/block-builder'
     | '/_authenticated/calendar'
     | '/_authenticated/feed'
     | '/_authenticated/home'
     | '/_authenticated/match-day'
+    | '/_authenticated/match-teams'
     | '/_authenticated/ratings'
-    | '/_authenticated/group/$groupId'
     | '/_authenticated/match-summary/$sessionId'
     | '/_authenticated/rules/u11'
     | '/_authenticated/rules/u11-vs-u10'
@@ -268,6 +254,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRatingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/match-teams': {
+      id: '/_authenticated/match-teams'
+      path: '/match-teams'
+      fullPath: '/match-teams'
+      preLoaderRoute: typeof AuthenticatedMatchTeamsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/match-day': {
       id: '/_authenticated/match-day'
       path: '/match-day'
@@ -294,13 +287,6 @@ declare module '@tanstack/react-router' {
       path: '/calendar'
       fullPath: '/calendar'
       preLoaderRoute: typeof AuthenticatedCalendarRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/block-builder': {
-      id: '/_authenticated/block-builder'
-      path: '/block-builder'
-      fullPath: '/block-builder'
-      preLoaderRoute: typeof AuthenticatedBlockBuilderRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin': {
@@ -352,25 +338,17 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMatchSummarySessionIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/group/$groupId': {
-      id: '/_authenticated/group/$groupId'
-      path: '/group/$groupId'
-      fullPath: '/group/$groupId'
-      preLoaderRoute: typeof AuthenticatedGroupGroupIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
-  AuthenticatedBlockBuilderRoute: typeof AuthenticatedBlockBuilderRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedMatchDayRoute: typeof AuthenticatedMatchDayRoute
+  AuthenticatedMatchTeamsRoute: typeof AuthenticatedMatchTeamsRoute
   AuthenticatedRatingsRoute: typeof AuthenticatedRatingsRoute
-  AuthenticatedGroupGroupIdRoute: typeof AuthenticatedGroupGroupIdRoute
   AuthenticatedMatchSummarySessionIdRoute: typeof AuthenticatedMatchSummarySessionIdRoute
   AuthenticatedRulesU11Route: typeof AuthenticatedRulesU11Route
   AuthenticatedRulesU11VsU10Route: typeof AuthenticatedRulesU11VsU10Route
@@ -381,13 +359,12 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
-  AuthenticatedBlockBuilderRoute: AuthenticatedBlockBuilderRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedFeedRoute: AuthenticatedFeedRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedMatchDayRoute: AuthenticatedMatchDayRoute,
+  AuthenticatedMatchTeamsRoute: AuthenticatedMatchTeamsRoute,
   AuthenticatedRatingsRoute: AuthenticatedRatingsRoute,
-  AuthenticatedGroupGroupIdRoute: AuthenticatedGroupGroupIdRoute,
   AuthenticatedMatchSummarySessionIdRoute:
     AuthenticatedMatchSummarySessionIdRoute,
   AuthenticatedRulesU11Route: AuthenticatedRulesU11Route,
@@ -409,13 +386,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

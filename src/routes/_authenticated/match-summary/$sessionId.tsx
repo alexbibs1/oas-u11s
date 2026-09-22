@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getMatchSummary } from "@/lib/sessions/sessions.functions";
+import { getMatchSummary } from "@/lib/match/match.functions";
 import { ChevronLeft, MapPin, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDateLong } from "@/lib/dates";
@@ -47,8 +47,6 @@ function MatchSummaryPage() {
                   {data.session.venue}
                 </span>
               ) : null}
-              {" • "}
-              {data.session.block_name}
             </p>
           )}
         </div>
@@ -67,55 +65,57 @@ function MatchSummaryPage() {
         </div>
       )}
 
-      <div className="space-y-6 pb-24">
-        {data?.groups.map((g) => (
-          <section key={g.id} className="rounded-lg border bg-card p-5">
-            <Link
-              to="/group/$groupId"
-              params={{ groupId: g.id }}
-              className="mb-3 flex items-center justify-between rounded border bg-background px-3 py-2 transition-colors hover:border-primary/40 hover:bg-secondary"
-            >
-              <h2 className="text-base font-bold text-primary">Group {g.group_number}</h2>
-              <p className="text-xs text-muted-foreground">
-                {g.coaches.length ? g.coaches.join(", ") : "No coaches"}
-              </p>
-            </Link>
+      {data && data.teams.length === 0 && (
+        <div className="rounded-lg border border-dashed p-6 text-center">
+          <p className="text-sm text-muted-foreground">No teams picked for this match yet.</p>
+        </div>
+      )}
 
-            {g.playerOfTheDay && (
+      <div className="space-y-6 pb-24">
+        {data?.teams.map((t: any) => (
+          <section key={t.id} className="rounded-lg border bg-card p-5">
+            <div className="mb-3 flex items-center justify-between rounded border bg-background px-3 py-2">
+              <h2 className="text-base font-bold text-primary">Team {t.team_number}</h2>
+              <p className="text-xs text-muted-foreground">
+                {t.coaches.length ? t.coaches.join(", ") : "No coaches"}
+              </p>
+            </div>
+
+            {t.playerOfTheDay && (
               <div className="mb-3 flex items-center gap-2 rounded-md border border-accent/40 bg-accent/10 px-3 py-2">
                 <Trophy className="h-4 w-4 text-accent" />
                 <div className="text-xs">
                   <p className="font-semibold uppercase tracking-wider text-accent">
                     Player of the Day
                   </p>
-                  <p className="text-sm font-bold text-primary">{g.playerOfTheDay.name}</p>
+                  <p className="text-sm font-bold text-primary">{t.playerOfTheDay.name}</p>
                 </div>
               </div>
             )}
-            {!g.hasOverrides ? (
+            {!t.hasOverrides ? (
               <div className="rounded-md border border-dashed p-4 text-center">
                 <p className="text-sm text-muted-foreground">No register submitted.</p>
                 <Button asChild variant="outline" size="sm" className="mt-3">
-                  <Link to="/match-day" search={{ sessionId: data.session.id, blockId: undefined, groupId: undefined }}>
+                  <Link to="/match-day" search={{ sessionId: data.session.id, teamId: t.id }}>
                     Submit register
                   </Link>
                 </Button>
               </div>
             ) : (
               <div className="space-y-3">
-                <PlayerList label="Present" items={g.present} />
-                <PlayerList label="Absent" items={g.absent} muted />
-                {g.movedIn.length > 0 && <PlayerList label="Moved in" items={g.movedIn} />}
+                <PlayerList label="Present" items={t.present} />
+                <PlayerList label="Absent" items={t.absent} muted />
+                {t.movedIn.length > 0 && <PlayerList label="Moved in" items={t.movedIn} />}
 
                 <div className="mt-4 border-t pt-3">
                   <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                     Ratings
                   </p>
-                  {!g.hasRatings ? (
+                  {!t.hasRatings ? (
                     <div className="rounded-md border border-dashed p-3 text-center">
                       <p className="text-xs text-muted-foreground">Ratings not yet submitted.</p>
                       <Button asChild variant="outline" size="sm" className="mt-2">
-                        <Link to="/match-day" search={{ sessionId: data.session.id, blockId: undefined, groupId: undefined }}>
+                        <Link to="/match-day" search={{ sessionId: data.session.id, teamId: t.id }}>
                           Submit ratings
                         </Link>
                       </Button>
@@ -134,7 +134,7 @@ function MatchSummaryPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {g.ratings.map((r) => (
+                          {t.ratings.map((r: any) => (
                             <tr key={r.player_id} className="border-t border-border/40">
                               <td className="py-1.5 pr-2 text-foreground/90">{r.name}</td>
                               {SKILLS.map((s) => (

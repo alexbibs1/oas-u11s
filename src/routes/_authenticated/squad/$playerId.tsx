@@ -3,7 +3,7 @@ import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tansta
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { getPlayer, getPlayerCurrentBlock, getPlayerPotdCount } from "@/lib/players/players.functions";
+import { getPlayer, getPlayerPotdCount, updatePlayerTier } from "@/lib/players/players.functions";
 import { listPlayerSkillRatings } from "@/lib/skill-ratings/skill-ratings.functions";
 import {
   listPlayerNotes,
@@ -15,6 +15,14 @@ import { ChevronLeft, Pencil, Trash2, Plus, TrendingUp, TrendingDown, Minus, Tro
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { formatUKDateTime } from "@/lib/dates";
+import { useMyRole } from "@/lib/auth/view-as";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const playerQuery = (id: string) => ({
   queryKey: qk.players.detail(id),
@@ -49,9 +57,17 @@ function PlayerProfile() {
     else router.navigate({ to: "/squad" });
   };
   const { data: player } = useSuspenseQuery(playerQuery(playerId));
-  const { data: currentBlock, isError: blockError } = useQuery({
-    queryKey: qk.players.currentBlock(playerId),
-    queryFn: () => getPlayerCurrentBlock({ data: { player_id: playerId } }),
+  const { data: me } = useMyRole();
+  const qcTier = useQueryClient();
+  const updateTier = useMutation({
+    mutationFn: (tier: "developing" | "intermediate" | "advanced" | null) =>
+      updatePlayerTier({ data: { id: playerId, tier } }),
+    onSuccess: () => {
+      toast.success("Tier updated");
+      qcTier.invalidateQueries({ queryKey: qk.players.detail(playerId) });
+      qcTier.invalidateQueries({ queryKey: qk.players.squad });
+    },
+    onError: (e: any) => toast.error(e.message),
   });
   const { data: potd, isError: potdError } = useQuery({
     queryKey: qk.players.potdCount(playerId),
@@ -86,12 +102,14 @@ function PlayerProfile() {
     }
     const recent = weeklyRows.slice(0, 3);
     for (const s of SKILLS) {
-      const vals = recent.map((r: any) => r[s.key] as number).filter((v): v is number => v != null);
+      const vals = recent
+        .map((r: any) => r[s.key] as number)
+        .filter((v: number | null | undefined): v is number => v != null);
       if (vals.length === 0) {
         trends[s.key] = { direction: "stable", delta: 0 };
         continue;
       }
-      const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+      const avg = vals.reduce((a: number, b: number) => a + b, 0) / vals.length;
       const baseline = (player as PlayerDto)[s.key] as number;
       const delta = Math.round(avg - baseline);
       trends[s.key] = {
@@ -156,28 +174,32 @@ function PlayerProfile() {
         <h1 className="mt-1 text-3xl font-bold text-primary">{(player as PlayerDto).player_name}</h1>
       </header>
 
-      <section className="mb-6 rounded-lg border bg-card p-4">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Current block
-        </h2>
-        {currentBlock?.block ? (
-          <div className="mt-1">
-            <p className="text-sm font-semibold text-primary">
-              {(currentBlock.block as any).name ??
-                `Block ${(currentBlock.block as any).block_number}`}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {currentBlock.group
-                ? `Group ${currentBlock.group.group_number}${
-                    currentBlock.coaches.length ? ` · Coach ${currentBlock.coaches.join(", ")}` : ""
-                  }`
-                : "Not assigned to a group"}
-            </p>
-          </div>
-        ) : (
-          <p className="mt-1 text-sm text-muted-foreground">No active block.</p>
-        )}
-      </section>
+      {me?.isAdmin && (
+        <section className="mb-6 rounded-lg border bg-card p-4">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Training tier
+          </h2>
+          <p className="mb-2 text-[11px] text-muted-foreground">
+            Admin only — other coaches never see this.
+          </p>
+          <Select
+            value={(player as PlayerDto).tier as string | undefined ?? "unassigned"}
+            onValueChange={(v) =>
+              updateTier.mutate(v === "unassigned" ? null : (v as any))
+            }
+          >
+            <SelectTrigger className="h-9 w-48 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unassigned">Unassigned</SelectItem>
+              <SelectItem value="developing">Developing</SelectItem>
+              <SelectItem value="intermediate">Intermediate</SelectItem>
+              <SelectItem value="advanced">Advanced</SelectItem>
+            </SelectContent>
+          </Select>
+        </section>
+      )}
 
       {potdCount > 0 && (
         <section className="mb-6 flex items-center gap-3 rounded-lg border border-accent/40 bg-accent/10 p-4">
@@ -217,7 +239,7 @@ function PlayerProfile() {
         </div>
       </section>
 
-      {(blockError || potdError || weeklyError) && (
+      {(potdError || weeklyError) && (
         <div className="mb-4">
           <QueryError message="Couldn't load some player data" />
         </div>
@@ -424,12 +446,9 @@ function WeeklyHistory({
               <li key={r.id} className="p-3">
                 <div className="mb-1 flex items-center justify-between gap-2">
                   <p className="text-sm font-semibold text-primary">
-                    Week {r.week_number ?? "—"}
-                    {r.session_date ? ` · ${r.session_date}` : ""}
+                    {r.session_date ?? "—"}
+                    {r.opponent ? ` · vs ${r.opponent}` : ""}
                   </p>
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Group {r.group_number}
-                  </span>
                 </div>
                 <p className="mb-2 text-xs text-muted-foreground">
                   {(r.coach_names ?? []).length ? (r.coach_names as string[]).join(", ") : "—"}

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { computeQuartileMap } from "@/lib/quartile";
 
 export const listPlayers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -211,35 +212,44 @@ export const listAuditLog = createServerFn({ method: "GET" })
     return rows ?? [];
   });
 
-export const getPlayerCurrentBlock = createServerFn({ method: "GET" })
+/** Admin-only: assign a player to a training tier (Developing/Intermediate/Advanced). */
+export const updatePlayerTier = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ player_id: z.string().uuid() }))
+  .inputValidator(
+    z.object({
+      id: z.string().uuid(),
+      tier: z.enum(["developing", "intermediate", "advanced"]).nullable(),
+    }),
+  )
   .handler(async ({ context, data }) => {
-    const sb = context.supabase;
-    const { data: block } = await sb
-      .from("blocks")
-      .select("id, name, block_number")
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "block_builder",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+    const { error } = await context.supabase
+      .from("players")
+      .update({ tier: data.tier })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Active squad with quartile rank computed — the only ranking regular coaches see. */
+export const listSquadWithQuartile = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: players, error } = await context.supabase
+      .from("players")
+      .select("*")
       .eq("is_active", true)
-      .order("start_date", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (!block) return { block: null, group: null, coaches: [] as string[] };
-    const { data: gpRows } = await sb
-      .from("group_players")
-      .select("groups:group_id ( id, group_number, block_id )")
-      .eq("player_id", data.player_id);
-    const g = (gpRows ?? [])
-      .map((r: any) => r.groups)
-      .find((x: any) => x?.block_id === (block as any).id);
-    if (!g) return { block, group: null, coaches: [] as string[] };
-    const { data: coachRows } = await sb
-      .from("group_coaches")
-      .select("coaches:coach_id ( coach_name )")
-      .eq("group_id", g.id);
-    const coaches = (coachRows ?? [])
-      .map((r: any) => r.coaches?.coach_name)
-      .filter(Boolean) as string[];
-    return { block, group: { id: g.id, group_number: g.group_number }, coaches };
+      .order("player_name", { ascending: true });
+    if (error) throw new Error(error.message);
+    const quartileMap = computeQuartileMap(players ?? []);
+    return (players ?? []).map((p: any) => ({
+      ...p,
+      quartile: quartileMap.get(p.id) ?? null,
+    }));
   });
 
 export const getPlayerPotdCount = createServerFn({ method: "GET" })
