@@ -101,6 +101,7 @@ function AdminPage() {
         <div className="space-y-3">
           <Link
             to="/match-teams"
+            search={{ sessionId: undefined }}
             className="flex items-center justify-between rounded-lg border bg-card p-4 hover:bg-secondary"
           >
             <div>
