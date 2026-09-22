@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { listMatchSessions } from "@/lib/sessions/sessions.functions";
 import {
   getMatchDayContext,
-  listGroupsForBlock,
+  getMatchTeamsForSession,
   saveRegister,
   submitRatings,
 } from "@/lib/match/match.functions";
@@ -17,13 +17,12 @@ import { formatDateLong } from "@/lib/dates";
 export const Route = createFileRoute("/_authenticated/match-day")({
   validateSearch: (s: Record<string, unknown>) => ({
     sessionId: typeof s.sessionId === "string" ? s.sessionId : undefined,
-    blockId: typeof s.blockId === "string" ? s.blockId : undefined,
-    groupId: typeof s.groupId === "string" ? s.groupId : undefined,
+    teamId: typeof s.teamId === "string" ? s.teamId : undefined,
   }),
   component: MatchDayPage,
 });
 
-type Step = "session" | "group" | "register" | "rate" | "done";
+type Step = "session" | "team" | "register" | "rate" | "done";
 
 import { SKILLS, SKILL_DESCRIPTORS as DESCRIPTORS } from "@/lib/skills";
 import { qk } from "@/lib/query-keys";
@@ -31,11 +30,11 @@ import { useConfirm } from "@/components/confirm-dialog";
 import { QueryError } from "@/components/query-error";
 
 function MatchDayPage() {
-  const { sessionId: preselectId, blockId: preselectBlockId, groupId: preselectGroupId } = Route.useSearch();
+  const { sessionId: preselectId, teamId: preselectTeamId } = Route.useSearch();
   const router = useRouter();
   const [step, setStep] = useState<Step>("session");
   const [session, setSession] = useState<any | null>(null);
-  const [group, setGroup] = useState<any | null>(null);
+  const [team, setTeam] = useState<any | null>(null);
 
   const { data: preselectSessions } = useQuery({
     queryKey: qk.sessions.matchList,
@@ -43,13 +42,10 @@ function MatchDayPage() {
     enabled: !!preselectId,
   });
 
-  // When arriving from a group page (groupId passed): skip the group picker —
-  // the coach has already chosen their group, so go straight to the register.
-  const { data: preselectGroups } = useQuery({
-    queryKey: ["match-day-preselect-groups", preselectId],
-    queryFn: () =>
-      listGroupsForBlock({ data: { block_id: preselectSessions!.find((s: any) => s.id === preselectId)!.block_id } }),
-    enabled: !!preselectId && !!preselectGroupId && !!preselectSessions?.length,
+  const { data: preselectTeams } = useQuery({
+    queryKey: preselectId ? qk.match.teamsForSession(preselectId) : ["match-teams", "none"],
+    queryFn: () => getMatchTeamsForSession({ data: { session_id: preselectId! } }),
+    enabled: !!preselectId && !!preselectTeamId,
   });
 
   const [autoAdvanced, setAutoAdvanced] = useState(false);
@@ -57,31 +53,23 @@ function MatchDayPage() {
   useEffect(() => {
     if (preselectId && !session && preselectSessions?.length) {
       const found = preselectSessions.find((s: any) => s.id === preselectId);
-      if (found && found.block_is_active) {
+      if (found) {
         setSession(found);
-        // No groupId: normal flow, pick a group next
-        if (!preselectGroupId) setStep("group");
+        if (!preselectTeamId) setStep("team");
       }
     }
-  }, [preselectId, preselectSessions, session, preselectGroupId]);
+  }, [preselectId, preselectSessions, session, preselectTeamId]);
 
-  // With groupId: once we have the session AND the groups list, find the
-  // coach's group and jump straight to the register step.
   useEffect(() => {
-    if (
-      preselectGroupId &&
-      !autoAdvanced &&
-      session &&
-      preselectGroups?.length
-    ) {
-      const g = preselectGroups.find((x: any) => x.id === preselectGroupId);
-      if (g) {
-        setGroup({ id: g.id, group_number: g.group_number });
+    if (preselectTeamId && !autoAdvanced && session && preselectTeams?.length) {
+      const t = preselectTeams.find((x: any) => x.id === preselectTeamId);
+      if (t) {
+        setTeam({ id: t.id, team_number: t.team_number });
         setStep("register");
         setAutoAdvanced(true);
       }
     }
-  }, [preselectGroupId, autoAdvanced, session, preselectGroups]);
+  }, [preselectTeamId, autoAdvanced, session, preselectTeams]);
 
   const back = () => {
     if (step === "session") {
@@ -89,22 +77,20 @@ function MatchDayPage() {
       else router.navigate({ to: "/calendar" });
       return;
     }
-    if (step === "group") {
+    if (step === "team") {
       setStep("session");
-      setGroup(null);
+      setTeam(null);
     } else if (step === "register" || step === "rate") {
-      // If we auto-advanced past the group picker (arrived with groupId),
-      // going back exits the flow instead of showing the skipped step.
-      if (preselectGroupId) {
+      if (preselectTeamId) {
         if (window.history.length > 1) router.history.back();
         else router.navigate({ to: "/home" });
         return;
       }
-      setStep("group");
+      setStep("team");
     } else if (step === "done") {
       setStep("session");
       setSession(null);
-      setGroup(null);
+      setTeam(null);
     }
   };
 
@@ -117,16 +103,17 @@ function MatchDayPage() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-accent">Match Day</p>
           <h1 className="mt-1 text-2xl font-bold text-primary">
-            {step === "session" && "Select session"}
-            {step === "group" && "Select group"}
+            {step === "session" && "Select match"}
+            {step === "team" && "Select team"}
             {step === "register" && "Register"}
             {step === "rate" && "Rate players"}
             {step === "done" && "Submitted"}
           </h1>
           {session && step !== "session" && (
             <p className="text-xs text-muted-foreground">
-              {session.block_name} • {formatDateLong(session.session_date)}
-              {group ? ` • Group ${group.group_number}` : ""}
+              {formatDateLong(session.session_date)}
+              {session.opponent ? ` • vs ${session.opponent}` : ""}
+              {team ? ` • Team ${team.team_number}` : ""}
             </p>
           )}
         </div>
@@ -136,39 +123,32 @@ function MatchDayPage() {
         <SessionStep
           onPick={(s) => {
             setSession(s);
-            // Arrived with a preselected group: the auto-advance effect will
-            // jump to the register once groups load. Otherwise pick a group.
-            if (!preselectGroupId) setStep("group");
+            if (!preselectTeamId) setStep("team");
           }}
         />
       )}
-      {step === "group" && session && (
-        <GroupStep
-          blockId={session.block_id}
-          onPick={(g) => {
-            setGroup(g);
+      {step === "team" && session && (
+        <TeamStep
+          sessionId={session.id}
+          onPick={(t) => {
+            setTeam(t);
             setStep("register");
           }}
         />
       )}
-      {step === "register" && session && group && (
-        <RegisterStep session={session} group={group} onProceed={() => setStep("rate")} />
+      {step === "register" && session && team && (
+        <RegisterStep session={session} team={team} onProceed={() => setStep("rate")} />
       )}
-      {step === "rate" && session && group && (
-        <RateStep session={session} group={group} onDone={() => setStep("done")} />
+      {step === "rate" && session && team && (
+        <RateStep session={session} team={team} onDone={() => setStep("done")} />
       )}
       {step === "done" && session && (
         <div className="rounded-lg border bg-card p-6 text-center">
           <p className="text-lg font-semibold text-primary">Ratings submitted</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Weekly ratings saved for this match.
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">Ratings saved for this match.</p>
           <div className="mt-6 flex flex-col gap-3">
             <Button asChild>
-              <Link
-                to="/match-summary/$sessionId"
-                params={{ sessionId: session.id }}
-              >
+              <Link to="/match-summary/$sessionId" params={{ sessionId: session.id }}>
                 View match summary
               </Link>
             </Button>
@@ -192,63 +172,56 @@ function SessionStep({ onPick }: { onPick: (s: any) => void }) {
   if (!sessions.length)
     return (
       <p className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">
-        No match sessions yet. A block builder can add one from the Admin page.
+        No matches yet. An admin can add one from the Calendar.
       </p>
     );
   return (
     <ul className="space-y-2">
-      {sessions.map((s: any) => {
-        const selectable = s.block_is_active;
-        return (
-          <li key={s.id}>
-            <button
-              disabled={!selectable}
-              onClick={() => onPick(s)}
-              className={cn(
-                "flex w-full items-center justify-between rounded-lg border bg-card p-4 text-left transition",
-                selectable ? "hover:border-primary" : "opacity-50 cursor-not-allowed",
-              )}
-            >
-              <div>
-                <p className="text-sm font-semibold">{formatDateLong(s.session_date)}</p>
-                <p className="text-xs text-muted-foreground">
-                  {s.opponent ? `vs ${s.opponent}` : "Match"}
-                  {s.venue ? `, ${s.venue}` : ""}
-                </p>
-              </div>
-              {!selectable && <span className="text-xs text-muted-foreground">Closed</span>}
-            </button>
-          </li>
-        );
-      })}
+      {sessions.map((s: any) => (
+        <li key={s.id}>
+          <button
+            onClick={() => onPick(s)}
+            className="flex w-full items-center justify-between rounded-lg border bg-card p-4 text-left transition hover:border-primary"
+          >
+            <div>
+              <p className="text-sm font-semibold">{formatDateLong(s.session_date)}</p>
+              <p className="text-xs text-muted-foreground">
+                {s.opponent ? `vs ${s.opponent}` : "Match"}
+                {s.venue ? `, ${s.venue}` : ""}
+              </p>
+            </div>
+          </button>
+        </li>
+      ))}
     </ul>
   );
 }
 
-function GroupStep({ blockId, onPick }: { blockId: string; onPick: (g: any) => void }) {
-  const { data: groups = [], isLoading, isError, refetch } = useQuery({
-    queryKey: qk.groups.forBlock(blockId),
-    queryFn: () => listGroupsForBlock({ data: { block_id: blockId } }),
+function TeamStep({ sessionId, onPick }: { sessionId: string; onPick: (t: any) => void }) {
+  const { data: teams = [], isLoading, isError, refetch } = useQuery({
+    queryKey: qk.match.teamsForSession(sessionId),
+    queryFn: () => getMatchTeamsForSession({ data: { session_id: sessionId } }),
   });
   if (isError) return <QueryError onRetry={() => refetch()} />;
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
-  if (!groups.length)
+  if (!teams.length)
     return (
       <p className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">
-        No groups configured for this block.
+        No teams picked for this match yet. An admin needs to pick teams from the Admin page
+        first.
       </p>
     );
   return (
     <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      {groups.map((g: any) => (
-        <li key={g.id}>
+      {teams.map((t: any) => (
+        <li key={t.id}>
           <button
-            onClick={() => onPick(g)}
+            onClick={() => onPick(t)}
             className="flex w-full flex-col items-start gap-1 rounded-lg border bg-card p-4 text-left transition hover:border-primary"
           >
-            <p className="text-base font-bold text-primary">Group {g.group_number}</p>
+            <p className="text-base font-bold text-primary">Team {t.team_number}</p>
             <p className="text-xs text-muted-foreground">
-              {g.coaches.length ? g.coaches.join(", ") : "No coaches assigned"}
+              {t.coaches.length ? t.coaches.join(", ") : "No coaches assigned"}
             </p>
           </button>
         </li>
@@ -261,23 +234,23 @@ type RegStatus = "present" | "absent" | "move";
 
 function RegisterStep({
   session,
-  group,
+  team,
   onProceed,
 }: {
   session: any;
-  group: any;
+  team: any;
   onProceed: () => void;
 }) {
   const qc = useQueryClient();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const { data: ctx, isLoading, isError, refetch } = useQuery({
-    queryKey: qk.match.context(session.id, group.id),
-    queryFn: () => getMatchDayContext({ data: { session_id: session.id, group_id: group.id } }),
+    queryKey: qk.match.context(session.id, team.id),
+    queryFn: () => getMatchDayContext({ data: { session_id: session.id, team_id: team.id } }),
     staleTime: 0,
   });
-  const { data: allGroups = [] } = useQuery({
-    queryKey: qk.groups.forBlock(session.block_id),
-    queryFn: () => listGroupsForBlock({ data: { block_id: session.block_id } }),
+  const { data: allTeams = [] } = useQuery({
+    queryKey: qk.match.teamsForSession(session.id),
+    queryFn: () => getMatchTeamsForSession({ data: { session_id: session.id } }),
   });
 
   const [state, setState] = useState<Record<string, { status: RegStatus; move_to?: string }>>({});
@@ -289,25 +262,25 @@ function RegisterStep({
       const ov = (ctx.overrides as any[]).find((o) => o.player_id === p.id);
       if (!ov) {
         init[p.id] = { status: "present" };
-      } else if (ov.override_group_id === null) {
+      } else if (ov.override_team_id === null) {
         init[p.id] = { status: "absent" };
-      } else if (ov.override_group_id === group.id) {
+      } else if (ov.override_team_id === team.id) {
         init[p.id] = { status: "present" };
       } else {
-        init[p.id] = { status: "move", move_to: ov.override_group_id };
+        init[p.id] = { status: "move", move_to: ov.override_team_id };
       }
     }
     for (const p of ctx.movedInPlayers as any[]) {
       if (!init[p.id]) init[p.id] = { status: "present" };
     }
     setState(init);
-  }, [ctx, group.id]);
+  }, [ctx, team.id]);
 
   const handleSave = async () => {
     const ok = await confirm({
       title: "Confirm register?",
       description:
-        "This will save the attendance register for this group. You can still amend it later by coming back to Match Day.",
+        "This will save the attendance register for this team. You can still amend it later by coming back to Match Day.",
       confirmLabel: "Confirm",
     });
     if (!ok) return;
@@ -319,18 +292,17 @@ function RegisterStep({
       saveRegister({
         data: {
           session_id: session.id,
-          group_id: group.id,
+          team_id: team.id,
           entries: Object.entries(state).map(([player_id, v]) => ({
             player_id,
             status: v.status,
-            move_to_group_id: v.status === "move" ? (v.move_to ?? null) : null,
+            move_to_team_id: v.status === "move" ? (v.move_to ?? null) : null,
           })),
         },
       }),
     onSuccess: () => {
       toast.success("Register confirmed");
-      qc.invalidateQueries({ queryKey: qk.match.contextForSession(session.id) });
-      qc.invalidateQueries({ queryKey: qk.groups.forBlock(session.block_id) });
+      qc.invalidateQueries({ queryKey: qk.match.context(session.id, team.id) });
       onProceed();
     },
     onError: (e: any) => toast.error(e.message),
@@ -339,7 +311,7 @@ function RegisterStep({
   if (isError) return <QueryError onRetry={() => refetch()} />;
   if (isLoading || !ctx) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
-  const otherGroups = (allGroups as any[]).filter((g) => g.id !== group.id);
+  const otherTeams = (allTeams as any[]).filter((t) => t.id !== team.id);
 
   return (
     <div className="space-y-3">
@@ -367,40 +339,40 @@ function RegisterStep({
                   <PillBtn
                     active={s.status === "move"}
                     color="amber"
-                    disabled={otherGroups.length === 0}
+                    disabled={otherTeams.length === 0}
                     onClick={() =>
                       setState({
                         ...state,
                         [p.id]:
                           s.status === "move"
                             ? { status: "present" }
-                            : { status: "move", move_to: otherGroups[0]?.id },
+                            : { status: "move", move_to: otherTeams[0]?.id },
                       })
                     }
                   >
                     <ArrowRightLeft className="h-3.5 w-3.5" /> Move
                   </PillBtn>
-                  {otherGroups.length === 0 && (
-                    <span className="text-xs text-muted-foreground">No other groups</span>
+                  {otherTeams.length === 0 && (
+                    <span className="text-xs text-muted-foreground">No other teams</span>
                   )}
                 </div>
               </div>
               {s.status === "move" && (
                 <div className="mt-2 flex flex-wrap gap-1">
-                  {otherGroups.map((g) => (
+                  {otherTeams.map((t) => (
                     <button
-                      key={g.id}
+                      key={t.id}
                       onClick={() =>
-                        setState({ ...state, [p.id]: { status: "move", move_to: g.id } })
+                        setState({ ...state, [p.id]: { status: "move", move_to: t.id } })
                       }
                       className={cn(
                         "rounded-md border px-2 py-1 text-xs",
-                        s.move_to === g.id
+                        s.move_to === t.id
                           ? "border-primary bg-primary text-primary-foreground"
                           : "bg-background",
                       )}
                     >
-                      Group {g.group_number}
+                      Team {t.team_number}
                     </button>
                   ))}
                 </div>
@@ -414,11 +386,9 @@ function RegisterStep({
             {(ctx.movedInPlayers as any[]).length > 0 && (
               <>
                 <p className="pt-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Moved in from other groups
+                  Moved in from other teams
                 </p>
-                <ul className="space-y-2">
-                  {(ctx.movedInPlayers as any[]).map(renderRow)}
-                </ul>
+                <ul className="space-y-2">{(ctx.movedInPlayers as any[]).map(renderRow)}</ul>
               </>
             )}
           </>
@@ -471,11 +441,11 @@ function PillBtn({
   );
 }
 
-function RateStep({ session, group, onDone }: { session: any; group: any; onDone: () => void }) {
+function RateStep({ session, team, onDone }: { session: any; team: any; onDone: () => void }) {
   const { confirm, dialog: confirmDialog } = useConfirm();
   const { data: ctx, isLoading, isError, refetch } = useQuery({
-    queryKey: qk.match.context(session.id, group.id),
-    queryFn: () => getMatchDayContext({ data: { session_id: session.id, group_id: group.id } }),
+    queryKey: qk.match.context(session.id, team.id),
+    queryFn: () => getMatchDayContext({ data: { session_id: session.id, team_id: team.id } }),
     staleTime: 0,
   });
 
@@ -484,11 +454,11 @@ function RateStep({ session, group, onDone }: { session: any; group: any; onDone
     const overrideById = new Map((ctx.overrides as any[]).map((o) => [o.player_id, o]));
     const here = (ctx.defaultRoster as any[]).filter((p) => {
       const ov = overrideById.get(p.id);
-      if (!ov) return true; // default
-      return ov.override_group_id === group.id;
+      if (!ov) return true;
+      return ov.override_team_id === team.id;
     });
     return [...here, ...(ctx.movedInPlayers as any[])];
-  }, [ctx, group.id]);
+  }, [ctx, team.id]);
 
   const [scores, setScores] = useState<Record<string, any>>({});
   const [activeDescriptor, setActiveDescriptor] = useState<string | null>(null);
@@ -518,8 +488,7 @@ function RateStep({ session, group, onDone }: { session: any; group: any; onDone
       submitRatings({
         data: {
           session_id: session.id,
-          group_id: group.id,
-          block_id: session.block_id,
+          team_id: team.id,
           ratings: presentPlayers.map((p) => ({
             player_id: p.id,
             ...scores[p.id],
@@ -538,7 +507,7 @@ function RateStep({ session, group, onDone }: { session: any; group: any; onDone
     if (hasExisting) {
       const ok = await confirm({
         title: "Overwrite existing ratings?",
-        description: "Ratings already exist for this group/session. Submitting will overwrite them.",
+        description: "Ratings already exist for this team/session. Submitting will overwrite them.",
         confirmLabel: "Overwrite",
         destructive: true,
       });

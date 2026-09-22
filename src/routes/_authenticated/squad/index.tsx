@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { listPlayers } from "@/lib/players/players.functions";
+import { listSquadWithQuartile } from "@/lib/players/players.functions";
+import { useMyRole } from "@/lib/auth/view-as";
 import { ChevronRight } from "lucide-react";
 
 const playersQuery = {
-  queryKey: qk.players.all,
-  queryFn: () => listPlayers(),
+  queryKey: qk.players.squad,
+  queryFn: () => listSquadWithQuartile(),
 };
 
 export const Route = createFileRoute("/_authenticated/squad/")({
@@ -16,10 +17,24 @@ export const Route = createFileRoute("/_authenticated/squad/")({
 import { SKILLS, ATTRIBUTES } from "@/lib/skills";
 import { qk } from "@/lib/query-keys";
 
+function quartileColor(q: number | null | undefined): string {
+  switch (q) {
+    case 1:
+      return "bg-emerald-100 text-emerald-800";
+    case 2:
+      return "bg-blue-100 text-blue-800";
+    case 3:
+      return "bg-amber-100 text-amber-800";
+    case 4:
+      return "bg-slate-200 text-slate-700";
+    default:
+      return "bg-muted text-muted-foreground";
+  }
+}
+
 function SquadPage() {
-  const { data: allPlayers } = useSuspenseQuery(playersQuery);
-  // Hide deactivated players from the squad list (missing is_active treated as active)
-  const players = allPlayers.filter((p: any) => p.is_active !== false);
+  const { data: players } = useSuspenseQuery(playersQuery);
+  const { data: me } = useMyRole();
 
   return (
     <main className="mx-auto max-w-2xl px-5 pt-8">
@@ -30,7 +45,7 @@ function SquadPage() {
       </header>
 
       <ul className="space-y-2">
-        {players.map((p: any) => (
+        {(players as any[]).map((p) => (
           <li key={p.id}>
             <Link
               to="/squad/$playerId"
@@ -38,7 +53,19 @@ function SquadPage() {
               className="flex items-center justify-between rounded-lg border bg-card px-4 py-3 transition-colors hover:border-primary/40 hover:bg-secondary"
             >
               <div className="min-w-0">
-                <p className="truncate font-medium">{p.player_name}</p>
+                <p className="truncate font-medium">
+                  {p.player_name}
+                  <span
+                    className={`ml-2 rounded px-1 py-0.5 text-[9px] font-bold ${quartileColor(p.quartile)}`}
+                  >
+                    Q{p.quartile ?? "—"}
+                  </span>
+                  {me?.isAdmin && p.tier && (
+                    <span className="ml-1 rounded bg-muted px-1 py-0.5 text-[9px] font-semibold uppercase text-muted-foreground">
+                      {p.tier}
+                    </span>
+                  )}
+                </p>
                 <div className="mt-1">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
                     Skills

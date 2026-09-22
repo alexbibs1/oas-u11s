@@ -1,17 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { listMatchSessions } from "@/lib/sessions/sessions.functions";
 import {
-  listMatchWeeks,
-  getMyGroupsForWeek,
-  getGroupRosterForWeek,
-  upsertWeekRatings,
-} from "@/lib/skill-ratings/skill-ratings.functions";
+  getMatchTeamsForSession,
+  getMatchDayContext,
+  submitRatings,
+} from "@/lib/match/match.functions";
 import { SKILLS, SKILL_DESCRIPTORS } from "@/lib/skills";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { formatDateLong } from "@/lib/dates";
 import { qk } from "@/lib/query-keys";
 import { useConfirm } from "@/components/confirm-dialog";
 import { QueryError } from "@/components/query-error";
@@ -22,17 +23,17 @@ export const Route = createFileRoute("/_authenticated/ratings")({
 
 function RatingsPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [groupId, setGroupId] = useState<string | null>(null);
+  const [teamId, setTeamId] = useState<string | null>(null);
 
   return (
     <main className="mx-auto max-w-2xl px-5 pt-8 pb-32">
       <header className="mb-6 flex items-center gap-3">
-        {(sessionId || groupId) && (
+        {(sessionId || teamId) && (
           <Button
             variant="ghost"
             size="icon"
             onClick={() => {
-              if (groupId) setGroupId(null);
+              if (teamId) setTeamId(null);
               else setSessionId(null);
             }}
           >
@@ -41,24 +42,24 @@ function RatingsPage() {
         )}
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-accent">
-            Weekly ratings
+            Match ratings
           </p>
           <h1 className="mt-1 text-2xl font-bold text-primary">
-            {!sessionId && "Pick a week"}
-            {sessionId && !groupId && "Pick a group"}
-            {sessionId && groupId && "Score players"}
+            {!sessionId && "Pick a match"}
+            {sessionId && !teamId && "Pick a team"}
+            {sessionId && teamId && "Score players"}
           </h1>
         </div>
       </header>
 
-      {!sessionId && <WeekPicker onPick={setSessionId} />}
-      {sessionId && !groupId && <GroupPicker sessionId={sessionId} onPick={setGroupId} />}
-      {sessionId && groupId && (
+      {!sessionId && <MatchPicker onPick={setSessionId} />}
+      {sessionId && !teamId && <TeamPicker sessionId={sessionId} onPick={setTeamId} />}
+      {sessionId && teamId && (
         <RatingsEntry
           sessionId={sessionId}
-          groupId={groupId}
+          teamId={teamId}
           onDone={() => {
-            setGroupId(null);
+            setTeamId(null);
           }}
         />
       )}
@@ -66,40 +67,32 @@ function RatingsPage() {
   );
 }
 
-function WeekPicker({ onPick }: { onPick: (id: string) => void }) {
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: qk.sessions.matchWeeks,
-    queryFn: () => listMatchWeeks(),
+function MatchPicker({ onPick }: { onPick: (id: string) => void }) {
+  const { data = [], isLoading, isError, refetch } = useQuery({
+    queryKey: qk.sessions.matchList,
+    queryFn: () => listMatchSessions(),
   });
   if (isError) return <QueryError onRetry={() => refetch()} />;
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
-  if (!data?.block)
+  if (!data.length)
     return (
       <p className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">
-        No active block.
-      </p>
-    );
-  if (!data.weeks.length)
-    return (
-      <p className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">
-        No match weeks scheduled for {(data.block as any).name}.
+        No matches scheduled.
       </p>
     );
   return (
     <ul className="space-y-2">
-      {data.weeks.map((w: any) => (
-        <li key={w.id}>
+      {data.map((s: any) => (
+        <li key={s.id}>
           <button
-            onClick={() => onPick(w.id)}
+            onClick={() => onPick(s.id)}
             className="flex w-full items-center justify-between rounded-lg border bg-card p-4 text-left hover:border-primary"
           >
             <div>
-              <p className="text-sm font-semibold">
-                Week {w.week_number ?? "—"} · {w.session_date}
-              </p>
+              <p className="text-sm font-semibold">{formatDateLong(s.session_date)}</p>
               <p className="text-xs text-muted-foreground">
-                {w.opponent ? `vs ${w.opponent}` : "Match"}
-                {w.venue ? ` · ${w.venue}` : ""}
+                {s.opponent ? `vs ${s.opponent}` : "Match"}
+                {s.venue ? ` · ${s.venue}` : ""}
               </p>
             </div>
             <span className="text-xs text-muted-foreground">Open →</span>
@@ -110,30 +103,30 @@ function WeekPicker({ onPick }: { onPick: (id: string) => void }) {
   );
 }
 
-function GroupPicker({ sessionId, onPick }: { sessionId: string; onPick: (id: string) => void }) {
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: qk.groups.myForWeek(sessionId),
-    queryFn: () => getMyGroupsForWeek({ data: { session_id: sessionId } }),
+function TeamPicker({ sessionId, onPick }: { sessionId: string; onPick: (id: string) => void }) {
+  const { data = [], isLoading, isError, refetch } = useQuery({
+    queryKey: qk.match.teamsForSession(sessionId),
+    queryFn: () => getMatchTeamsForSession({ data: { session_id: sessionId } }),
   });
   if (isError) return <QueryError onRetry={() => refetch()} />;
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>;
-  if (!data?.groups.length)
+  if (!data.length)
     return (
       <p className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">
-        You're not assigned to a group for this week.
+        No teams picked for this match yet.
       </p>
     );
   return (
     <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      {data.groups.map((g: any) => (
-        <li key={g.id}>
+      {data.map((t: any) => (
+        <li key={t.id}>
           <button
-            onClick={() => onPick(g.id)}
+            onClick={() => onPick(t.id)}
             className="flex w-full flex-col items-start gap-1 rounded-lg border bg-card p-4 text-left hover:border-primary"
           >
-            <p className="text-base font-bold text-primary">Group {g.group_number}</p>
+            <p className="text-base font-bold text-primary">Team {t.team_number}</p>
             <p className="text-xs text-muted-foreground">
-              {g.coaches.length ? g.coaches.map((c: any) => c.name).join(", ") : "—"}
+              {t.coaches.length ? t.coaches.join(", ") : "—"}
             </p>
           </button>
         </li>
@@ -146,45 +139,58 @@ type Scores = Record<string, Record<string, number>>;
 
 function RatingsEntry({
   sessionId,
-  groupId,
+  teamId,
   onDone,
 }: {
   sessionId: string;
-  groupId: string;
+  teamId: string;
   onDone: () => void;
 }) {
   const qc = useQueryClient();
   const { confirm, dialog: confirmDialog } = useConfirm();
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: qk.groups.rosterForWeek(sessionId, groupId),
-    queryFn: () => getGroupRosterForWeek({ data: { session_id: sessionId, group_id: groupId } }),
+  const { data: ctx, isLoading, isError, refetch } = useQuery({
+    queryKey: qk.match.context(sessionId, teamId),
+    queryFn: () => getMatchDayContext({ data: { session_id: sessionId, team_id: teamId } }),
+    staleTime: 0,
   });
+
+  const presentPlayers = useMemo(() => {
+    if (!ctx) return [] as any[];
+    const overrideById = new Map((ctx.overrides as any[]).map((o) => [o.player_id, o]));
+    const here = (ctx.defaultRoster as any[]).filter((p) => {
+      const ov = overrideById.get(p.id);
+      if (!ov) return true;
+      return ov.override_team_id === teamId;
+    });
+    return [...here, ...(ctx.movedInPlayers as any[])];
+  }, [ctx, teamId]);
+
   const [scores, setScores] = useState<Scores>({});
   const [potdId, setPotdId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!data) return;
+    if (!ctx) return;
     const init: Scores = {};
-    const existingMap = new Map((data.existing as any[]).map((e) => [e.player_id, e]));
-    for (const p of data.players as any[]) {
-      const ex = existingMap.get(p.id);
+    const existingByPid = new Map((ctx.ratings as any[]).map((r) => [r.player_id, r]));
+    for (const p of presentPlayers) {
+      const ex = existingByPid.get(p.id);
       init[p.id] = {};
       for (const s of SKILLS) {
         init[p.id][s.key] = ex ? (ex as any)[s.key] : ((p as any)[s.key] ?? 3);
       }
     }
     setScores(init);
-    const existingPotd = (data.existing as any[]).find((e) => e.player_of_the_day);
+    const existingPotd = (ctx.ratings as any[]).find((r) => r.player_of_the_day);
     setPotdId(existingPotd?.player_id ?? null);
-  }, [data]);
+  }, [ctx, presentPlayers]);
 
-  const hasExisting = (data?.existing as any[] | undefined)?.length ?? 0;
+  const hasExisting = (ctx?.ratings as any[] | undefined)?.length ?? 0;
 
   const handleSubmit = async () => {
     if (hasExisting) {
       const ok = await confirm({
         title: "Overwrite existing ratings?",
-        description: "Ratings already exist for this group/session. Submitting will overwrite them.",
+        description: "Ratings already exist for this team/session. Submitting will overwrite them.",
         confirmLabel: "Overwrite",
         destructive: true,
       });
@@ -195,11 +201,11 @@ function RatingsEntry({
 
   const submit = useMutation({
     mutationFn: () =>
-      upsertWeekRatings({
+      submitRatings({
         data: {
           session_id: sessionId,
-          group_id: groupId,
-          ratings: (data?.players ?? []).map((p: any) => ({
+          team_id: teamId,
+          ratings: presentPlayers.map((p: any) => ({
             player_id: p.id,
             carrying: scores[p.id]?.carrying ?? 3,
             handling: scores[p.id]?.handling ?? 3,
@@ -213,23 +219,22 @@ function RatingsEntry({
         },
       }),
     onSuccess: (r: any) => {
-      toast.success(`Saved — ${r.inserted} new, ${r.updated} updated`);
-      qc.invalidateQueries({ queryKey: qk.groups.rosterForWeek(sessionId, groupId) });
-      qc.invalidateQueries({ queryKey: qk.sessions.weekCompletion.all });
+      toast.success(`Saved ratings for ${r.count} player${r.count === 1 ? "" : "s"}`);
+      qc.invalidateQueries({ queryKey: qk.match.context(sessionId, teamId) });
+      qc.invalidateQueries({ queryKey: qk.sessions.completion.all });
       onDone();
     },
     onError: (e: any) => toast.error(e.message),
   });
 
   if (isError) return <QueryError onRetry={() => refetch()} />;
-  if (isLoading || !data) return <p className="text-sm text-muted-foreground">Loading…</p>;
-  if (!data.registerSubmitted) {
+  if (isLoading || !ctx) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (!presentPlayers.length)
     return (
       <div className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">
-        <p className="font-semibold text-primary">Register not yet submitted</p>
+        <p className="font-semibold text-primary">No players to rate yet</p>
         <p className="mt-1">
-          The attendance register for this group hasn't been submitted yet. Please complete the
-          register on Match Day before entering ratings.
+          Submit the attendance register for this team on Match Day before entering ratings.
         </p>
         <Button
           variant="outline"
@@ -241,18 +246,11 @@ function RatingsEntry({
         </Button>
       </div>
     );
-  }
-  if (!data.players.length)
-    return (
-      <p className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">
-        No players to rate (everyone absent or moved out).
-      </p>
-    );
 
   return (
     <div className="space-y-3">
       <ul className="space-y-3">
-        {(data.players as any[]).map((p) => (
+        {(presentPlayers as any[]).map((p) => (
           <li key={p.id} className="rounded-lg border bg-card p-4">
             <p className="mb-3 text-base font-bold text-primary">{p.player_name}</p>
             <div className="space-y-2">
@@ -302,7 +300,7 @@ function RatingsEntry({
           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
         >
           <option value="">— None —</option>
-          {(data.players as any[]).map((p) => (
+          {(presentPlayers as any[]).map((p) => (
             <option key={p.id} value={p.id}>
               {p.player_name}
             </option>

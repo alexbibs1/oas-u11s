@@ -39,7 +39,6 @@ function HomePage() {
     );
 
   const displayName = me?.coachName ?? me?.username ?? "Coach";
-  const block = summary?.block;
   const next = summary?.nextSession;
   const feed = summary?.feed ?? [];
 
@@ -63,75 +62,8 @@ function HomePage() {
       </header>
 
       <section className="space-y-4">
-        {block ? (
-          <Link
-            to="/calendar"
-            className="block rounded-lg border bg-card p-5 hover:bg-secondary"
-          >
-            <h2 className="text-sm font-semibold text-muted-foreground">Current block</h2>
-            <p className="mt-2 text-base font-semibold text-primary">
-              {(block as any).name ?? `Block ${(block as any).block_number}`}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {fmtDate((block as any).start_date)} – {fmtDate((block as any).end_date)}
-            </p>
-          </Link>
-        ) : (
-          <div className="rounded-lg border bg-card p-5">
-            <h2 className="text-sm font-semibold text-muted-foreground">Current block</h2>
-            <p className="mt-2 text-sm text-muted-foreground">No active block.</p>
-          </div>
-        )}
-
         <div>
-          <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Groups this block</h2>
           <div className="grid grid-cols-2 gap-3">
-            {summary?.myGroup ? (
-              <Link
-                to="/group/$groupId"
-                params={{ groupId: summary.myGroup.id }}
-                className="rounded-lg border-2 border-accent bg-card p-4 hover:bg-secondary"
-              >
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-accent">
-                  Your group
-                </p>
-                <p className="mt-1 text-base font-bold text-primary">
-                  Group {summary.myGroup.group_number}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {summary.myGroup.coach_names?.length
-                    ? summary.myGroup.coach_names.join(", ")
-                    : "No coach"}
-                </p>
-              </Link>
-            ) : (
-              <div className="rounded-lg border-2 border-dashed p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Your group
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">Not assigned</p>
-              </div>
-            )}
-
-            {summary?.otherGroups?.map((g: any) => (
-              <Link
-                key={g.id}
-                to="/group/$groupId"
-                params={{ groupId: g.id }}
-                className="rounded-lg border bg-card p-4 hover:bg-secondary"
-              >
-                <p className="text-base font-semibold text-primary">Group {g.group_number}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {g.player_count} player{g.player_count === 1 ? "" : "s"}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {g.coach_names.length ? g.coach_names.join(", ") : "No coach"}
-                </p>
-              </Link>
-            ))}
-          </div>
-
-          <div className="mt-3 grid grid-cols-2 gap-3">
             <Link
               to="/rules/u11"
               className="flex items-center justify-center gap-2 rounded-lg border bg-card px-3 py-3 text-sm font-semibold text-primary hover:bg-secondary"

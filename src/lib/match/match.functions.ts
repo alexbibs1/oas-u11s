@@ -1,123 +1,197 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { SKILL_KEYS, ATTRIBUTE_KEYS } from "@/lib/skills";
+import { computeQuartileMap } from "@/lib/quartile";
+
+async function assertAdmin(context: any) {
+  const { data: isAdmin } = await context.supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "block_builder",
+  });
+  if (!isAdmin) throw new Error("Forbidden");
+}
 
 async function fetchQuartileMap(sb: any): Promise<Map<string, number>> {
-  const allKeys = [...SKILL_KEYS, ...ATTRIBUTE_KEYS] as string[];
   const { data: players } = await sb
     .from("players")
     .select(
       "id, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability",
     )
     .eq("is_active", true);
-  const scored = (players ?? []).map((p: any) => {
-    const values = allKeys.map((k) => (p as any)[k] as number);
-    return { id: p.id, overall: values.reduce((a: number, b: number) => a + b, 0) / values.length };
-  });
-  scored.sort((a: any, b: any) => b.overall - a.overall);
-  const quartileSize = Math.max(1, Math.ceil(scored.length / 4));
-  const map = new Map<string, number>();
-  scored.forEach((p: any, i: number) => {
-    map.set(p.id, Math.min(Math.floor(i / quartileSize) + 1, 4));
-  });
-  return map;
+  return computeQuartileMap(players ?? []);
 }
 
-
-
-export const getGroupDetail = createServerFn({ method: "GET" })
+// ============================================================
+// Team picker (admin): pick up to 5 teams for a specific fixture.
+// ============================================================
+export const getMatchTeamBuilderData = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ group_id: z.string().uuid() }))
+  .inputValidator(z.object({ session_id: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const sb = context.supabase;
-    const { data: group, error: gErr } = await sb
-      .from("groups")
-      .select(
-        "id, group_number, block_id, blocks:block_id ( id, name, block_number, is_active, start_date, end_date ), group_coaches:group_coaches ( coaches:coach_id ( coach_name ) )",
-      )
-      .eq("id", data.group_id)
+
+    const { data: session, error: sErr } = await sb
+      .from("sessions")
+      .select("id, session_date, session_type, opponent, venue")
+      .eq("id", data.session_id)
       .single();
-    if (gErr) throw new Error(gErr.message);
-    const { data: roster, error: rErr } = await sb
-      .from("group_players")
+    if (sErr) throw new Error(sErr.message);
+
+    const { data: players } = await sb
+      .from("players")
       .select(
-        "player_id, players:player_id ( id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability )",
+        "id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability, tier",
       )
-      .eq("group_id", data.group_id)
-      .order("player_name", { referencedTable: "players", ascending: true });
-    if (rErr) throw new Error(rErr.message);
-    const quartileMap = await fetchQuartileMap(sb);
+      .eq("is_active", true)
+      .order("player_name", { ascending: true });
+
+    const quartileMap = computeQuartileMap(players ?? []);
+    const enrichedPlayers = (players ?? []).map((p: any) => ({
+      ...p,
+      quartile: quartileMap.get(p.id) ?? null,
+    }));
+
+    const { data: coaches } = await sb
+      .from("coaches")
+      .select("id, coach_name")
+      .order("coach_name", { ascending: true });
+
+    const { data: teams } = await sb
+      .from("match_teams")
+      .select(
+        "id, team_number, match_team_coaches:match_team_coaches ( coach_id ), match_team_players:match_team_players ( player_id )",
+      )
+      .eq("session_id", data.session_id)
+      .order("team_number", { ascending: true });
+
     return {
-      group: {
-        id: (group as any).id,
-        group_number: (group as any).group_number,
-        block: (group as any).blocks,
-      },
-      coaches: ((group as any).group_coaches ?? [])
-        .map((gc: any) => gc.coaches?.coach_name)
-        .filter(Boolean) as string[],
-      players: (roster ?? [])
-        .map((r: any) => r.players)
-        .filter(Boolean)
-        .map((p: any) => ({ ...p, quartile: quartileMap.get(p.id) ?? null }))
-        .sort((a: any, b: any) => a.player_name.localeCompare(b.player_name)),
+      session,
+      players: enrichedPlayers,
+      coaches: coaches ?? [],
+      teams: (teams ?? []).map((t: any) => ({
+        id: t.id,
+        team_number: t.team_number,
+        coach_ids: (t.match_team_coaches ?? []).map((c: any) => c.coach_id),
+        player_ids: (t.match_team_players ?? []).map((p: any) => p.player_id),
+      })),
     };
   });
 
-export const listGroupsForBlock = createServerFn({ method: "GET" })
+const teamInput = z.object({
+  team_number: z.number().int().min(1).max(5),
+  coach_ids: z.array(z.string().uuid()),
+  player_ids: z.array(z.string().uuid()),
+});
+
+export const saveMatchTeams = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ block_id: z.string().uuid() }))
+  .inputValidator(z.object({ session_id: z.string().uuid(), teams: z.array(teamInput).max(5) }))
   .handler(async ({ context, data }) => {
-    const { data: groups, error } = await context.supabase
-      .from("groups")
+    await assertAdmin(context);
+    const sb = context.supabase;
+
+    for (const t of data.teams) {
+      const { data: existing } = await sb
+        .from("match_teams")
+        .select("id")
+        .eq("session_id", data.session_id)
+        .eq("team_number", t.team_number)
+        .maybeSingle();
+      let teamId = (existing as any)?.id;
+      if (!teamId) {
+        const { data: newT, error } = await sb
+          .from("match_teams")
+          .insert({ session_id: data.session_id, team_number: t.team_number })
+          .select("id")
+          .single();
+        if (error) throw new Error(error.message);
+        teamId = newT.id;
+      }
+      await sb.from("match_team_players").delete().eq("match_team_id", teamId);
+      await sb.from("match_team_coaches").delete().eq("match_team_id", teamId);
+      if (t.player_ids.length) {
+        const { error } = await sb
+          .from("match_team_players")
+          .insert(t.player_ids.map((pid) => ({ match_team_id: teamId, player_id: pid })));
+        if (error) throw new Error(error.message);
+      }
+      if (t.coach_ids.length) {
+        const { error } = await sb
+          .from("match_team_coaches")
+          .insert(t.coach_ids.map((cid) => ({ match_team_id: teamId, coach_id: cid })));
+        if (error) throw new Error(error.message);
+      }
+    }
+
+    const keepNumbers = data.teams.map((t) => t.team_number);
+    const { data: existingTeams } = await sb
+      .from("match_teams")
+      .select("id, team_number")
+      .eq("session_id", data.session_id);
+    const toDelete = (existingTeams ?? []).filter(
+      (t: any) => !keepNumbers.includes(t.team_number),
+    );
+    for (const t of toDelete) {
+      await sb.from("match_team_players").delete().eq("match_team_id", t.id);
+      await sb.from("match_team_coaches").delete().eq("match_team_id", t.id);
+      await sb.from("match_teams").delete().eq("id", t.id);
+    }
+
+    return { ok: true };
+  });
+
+// ============================================================
+// Match day: session -> team -> register -> rate.
+// ============================================================
+export const getMatchTeamsForSession = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ session_id: z.string().uuid() }))
+  .handler(async ({ context, data }) => {
+    const { data: teams, error } = await context.supabase
+      .from("match_teams")
       .select(
-        "id, group_number, group_coaches:group_coaches ( coach_id, coaches:coach_id ( coach_name ) )",
+        "id, team_number, match_team_coaches:match_team_coaches ( coach_id, coaches:coach_id ( coach_name ) )",
       )
-      .eq("block_id", data.block_id)
-      .order("group_number", { ascending: true });
+      .eq("session_id", data.session_id)
+      .order("team_number", { ascending: true });
     if (error) throw new Error(error.message);
-    return (groups ?? []).map((g: any) => ({
-      id: g.id,
-      group_number: g.group_number,
-      coaches: (g.group_coaches ?? [])
-        .map((gc: any) => gc.coaches?.coach_name)
+    return (teams ?? []).map((t: any) => ({
+      id: t.id,
+      team_number: t.team_number,
+      coaches: (t.match_team_coaches ?? [])
+        .map((c: any) => c.coaches?.coach_name)
         .filter(Boolean) as string[],
     }));
   });
 
 /**
- * Returns the effective player roster for (session, group):
- * - Players whose default group is this group, MINUS those whose override moves them elsewhere
+ * Returns the effective player roster for (session, team):
+ * - Players picked onto this team, MINUS those whose override moves them elsewhere
  * - Absent players stay visible so they can be toggled back to present
- * - PLUS players moved IN by override to this group
- * Also returns existing overrides, ratings, and locked status.
+ * - PLUS players moved IN by override to this team
  */
 export const getMatchDayContext = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ session_id: z.string().uuid(), group_id: z.string().uuid() }))
+  .inputValidator(z.object({ session_id: z.string().uuid(), team_id: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const supabase = context.supabase;
 
-    // Default roster from group_players
     const { data: defaultRoster, error: e1 } = await supabase
-      .from("group_players")
+      .from("match_team_players")
       .select(
         "player_id, players:player_id ( id, player_name, is_active, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability )",
       )
-      .eq("group_id", data.group_id);
+      .eq("match_team_id", data.team_id);
     if (e1) throw new Error(e1.message);
 
-    // All overrides for this session
     const { data: overrides, error: e2 } = await supabase
       .from("session_player_overrides")
       .select("*")
       .eq("session_id", data.session_id);
     if (e2) throw new Error(e2.message);
 
-    // Players moved IN by override
     const movedInIds = (overrides ?? [])
-      .filter((o: any) => o.override_group_id === data.group_id)
+      .filter((o: any) => o.override_team_id === data.team_id)
       .map((o: any) => o.player_id);
 
     let movedInPlayers: any[] = [];
@@ -133,26 +207,23 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
       movedInPlayers = pl ?? [];
     }
 
-    // Existing ratings for this session+group (source of truth is skill_ratings)
     const { data: ratings, error: e4 } = await supabase
       .from("skill_ratings")
-      .select("player_id, group_id, carrying, handling, tackling, rucking, kicking, catching, iq, player_of_the_day")
+      .select(
+        "player_id, match_team_id, carrying, handling, tackling, rucking, kicking, catching, iq, player_of_the_day",
+      )
       .eq("session_id", data.session_id)
-      .eq("group_id", data.group_id);
+      .eq("match_team_id", data.team_id);
     if (e4) throw new Error(e4.message);
 
     const defaultIds = new Set((defaultRoster ?? []).map((r: any) => r.player_id));
 
-    // Only filter MOVED players (override_group_id is a different group, not null).
-    // Absent players (override_group_id = null) stay in defaultRoster so coaches
-    // can see them and toggle them back to present if they turn up late.
     const movedOutIds = new Set(
       (overrides ?? [])
         .filter((o: any) => {
           const isDefaultPlayer = defaultIds.has(o.player_id);
-          const target = o.override_group_id;
-          // Moved out = target is a non-null value that's a different group
-          return isDefaultPlayer && target !== null && target !== data.group_id;
+          const target = o.override_team_id;
+          return isDefaultPlayer && target !== null && target !== data.team_id;
         })
         .map((o: any) => o.player_id),
     );
@@ -162,7 +233,6 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
       .filter((p: any) => p && p.is_active !== false && !movedOutIds.has(p.id))
       .sort((a: any, b: any) => a.player_name.localeCompare(b.player_name));
 
-    // Dedupe movedIn: exclude any players already appearing in defaultRoster
     const defaultRosterIds = new Set(filteredDefaultRoster.map((p: any) => p.id));
     const dedupedMovedIn = movedInPlayers
       .filter((p: any) => !defaultRosterIds.has(p.id))
@@ -181,12 +251,12 @@ export const saveRegister = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
       session_id: z.string().uuid(),
-      group_id: z.string().uuid(),
+      team_id: z.string().uuid(),
       entries: z.array(
         z.object({
           player_id: z.string().uuid(),
           status: z.enum(["present", "absent", "move"]),
-          move_to_group_id: z.string().uuid().nullable().optional(),
+          move_to_team_id: z.string().uuid().nullable().optional(),
         }),
       ),
     }),
@@ -194,15 +264,14 @@ export const saveRegister = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const supabase = context.supabase;
 
-    // Authorization: must be admin OR a coach assigned to this group
-    const { data: group, error: gErr } = await supabase
-      .from("groups")
-      .select("id, group_coaches:group_coaches ( coach_id )")
-      .eq("id", data.group_id)
+    const { data: team, error: gErr } = await supabase
+      .from("match_teams")
+      .select("id, match_team_coaches:match_team_coaches ( coach_id )")
+      .eq("id", data.team_id)
       .single();
     if (gErr) throw new Error(gErr.message);
-    const coachIds = ((group as any).group_coaches ?? [])
-      .map((gc: any) => gc.coach_id)
+    const coachIds = ((team as any).match_team_coaches ?? [])
+      .map((c: any) => c.coach_id)
       .filter(Boolean) as string[];
     const { data: isAdmin } = await supabase.rpc("has_role", {
       _user_id: context.userId,
@@ -216,52 +285,39 @@ export const saveRegister = createServerFn({ method: "POST" })
     const myCoachId = (myRole as any)?.coach_id as string | null | undefined;
     const isAssignedCoach = !!myCoachId && coachIds.includes(myCoachId);
     if (!isAdmin && !isAssignedCoach) {
-      throw new Error("Forbidden: you are not a coach for this group");
+      throw new Error("Forbidden: you are not a coach for this team");
     }
 
-    // Fetch current overrides for all submitted players so we can detect
-    // moved-in players (their current override targets this group) and
-    // preserve their override when they're marked "present".
     const playerIds = data.entries.map((e) => e.player_id);
     const { data: currentOverrides } = await supabase
       .from("session_player_overrides")
-      .select("player_id, override_group_id")
+      .select("player_id, override_team_id")
       .eq("session_id", data.session_id)
       .in("player_id", playerIds);
-    const currentByPid = new Map(
-      (currentOverrides ?? []).map((o: any) => [o.player_id, o]),
-    );
+    const currentByPid = new Map((currentOverrides ?? []).map((o: any) => [o.player_id, o]));
 
     const rows = data.entries
       .map((e) => {
         const current = currentByPid.get(e.player_id);
-        const isMovedIn =
-          current && (current as any).override_group_id === data.group_id;
+        const isMovedIn = current && (current as any).override_team_id === data.team_id;
 
         if (e.status === "present") {
           if (isMovedIn) {
-            // Moved-in player marked present — keep their override so they
-            // stay in this group.
             return {
               session_id: data.session_id,
               player_id: e.player_id,
-              override_group_id: data.group_id,
+              override_team_id: data.team_id,
               created_by: context.userId,
             };
           }
-          // Default-roster player marked present — no override needed.
           return null;
         }
 
         return {
           session_id: data.session_id,
           player_id: e.player_id,
-          override_group_id:
-            e.status === "absent"
-              ? null
-              : e.status === "move"
-                ? (e.move_to_group_id ?? null)
-                : null,
+          override_team_id:
+            e.status === "absent" ? null : e.status === "move" ? (e.move_to_team_id ?? null) : null,
           created_by: context.userId,
         };
       })
@@ -280,29 +336,25 @@ export const saveRegister = createServerFn({ method: "POST" })
       if (insErr) throw new Error(insErr.message);
     }
 
-    await supabase
-      .from("session_registrations")
-      .upsert(
-        {
-          session_id: data.session_id,
-          group_id: data.group_id,
-          submitted_by: context.userId,
-          submitted_at: new Date().toISOString(),
-        },
-        { onConflict: "session_id,group_id" },
-      );
+    await supabase.from("session_registrations").upsert(
+      {
+        session_id: data.session_id,
+        match_team_id: data.team_id,
+        submitted_by: context.userId,
+        submitted_at: new Date().toISOString(),
+      },
+      { onConflict: "session_id,match_team_id" },
+    );
 
     return { ok: true };
   });
-
 
 export const submitRatings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     z.object({
       session_id: z.string().uuid(),
-      group_id: z.string().uuid(),
-      block_id: z.string().uuid(),
+      team_id: z.string().uuid(),
       ratings: z.array(
         z.object({
           player_id: z.string().uuid(),
@@ -321,50 +373,31 @@ export const submitRatings = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const supabase = context.supabase;
 
-    // Look up context needed for skill_ratings NOT NULL columns
-    const { data: session, error: sErr } = await supabase
-      .from("sessions")
-      .select("id, session_date, week_number, blocks:block_id ( start_date )")
-      .eq("id", data.session_id)
-      .single();
-    if (sErr) throw new Error(sErr.message);
-
-    let weekNumber = (session as any).week_number as number | null;
-    if (!weekNumber && (session as any).blocks?.start_date) {
-      weekNumber =
-        Math.floor(
-          (new Date((session as any).session_date).getTime() -
-            new Date((session as any).blocks.start_date).getTime()) /
-            (7 * 86400000),
-        ) + 1;
-      if (weekNumber < 1) weekNumber = 1;
-    }
-
-    const { data: group, error: gErr } = await supabase
-      .from("groups")
-      .select("id, group_number, group_coaches:group_coaches ( coach_id, coaches:coach_id ( coach_name ) )")
-      .eq("id", data.group_id)
+    const { data: team, error: gErr } = await supabase
+      .from("match_teams")
+      .select(
+        "id, team_number, match_team_coaches:match_team_coaches ( coach_id, coaches:coach_id ( coach_name ) )",
+      )
+      .eq("id", data.team_id)
       .single();
     if (gErr) throw new Error(gErr.message);
-    const groupNumber = (group as any).group_number as number;
-    const coachIds = ((group as any).group_coaches ?? [])
-      .map((gc: any) => gc.coach_id)
+    const coachIds = ((team as any).match_team_coaches ?? [])
+      .map((c: any) => c.coach_id)
       .filter(Boolean) as string[];
-    const coachNames = ((group as any).group_coaches ?? [])
-      .map((gc: any) => gc.coaches?.coach_name)
+    const coachNames = ((team as any).match_team_coaches ?? [])
+      .map((c: any) => c.coaches?.coach_name)
       .filter(Boolean) as string[];
 
     const { data: reg } = await supabase
       .from("session_registrations")
       .select("session_id")
       .eq("session_id", data.session_id)
-      .eq("group_id", data.group_id)
+      .eq("match_team_id", data.team_id)
       .maybeSingle();
     if (!reg) {
       throw new Error("Register must be submitted before ratings can be entered");
     }
 
-    // Caller info + authorization: must be admin OR a coach assigned to this group
     const { data: isAdmin } = await supabase.rpc("has_role", {
       _user_id: context.userId,
       _role: "block_builder",
@@ -377,7 +410,7 @@ export const submitRatings = createServerFn({ method: "POST" })
     const myCoachId = (myRole as any)?.coach_id as string | null | undefined;
     const isAssignedCoach = !!myCoachId && coachIds.includes(myCoachId);
     if (!isAdmin && !isAssignedCoach) {
-      throw new Error("Forbidden: you are not a coach for this group");
+      throw new Error("Forbidden: you are not a coach for this team");
     }
     const enteredByName =
       ((myRole as any)?.coaches?.coach_name as string | undefined) ??
@@ -391,13 +424,6 @@ export const submitRatings = createServerFn({ method: "POST" })
       .in("id", playerIds);
     const nameMap = new Map((players ?? []).map((p: any) => [p.id, p.player_name]));
 
-    // Dedupe by player_id — a single ON CONFLICT upsert can't affect the
-    // same target row twice in one statement ("ON CONFLICT DO UPDATE
-    // command cannot affect row a second time"). This can happen when a
-    // player in the group's default roster is also explicitly marked
-    // "Here" via an override, which surfaces them in both defaultRoster
-    // AND movedInPlayers on the match-day UI. Keep the last rating per
-    // player (in input order) so any later edits win.
     const seen = new Set<string>();
     const dedupedRatings = data.ratings.filter((r) => {
       if (seen.has(r.player_id)) return false;
@@ -407,10 +433,7 @@ export const submitRatings = createServerFn({ method: "POST" })
 
     const rows = dedupedRatings.map((r) => ({
       session_id: data.session_id,
-      group_id: data.group_id,
-      group_number: groupNumber,
-      block_id: data.block_id,
-      week_number: weekNumber,
+      match_team_id: data.team_id,
       coach_names: coachNames,
       player_id: r.player_id,
       player_name: nameMap.get(r.player_id) ?? "",
@@ -430,22 +453,199 @@ export const submitRatings = createServerFn({ method: "POST" })
       .upsert(rows, { onConflict: "session_id,player_id" });
     if (error) throw new Error(error.message);
 
-    // Player of the Day: reset then set for this session+group.
     await supabase
       .from("skill_ratings")
       .update({ player_of_the_day: false })
       .eq("session_id", data.session_id)
-      .eq("group_id", data.group_id)
+      .eq("match_team_id", data.team_id)
       .eq("player_of_the_day", true);
     if (data.player_of_the_day_id) {
       await supabase
         .from("skill_ratings")
         .update({ player_of_the_day: true })
         .eq("session_id", data.session_id)
-        .eq("group_id", data.group_id)
+        .eq("match_team_id", data.team_id)
         .eq("player_id", data.player_of_the_day_id);
     }
 
     return { ok: true, count: rows.length };
   });
 
+// ============================================================
+// Match summary + admin completion tracker.
+// ============================================================
+export const getMatchSummary = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ session_id: z.string().uuid() }))
+  .handler(async ({ context, data }) => {
+    const sb = context.supabase;
+    const { data: session, error: sErr } = await sb
+      .from("sessions")
+      .select("id, session_date, session_type, opponent, venue")
+      .eq("id", data.session_id)
+      .single();
+    if (sErr) throw new Error(sErr.message);
+
+    const { data: teams } = await sb
+      .from("match_teams")
+      .select(
+        "id, team_number, match_team_coaches:match_team_coaches ( coaches:coach_id ( coach_name ) ), match_team_players:match_team_players ( player_id )",
+      )
+      .eq("session_id", data.session_id)
+      .order("team_number", { ascending: true });
+
+    const { data: overrides } = await sb
+      .from("session_player_overrides")
+      .select("player_id, override_team_id")
+      .eq("session_id", data.session_id);
+
+    const { data: ratings } = await sb
+      .from("skill_ratings")
+      .select(
+        "player_id, match_team_id, tackling, rucking, carrying, handling, kicking, catching, iq, player_of_the_day",
+      )
+      .eq("session_id", data.session_id);
+
+    const playerIds = new Set<string>();
+    (teams ?? []).forEach((t: any) =>
+      (t.match_team_players ?? []).forEach((tp: any) => playerIds.add(tp.player_id)),
+    );
+    (overrides ?? []).forEach((o: any) => playerIds.add(o.player_id));
+    const { data: players } = playerIds.size
+      ? await sb.from("players").select("id, player_name").in("id", Array.from(playerIds))
+      : { data: [] as any[] };
+    const pMap = new Map<string, string>(
+      (players ?? []).map((p: any) => [p.id, p.player_name] as [string, string]),
+    );
+    const oMap = new Map(
+      (overrides ?? []).map((o: any) => [o.player_id, o.override_team_id as string | null]),
+    );
+
+    const teamSummaries = (teams ?? []).map((t: any) => {
+      const defaultIds: string[] = (t.match_team_players ?? []).map((tp: any) => tp.player_id);
+      const present: { id: string; name: string }[] = [];
+      const absent: { id: string; name: string }[] = [];
+      const movedIn: { id: string; name: string }[] = [];
+
+      defaultIds.forEach((pid) => {
+        const has = oMap.has(pid);
+        const target = oMap.get(pid);
+        if (!has) {
+          present.push({ id: pid, name: pMap.get(pid) ?? "—" });
+          return;
+        }
+        if (target === t.id) present.push({ id: pid, name: pMap.get(pid) ?? "—" });
+        else if (target === null) absent.push({ id: pid, name: pMap.get(pid) ?? "—" });
+      });
+
+      (overrides ?? []).forEach((o: any) => {
+        if (o.override_team_id === t.id && !defaultIds.includes(o.player_id)) {
+          movedIn.push({ id: o.player_id, name: pMap.get(o.player_id) ?? "—" });
+          present.push({ id: o.player_id, name: pMap.get(o.player_id) ?? "—" });
+        }
+      });
+
+      const teamRatings = (ratings ?? []).filter((r: any) => r.match_team_id === t.id);
+      const ratingMap = new Map(teamRatings.map((r: any) => [r.player_id, r]));
+      const potdRow = teamRatings.find((r: any) => r.player_of_the_day);
+      const potd = potdRow
+        ? { id: potdRow.player_id, name: pMap.get(potdRow.player_id) ?? "—" }
+        : null;
+
+      return {
+        id: t.id,
+        team_number: t.team_number,
+        coaches: (t.match_team_coaches ?? [])
+          .map((c: any) => c.coaches?.coach_name)
+          .filter(Boolean) as string[],
+        present,
+        absent,
+        movedIn,
+        hasOverrides: defaultIds.some((pid) => oMap.has(pid)) || movedIn.length > 0,
+        ratings: present.map((p) => ({
+          player_id: p.id,
+          name: p.name,
+          scores: ratingMap.get(p.id) ?? null,
+        })),
+        hasRatings: teamRatings.length > 0,
+        playerOfTheDay: potd,
+      };
+    });
+
+    return {
+      session: {
+        id: (session as any).id,
+        session_date: (session as any).session_date,
+        session_type: (session as any).session_type,
+        opponent: (session as any).opponent,
+        venue: (session as any).venue,
+      },
+      teams: teamSummaries,
+    };
+  });
+
+export const getMatchCompletion = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ session_id: z.string().uuid() }))
+  .handler(async ({ context, data }) => {
+    const sb = context.supabase;
+
+    const { data: teams } = await sb
+      .from("match_teams")
+      .select(
+        "id, team_number, match_team_coaches:match_team_coaches ( coaches:coach_id ( coach_name ) ), match_team_players:match_team_players ( player_id )",
+      )
+      .eq("session_id", data.session_id)
+      .order("team_number", { ascending: true });
+
+    const { data: overrides } = await sb
+      .from("session_player_overrides")
+      .select("player_id, override_team_id")
+      .eq("session_id", data.session_id);
+    const absent = new Set(
+      (overrides ?? []).filter((o: any) => o.override_team_id === null).map((o: any) => o.player_id),
+    );
+    const movedTo = new Map<string, string>();
+    (overrides ?? []).forEach((o: any) => {
+      if (o.override_team_id) movedTo.set(o.player_id, o.override_team_id);
+    });
+
+    const { data: ratings } = await sb
+      .from("skill_ratings")
+      .select("player_id")
+      .eq("session_id", data.session_id);
+    const ratedSet = new Set((ratings ?? []).map((r: any) => r.player_id));
+
+    const result = (teams ?? []).map((t: any) => {
+      const defaultIds = (t.match_team_players ?? []).map((tp: any) => tp.player_id);
+      const inTeam = new Set<string>();
+      for (const pid of defaultIds) {
+        if (absent.has(pid)) continue;
+        const moved = movedTo.get(pid);
+        if (moved && moved !== t.id) continue;
+        inTeam.add(pid);
+      }
+      for (const [pid, tid] of movedTo) {
+        if (tid === t.id) inTeam.add(pid);
+      }
+      const expected = inTeam.size;
+      let rated = 0;
+      for (const pid of inTeam) if (ratedSet.has(pid)) rated += 1;
+      let status: "not_started" | "partial" | "submitted";
+      if (rated === 0) status = "not_started";
+      else if (rated >= expected) status = "submitted";
+      else status = "partial";
+      return {
+        team_id: t.id,
+        team_number: t.team_number,
+        coaches: (t.match_team_coaches ?? [])
+          .map((c: any) => c.coaches?.coach_name)
+          .filter(Boolean) as string[],
+        rated,
+        expected,
+        status,
+      };
+    });
+
+    return { teams: result };
+  });

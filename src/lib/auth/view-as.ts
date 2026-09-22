@@ -46,11 +46,11 @@ export function useMyRole() {
   });
   const viewAsCoach = useViewAsCoach();
   const real = query.data;
-  const canToggle = !!real?.isBlockBuilder;
+  const canToggle = !!real?.isAdmin;
   const effective = real
     ? viewAsCoach && canToggle
-      ? { ...real, isBlockBuilder: false, isCoach: true, roles: ["coach"] }
+      ? { ...real, isAdmin: false, isCoach: true, roles: ["coach"] }
       : real
     : real;
-  return { ...query, data: effective, realIsBlockBuilder: canToggle, viewAsCoach };
+  return { ...query, data: effective, realIsAdmin: canToggle, viewAsCoach };
 }

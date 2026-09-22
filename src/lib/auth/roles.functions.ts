@@ -33,7 +33,7 @@ export const getMyRole = createServerFn({ method: "GET" })
       email,
       username,
       roles,
-      isBlockBuilder: roles.includes("block_builder"),
+      isAdmin: roles.includes("block_builder"),
       isCoach: roles.includes("coach"),
       coachName,
     };
