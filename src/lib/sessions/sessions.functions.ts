@@ -82,6 +82,7 @@ export const createSession = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const payload: any = {
+      block_id: await resolveBlockId(context, data.session_date),
       session_date: data.session_date,
       session_type: data.session_type,
       opponent: data.session_type === "match" ? (data.opponent ?? null) : null,
