@@ -46,12 +46,43 @@ const sessionInput = z.object({
   venue: z.string().max(100).nullable().optional(),
 });
 
+async function resolveBlockId(context: any, sessionDate: string): Promise<string> {
+  const { data: covering } = await context.supabase
+    .from("blocks")
+    .select("id")
+    .lte("start_date", sessionDate)
+    .gte("end_date", sessionDate)
+    .limit(1)
+    .maybeSingle();
+  if (covering?.id) return covering.id;
+
+  const { data: active } = await context.supabase
+    .from("blocks")
+    .select("id")
+    .eq("is_active", true)
+    .order("block_number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (active?.id) return active.id;
+
+  const { data: latest } = await context.supabase
+    .from("blocks")
+    .select("id")
+    .order("block_number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (latest?.id) return latest.id;
+
+  throw new Error("No training block exists yet — create a block before adding sessions.");
+}
+
 export const createSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(sessionInput)
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const payload: any = {
+      block_id: await resolveBlockId(context, data.session_date),
       session_date: data.session_date,
       session_type: data.session_type,
       opponent: data.session_type === "match" ? (data.opponent ?? null) : null,
