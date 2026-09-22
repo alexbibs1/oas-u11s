@@ -14,6 +14,55 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          player_id: string
+          present: boolean
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          player_id: string
+          present?: boolean
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          player_id?: string
+          present?: boolean
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           changed_by: string | null
@@ -47,6 +96,36 @@ export type Database = {
           operation?: string
           record_id?: string | null
           table_name?: string
+        }
+        Relationships: []
+      }
+      blocks: {
+        Row: {
+          block_number: number
+          created_at: string
+          end_date: string | null
+          id: string
+          is_active: boolean
+          name: string | null
+          start_date: string | null
+        }
+        Insert: {
+          block_number: number
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string | null
+          start_date?: string | null
+        }
+        Update: {
+          block_number?: number
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string | null
+          start_date?: string | null
         }
         Relationships: []
       }
@@ -130,71 +209,71 @@ export type Database = {
           },
         ]
       }
-      match_team_coaches: {
+      group_coaches: {
         Row: {
           coach_id: string
           created_at: string
+          group_id: string
           id: string
-          match_team_id: string
         }
         Insert: {
           coach_id: string
           created_at?: string
+          group_id: string
           id?: string
-          match_team_id: string
         }
         Update: {
           coach_id?: string
           created_at?: string
+          group_id?: string
           id?: string
-          match_team_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "match_team_coaches_coach_id_fkey"
+            foreignKeyName: "group_coaches_coach_id_fkey"
             columns: ["coach_id"]
             isOneToOne: false
             referencedRelation: "coaches"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "match_team_coaches_match_team_id_fkey"
-            columns: ["match_team_id"]
+            foreignKeyName: "group_coaches_group_id_fkey"
+            columns: ["group_id"]
             isOneToOne: false
-            referencedRelation: "match_teams"
+            referencedRelation: "groups"
             referencedColumns: ["id"]
           },
         ]
       }
-      match_team_players: {
+      group_players: {
         Row: {
           created_at: string
+          group_id: string
           id: string
-          match_team_id: string
           player_id: string
         }
         Insert: {
           created_at?: string
+          group_id: string
           id?: string
-          match_team_id: string
           player_id: string
         }
         Update: {
           created_at?: string
+          group_id?: string
           id?: string
-          match_team_id?: string
           player_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "match_team_players_match_team_id_fkey"
-            columns: ["match_team_id"]
+            foreignKeyName: "group_players_group_id_fkey"
+            columns: ["group_id"]
             isOneToOne: false
-            referencedRelation: "match_teams"
+            referencedRelation: "groups"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "match_team_players_player_id_fkey"
+            foreignKeyName: "group_players_player_id_fkey"
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
@@ -202,31 +281,31 @@ export type Database = {
           },
         ]
       }
-      match_teams: {
+      groups: {
         Row: {
+          block_id: string
           created_at: string
+          group_number: number
           id: string
-          session_id: string
-          team_number: number
         }
         Insert: {
+          block_id: string
           created_at?: string
+          group_number: number
           id?: string
-          session_id: string
-          team_number: number
         }
         Update: {
+          block_id?: string
           created_at?: string
+          group_number?: number
           id?: string
-          session_id?: string
-          team_number?: number
         }
         Relationships: [
           {
-            foreignKeyName: "match_teams_session_id_fkey"
-            columns: ["session_id"]
+            foreignKeyName: "groups_block_id_fkey"
+            columns: ["block_id"]
             isOneToOne: false
-            referencedRelation: "sessions"
+            referencedRelation: "blocks"
             referencedColumns: ["id"]
           },
         ]
@@ -285,7 +364,6 @@ export type Database = {
           speed: number
           strength: number
           tackling: number
-          tier: string | null
         }
         Insert: {
           carrying?: number
@@ -302,7 +380,6 @@ export type Database = {
           speed?: number
           strength?: number
           tackling?: number
-          tier?: string | null
         }
         Update: {
           carrying?: number
@@ -319,7 +396,6 @@ export type Database = {
           speed?: number
           strength?: number
           tackling?: number
-          tier?: string | null
         }
         Relationships: []
       }
@@ -328,7 +404,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
-          override_team_id: string | null
+          override_group_id: string | null
           player_id: string
           session_id: string
         }
@@ -336,7 +412,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
-          override_team_id?: string | null
+          override_group_id?: string | null
           player_id: string
           session_id: string
         }
@@ -344,16 +420,16 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
-          override_team_id?: string | null
+          override_group_id?: string | null
           player_id?: string
           session_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "session_player_overrides_override_team_id_fkey"
-            columns: ["override_team_id"]
+            foreignKeyName: "session_player_overrides_override_group_id_fkey"
+            columns: ["override_group_id"]
             isOneToOne: false
-            referencedRelation: "match_teams"
+            referencedRelation: "groups"
             referencedColumns: ["id"]
           },
           {
@@ -375,34 +451,34 @@ export type Database = {
       session_registrations: {
         Row: {
           created_at: string
+          group_id: string
           id: string
-          match_team_id: string | null
           session_id: string
           submitted_at: string
           submitted_by: string | null
         }
         Insert: {
           created_at?: string
+          group_id: string
           id?: string
-          match_team_id?: string | null
           session_id: string
           submitted_at?: string
           submitted_by?: string | null
         }
         Update: {
           created_at?: string
+          group_id?: string
           id?: string
-          match_team_id?: string | null
           session_id?: string
           submitted_at?: string
           submitted_by?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "session_registrations_match_team_id_fkey"
-            columns: ["match_team_id"]
+            foreignKeyName: "session_registrations_group_id_fkey"
+            columns: ["group_id"]
             isOneToOne: false
-            referencedRelation: "match_teams"
+            referencedRelation: "groups"
             referencedColumns: ["id"]
           },
           {
@@ -416,44 +492,60 @@ export type Database = {
       }
       sessions: {
         Row: {
+          block_id: string
           created_at: string
           id: string
           opponent: string | null
           session_date: string
           session_type: string
           venue: string | null
+          week_number: number | null
         }
         Insert: {
+          block_id: string
           created_at?: string
           id?: string
           opponent?: string | null
           session_date: string
           session_type: string
           venue?: string | null
+          week_number?: number | null
         }
         Update: {
+          block_id?: string
           created_at?: string
           id?: string
           opponent?: string | null
           session_date?: string
           session_type?: string
           venue?: string | null
+          week_number?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sessions_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "blocks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       skill_ratings: {
         Row: {
+          block_id: string
           carrying: number
           catching: number
           coach_names: string[]
           created_at: string
           entered_by: string | null
           entered_by_name: string | null
+          group_id: string | null
+          group_number: number
           handling: number
           id: string
           iq: number
           kicking: number
-          match_team_id: string | null
           player_id: string
           player_name: string
           player_of_the_day: boolean
@@ -461,19 +553,22 @@ export type Database = {
           session_id: string
           tackling: number
           updated_at: string
+          week_number: number | null
         }
         Insert: {
+          block_id: string
           carrying: number
           catching: number
           coach_names?: string[]
           created_at?: string
           entered_by?: string | null
           entered_by_name?: string | null
+          group_id?: string | null
+          group_number: number
           handling: number
           id?: string
           iq: number
           kicking: number
-          match_team_id?: string | null
           player_id: string
           player_name: string
           player_of_the_day?: boolean
@@ -481,19 +576,22 @@ export type Database = {
           session_id: string
           tackling: number
           updated_at?: string
+          week_number?: number | null
         }
         Update: {
+          block_id?: string
           carrying?: number
           catching?: number
           coach_names?: string[]
           created_at?: string
           entered_by?: string | null
           entered_by_name?: string | null
+          group_id?: string | null
+          group_number?: number
           handling?: number
           id?: string
           iq?: number
           kicking?: number
-          match_team_id?: string | null
           player_id?: string
           player_name?: string
           player_of_the_day?: boolean
@@ -501,13 +599,21 @@ export type Database = {
           session_id?: string
           tackling?: number
           updated_at?: string
+          week_number?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "skill_ratings_match_team_id_fkey"
-            columns: ["match_team_id"]
+            foreignKeyName: "skill_ratings_block_id_fkey"
+            columns: ["block_id"]
             isOneToOne: false
-            referencedRelation: "match_teams"
+            referencedRelation: "blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skill_ratings_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
             referencedColumns: ["id"]
           },
           {
@@ -570,11 +676,11 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_coach_for_team: {
-        Args: { _team_id: string; _user_id: string }
+      is_coach_for_group: {
+        Args: { _group_id: string; _user_id: string }
         Returns: boolean
       }
-      is_coach_for_session: {
+      is_coach_for_session_block: {
         Args: { _session_id: string; _user_id: string }
         Returns: boolean
       }
