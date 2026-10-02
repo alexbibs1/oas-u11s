@@ -12,7 +12,7 @@ All FKs by `uuid` (per your decision). `player_name` and `coach_name` stay uniqu
 
 Tables:
 
-- `players` — id, player_name (unique), tackling, rucking, kicking, catching, iq, speed (int 1–5, default 2, CHECK constraints), created_at
+- `players` — id, player_name (unique), tackling, rucking, kicking, iq, speed (int 1–5, default 2, CHECK constraints), created_at
 - `coaches` — id, coach_name (unique), created_at
 - `blocks` — id, block_number (unique), name, start_date, end_date, is_active (default false), created_at
 - `groups` — id, block_id → blocks, group_number (1–4, CHECK), created_at

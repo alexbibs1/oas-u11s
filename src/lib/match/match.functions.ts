@@ -15,7 +15,7 @@ async function fetchQuartileMap(sb: any): Promise<Map<string, number>> {
   const { data: players } = await sb
     .from("players")
     .select(
-      "id, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability",
+      "id, tackling, rucking, carrying, handling, kicking, iq, speed, strength, repeatability",
     )
     .eq("is_active", true);
   return computeQuartileMap(players ?? []);
@@ -40,7 +40,7 @@ export const getMatchTeamBuilderData = createServerFn({ method: "GET" })
     const { data: players } = await sb
       .from("players")
       .select(
-        "id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability, tier",
+        "id, player_name, tackling, rucking, carrying, handling, kicking, iq, speed, strength, repeatability, player_grouping",
       )
       .eq("is_active", true)
       .order("player_name", { ascending: true });
@@ -179,7 +179,7 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
     const { data: defaultRoster, error: e1 } = await supabase
       .from("match_team_players")
       .select(
-        "player_id, players:player_id ( id, player_name, is_active, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability )",
+        "player_id, players:player_id ( id, player_name, is_active, tackling, rucking, carrying, handling, kicking, iq, speed, strength, repeatability )",
       )
       .eq("match_team_id", data.team_id);
     if (e1) throw new Error(e1.message);
@@ -199,7 +199,7 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
       const { data: pl, error: e3 } = await supabase
         .from("players")
         .select(
-          "id, player_name, tackling, rucking, carrying, handling, kicking, catching, iq, speed, strength, repeatability",
+          "id, player_name, tackling, rucking, carrying, handling, kicking, iq, speed, strength, repeatability",
         )
         .in("id", movedInIds)
         .eq("is_active", true);
@@ -210,7 +210,7 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
     const { data: ratings, error: e4 } = await supabase
       .from("skill_ratings")
       .select(
-        "player_id, match_team_id, carrying, handling, tackling, rucking, kicking, catching, iq, player_of_the_day",
+        "player_id, match_team_id, carrying, handling, tackling, rucking, kicking, iq, player_of_the_day",
       )
       .eq("session_id", data.session_id)
       .eq("match_team_id", data.team_id);
@@ -363,7 +363,6 @@ export const submitRatings = createServerFn({ method: "POST" })
           carrying: z.number().int().min(1).max(5),
           handling: z.number().int().min(1).max(5),
           kicking: z.number().int().min(1).max(5),
-          catching: z.number().int().min(1).max(5),
           iq: z.number().int().min(1).max(5),
         }),
       ),
@@ -442,7 +441,6 @@ export const submitRatings = createServerFn({ method: "POST" })
       carrying: r.carrying,
       handling: r.handling,
       kicking: r.kicking,
-      catching: r.catching,
       iq: r.iq,
       entered_by: context.userId,
       entered_by_name: enteredByName,
@@ -502,7 +500,7 @@ export const getMatchSummary = createServerFn({ method: "GET" })
     const { data: ratings } = await sb
       .from("skill_ratings")
       .select(
-        "player_id, match_team_id, tackling, rucking, carrying, handling, kicking, catching, iq, player_of_the_day",
+        "player_id, match_team_id, tackling, rucking, carrying, handling, kicking, iq, player_of_the_day",
       )
       .eq("session_id", data.session_id);
 

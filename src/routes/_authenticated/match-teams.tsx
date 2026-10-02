@@ -1,4 +1,5 @@
 import { createFileRoute, redirect, Link } from "@tanstack/react-router";
+import { GroupingBadge } from "@/components/grouping-badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -280,11 +281,7 @@ function TeamBuilder({ sessionId, onBack }: { sessionId: string; onBack: () => v
                   >
                     Q{p.quartile ?? "—"}
                   </span>
-                  {p.tier && (
-                    <span className="ml-1 rounded bg-muted px-1 py-0.5 text-[9px] font-semibold uppercase text-muted-foreground">
-                      {p.tier}
-                    </span>
-                  )}
+                  <GroupingBadge value={p.player_grouping} />
                 </p>
               </div>
               <div className="flex shrink-0 gap-1">

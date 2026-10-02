@@ -212,7 +212,6 @@ function RatingsEntry({
             tackling: scores[p.id]?.tackling ?? 3,
             rucking: scores[p.id]?.rucking ?? 3,
             kicking: scores[p.id]?.kicking ?? 3,
-            catching: scores[p.id]?.catching ?? 3,
             iq: scores[p.id]?.iq ?? 3,
           })),
           player_of_the_day_id: potdId,

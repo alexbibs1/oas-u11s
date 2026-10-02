@@ -3,7 +3,9 @@ import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tansta
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { getPlayer, getPlayerPotdCount, updatePlayerTier } from "@/lib/players/players.functions";
+import { getPlayer, getPlayerPotdCount, updatePlayerGrouping } from "@/lib/players/players.functions";
+import { GroupingSelect } from "@/components/grouping-select";
+import { groupingInfo, type GroupingValue } from "@/lib/groupings";
 import { listPlayerSkillRatings } from "@/lib/skill-ratings/skill-ratings.functions";
 import {
   listPlayerNotes,
@@ -16,13 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { formatUKDateTime } from "@/lib/dates";
 import { useMyRole } from "@/lib/auth/view-as";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 const playerQuery = (id: string) => ({
   queryKey: qk.players.detail(id),
@@ -58,14 +53,15 @@ function PlayerProfile() {
   };
   const { data: player } = useSuspenseQuery(playerQuery(playerId));
   const { data: me } = useMyRole();
-  const qcTier = useQueryClient();
-  const updateTier = useMutation({
-    mutationFn: (tier: "developing" | "intermediate" | "advanced" | null) =>
-      updatePlayerTier({ data: { id: playerId, tier } }),
+  const qcGrouping = useQueryClient();
+  const updateGrouping = useMutation({
+    mutationFn: (player_grouping: GroupingValue | null) =>
+      updatePlayerGrouping({ data: { id: playerId, player_grouping } }),
     onSuccess: () => {
-      toast.success("Tier updated");
-      qcTier.invalidateQueries({ queryKey: qk.players.detail(playerId) });
-      qcTier.invalidateQueries({ queryKey: qk.players.squad });
+      toast.success("Grouping updated");
+      qcGrouping.invalidateQueries({ queryKey: qk.players.detail(playerId) });
+      qcGrouping.invalidateQueries({ queryKey: qk.players.squad });
+      qcGrouping.invalidateQueries({ queryKey: qk.players.all });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -174,32 +170,34 @@ function PlayerProfile() {
         <h1 className="mt-1 text-3xl font-bold text-primary">{(player as PlayerDto).player_name}</h1>
       </header>
 
-      {me?.isAdmin && (
-        <section className="mb-6 rounded-lg border bg-card p-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Training tier
-          </h2>
-          <p className="mb-2 text-[11px] text-muted-foreground">
-            Admin only — other coaches never see this.
-          </p>
-          <Select
-            value={(player as PlayerDto).tier as string | undefined ?? "unassigned"}
-            onValueChange={(v) =>
-              updateTier.mutate(v === "unassigned" ? null : (v as any))
-            }
-          >
-            <SelectTrigger className="h-9 w-48 text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="unassigned">Unassigned</SelectItem>
-              <SelectItem value="developing">Developing</SelectItem>
-              <SelectItem value="intermediate">Intermediate</SelectItem>
-              <SelectItem value="advanced">Advanced</SelectItem>
-            </SelectContent>
-          </Select>
-        </section>
-      )}
+      {(() => {
+        const current = (player as PlayerDto).player_grouping as string | null | undefined;
+        const info = groupingInfo(current);
+        return (
+          <section className="mb-6 rounded-lg border bg-card p-4">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Grouping
+            </h2>
+            <p className="mb-2 text-[11px] text-muted-foreground">Coaches only. Not shown to parents or players.</p>
+            {me?.isAdmin ? (
+              <GroupingSelect
+                value={current}
+                onChange={(v) => updateGrouping.mutate(v as GroupingValue | null)}
+                disabled={updateGrouping.isPending}
+                className="h-9 w-32 text-sm"
+              />
+            ) : (
+              <p className="text-2xl font-bold tabular-nums text-primary">{current ?? "Unassigned"}</p>
+            )}
+            {info && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {info.group} · {info.band}
+                {info.note !== info.band && <> · {info.note}</>}
+              </p>
+            )}
+          </section>
+        );
+      })()}
 
       {potdCount > 0 && (
         <section className="mb-6 flex items-center gap-3 rounded-lg border border-accent/40 bg-accent/10 p-4">
