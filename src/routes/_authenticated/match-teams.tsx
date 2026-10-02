@@ -24,21 +24,6 @@ export const Route = createFileRoute("/_authenticated/match-teams")({
   component: MatchTeamsPage,
 });
 
-function quartileColor(q: number | null | undefined): string {
-  switch (q) {
-    case 1:
-      return "bg-emerald-100 text-emerald-800";
-    case 2:
-      return "bg-blue-100 text-blue-800";
-    case 3:
-      return "bg-amber-100 text-amber-800";
-    case 4:
-      return "bg-slate-200 text-slate-700";
-    default:
-      return "bg-muted text-muted-foreground";
-  }
-}
-
 function MatchTeamsPage() {
   const { sessionId } = Route.useSearch();
   const [selected, setSelected] = useState<string | null>(sessionId ?? null);
@@ -478,14 +463,7 @@ function TeamBuilder({ sessionId, onBack }: { sessionId: string; onBack: () => v
                             : "bg-card hover:border-primary/50",
                       )}
                     >
-                      <span className="truncate text-sm font-medium">
-                        {p.player_name}
-                        <span
-                          className={`ml-2 rounded px-1 py-0.5 text-[9px] font-bold ${quartileColor(p.quartile)}`}
-                        >
-                          Q{p.quartile ?? "—"}
-                        </span>
-                      </span>
+                      <span className="truncate text-sm font-medium">{p.player_name}</span>
                       {on != null ? (
                         <span
                           className={cn(

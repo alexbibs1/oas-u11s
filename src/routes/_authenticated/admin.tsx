@@ -16,7 +16,7 @@ import { listCoaches, addCoach, removeCoach } from "@/lib/coaches/coaches.functi
 import { inviteUser } from "@/lib/admin/invite.functions";
 import { linkCoachToUser, resetCoachPassword } from "@/lib/admin/coach-accounts.functions";
 import { createSession, listMatchSessions } from "@/lib/sessions/sessions.functions";
-import { updatePlayerGrouping, listSquadWithQuartile } from "@/lib/players/players.functions";
+import { updatePlayerGrouping, listSquad } from "@/lib/players/players.functions";
 import { GROUPINGS, groupingInfo, groupingRank, type GroupingValue } from "@/lib/groupings";
 import { GroupingSelect } from "@/components/grouping-select";
 import { ATTRIBUTES, SKILLS } from "@/lib/skills";
@@ -215,7 +215,7 @@ function GroupingSection() {
   const [filter, setFilter] = useState<string>("all");
   const { data: players = [], isLoading } = useQuery({
     queryKey: qk.players.squad,
-    queryFn: () => listSquadWithQuartile(),
+    queryFn: () => listSquad(),
   });
 
   const update = useMutation({

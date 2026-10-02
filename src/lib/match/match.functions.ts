@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { computeQuartileMap } from "@/lib/quartile";
 
 async function assertAdmin(context: any) {
   const { data: isAdmin } = await context.supabase.rpc("has_role", {
@@ -9,16 +8,6 @@ async function assertAdmin(context: any) {
     _role: "block_builder",
   });
   if (!isAdmin) throw new Error("Forbidden");
-}
-
-async function fetchQuartileMap(sb: any): Promise<Map<string, number>> {
-  const { data: players } = await sb
-    .from("players")
-    .select(
-      "id, tackling, rucking, carrying, handling, kicking, iq, speed, strength, repeatability",
-    )
-    .eq("is_active", true);
-  return computeQuartileMap(players ?? []);
 }
 
 // ============================================================
@@ -45,12 +34,6 @@ export const getMatchTeamBuilderData = createServerFn({ method: "GET" })
       .eq("is_active", true)
       .order("player_name", { ascending: true });
 
-    const quartileMap = computeQuartileMap(players ?? []);
-    const enrichedPlayers = (players ?? []).map((p: any) => ({
-      ...p,
-      quartile: quartileMap.get(p.id) ?? null,
-    }));
-
     const { data: coaches } = await sb
       .from("coaches")
       .select("id, coach_name")
@@ -66,7 +49,7 @@ export const getMatchTeamBuilderData = createServerFn({ method: "GET" })
 
     return {
       session,
-      players: enrichedPlayers,
+      players: players ?? [],
       coaches: coaches ?? [],
       teams: (teams ?? []).map((t: any) => ({
         id: t.id,
