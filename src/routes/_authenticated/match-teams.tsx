@@ -6,7 +6,20 @@ import { getMyRole } from "@/lib/auth/roles.functions";
 import { listMatchSessions } from "@/lib/sessions/sessions.functions";
 import { getMatchTeamBuilderData, saveMatchTeams } from "@/lib/match/match.functions";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Plus } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
+import {
+  DndContext,
+  DragOverlay,
+  MouseSensor,
+  TouchSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import { GroupingBadge } from "@/components/grouping-badge";
 import { useConfirm } from "@/components/confirm-dialog";
 import { GROUPINGS } from "@/lib/groupings";
 import { cn } from "@/lib/utils";
@@ -29,7 +42,7 @@ function MatchTeamsPage() {
   const [selected, setSelected] = useState<string | null>(sessionId ?? null);
 
   return (
-    <main className="mx-auto max-w-3xl px-5 pt-8 pb-32">
+    <main className="mx-auto max-w-6xl px-5 pt-8 pb-32">
       {!selected ? (
         <MatchList onPick={setSelected} />
       ) : (
@@ -86,8 +99,10 @@ function MatchList({ onPick }: { onPick: (id: string) => void }) {
 type TeamState = { coach_ids: string[]; player_ids: string[] };
 
 const NO_GROUPING = "none";
+const POOL = "pool";
+const MAX_TEAMS = 5;
 
-function TeamBuilder({ sessionId, onBack }: { sessionId: string; onBack: () => void }) {
+export function TeamBuilder({ sessionId, onBack }: { sessionId: string; onBack: () => void }) {
   const qc = useQueryClient();
   const { confirm, dialog: confirmDialog } = useConfirm();
   const { data, isLoading } = useQuery({
@@ -95,28 +110,33 @@ function TeamBuilder({ sessionId, onBack }: { sessionId: string; onBack: () => v
     queryFn: () => getMatchTeamBuilderData({ data: { session_id: sessionId } }),
   });
 
+  const [teamCount, setTeamCount] = useState(0);
   const [teams, setTeams] = useState<Record<number, TeamState>>({});
-  const [activeTeam, setActiveTeam] = useState<number | null>(null);
   const [dirty, setDirty] = useState(false);
-  const [filter, setFilter] = useState<"all" | "unassigned">("all");
   const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
   const [editingCoaches, setEditingCoaches] = useState<number | null>(null);
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
+  );
 
   useEffect(() => {
     if (!data) return;
     const init: Record<number, TeamState> = {};
+    let max = 0;
     for (const t of data.teams as any[]) {
       init[t.team_number] = { coach_ids: t.coach_ids, player_ids: t.player_ids };
+      max = Math.max(max, t.team_number);
     }
+    for (let n = 1; n <= max; n++) init[n] ??= { coach_ids: [], player_ids: [] };
     setTeams(init);
+    setTeamCount(max);
     setDirty(false);
-    const nums = Object.keys(init)
-      .map(Number)
-      .sort((a, b) => a - b);
-    setActiveTeam((cur) => (cur && init[cur] ? cur : (nums[0] ?? null)));
   }, [data]);
 
-  // Warn before closing the tab with unsaved changes.
   useEffect(() => {
     if (!dirty) return;
     const handler = (e: BeforeUnloadEvent) => {
@@ -127,52 +147,36 @@ function TeamBuilder({ sessionId, onBack }: { sessionId: string; onBack: () => v
     return () => window.removeEventListener("beforeunload", handler);
   }, [dirty]);
 
-  const teamNumbers = Object.keys(teams)
-    .map(Number)
-    .sort((a, b) => a - b);
+  const teamNumbers = Array.from({ length: teamCount }, (_, i) => i + 1);
 
-  const update = (fn: (prev: Record<number, TeamState>) => Record<number, TeamState>) => {
-    setTeams(fn);
+  const changeTeamCount = async (n: number) => {
+    if (n === teamCount) return;
+    if (n < teamCount) {
+      const losing = teamNumbers
+        .filter((t) => t > n)
+        .reduce((acc, t) => acc + (teams[t]?.player_ids.length ?? 0), 0);
+      if (losing) {
+        const ok = await confirm({
+          title: `Go down to ${n} team${n === 1 ? "" : "s"}?`,
+          description: `${losing} player${losing === 1 ? "" : "s"} in the removed team${teamCount - n === 1 ? "" : "s"} go back to the squad.`,
+          confirmLabel: "Continue",
+        });
+        if (!ok) return;
+      }
+    }
+    setTeams((prev) => {
+      const next: Record<number, TeamState> = {};
+      for (let t = 1; t <= n; t++) next[t] = prev[t] ?? { coach_ids: [], player_ids: [] };
+      return next;
+    });
+    setTeamCount(n);
     setDirty(true);
   };
 
-  const addTeam = () => {
-    for (let n = 1; n <= 5; n++) {
-      if (!teams[n]) {
-        update((prev) => ({ ...prev, [n]: { coach_ids: [], player_ids: [] } }));
-        setActiveTeam(n);
-        return;
-      }
-    }
-  };
-
-  const removeTeam = async (n: number) => {
-    if (teams[n].player_ids.length) {
-      const ok = await confirm({
-        title: `Remove Team ${n}?`,
-        description: `Its ${teams[n].player_ids.length} players go back to unassigned.`,
-        confirmLabel: "Remove",
-        destructive: true,
-      });
-      if (!ok) return;
-    }
-    update((prev) => {
-      const next = { ...prev };
-      delete next[n];
-      return next;
-    });
-    if (activeTeam === n) setActiveTeam(teamNumbers.find((x) => x !== n) ?? null);
-  };
-
-  /** Tap a player: put them on the active team, or take them off it if already there. */
-  const tapPlayer = (playerId: string) => {
-    if (activeTeam == null) {
-      toast.info("Add a team first");
-      return;
-    }
-    update((prev) => {
+  /** Move a player to a team (1..n) or back to the squad (null). */
+  const movePlayer = (playerId: string, target: number | null) => {
+    setTeams((prev) => {
       const next: Record<number, TeamState> = {};
-      const alreadyHere = prev[activeTeam]?.player_ids.includes(playerId);
       for (const key of Object.keys(prev)) {
         const num = Number(key);
         next[num] = {
@@ -180,19 +184,18 @@ function TeamBuilder({ sessionId, onBack }: { sessionId: string; onBack: () => v
           player_ids: prev[num].player_ids.filter((id) => id !== playerId),
         };
       }
-      if (!alreadyHere) {
-        next[activeTeam] = {
-          ...next[activeTeam],
-          player_ids: [...next[activeTeam].player_ids, playerId],
-        };
+      if (target != null && next[target]) {
+        next[target] = { ...next[target], player_ids: [...next[target].player_ids, playerId] };
       }
       return next;
     });
+    setDirty(true);
+    setSelected(null);
   };
 
   const toggleCoach = (n: number, coachId: string) => {
-    update((prev) => {
-      const cur = prev[n] ?? { coach_ids: [], player_ids: [] };
+    setTeams((prev) => {
+      const cur = prev[n];
       const has = cur.coach_ids.includes(coachId);
       return {
         ...prev,
@@ -204,6 +207,16 @@ function TeamBuilder({ sessionId, onBack }: { sessionId: string; onBack: () => v
         },
       };
     });
+    setDirty(true);
+  };
+
+  const onDragStart = (e: DragStartEvent) => setDraggingId(String(e.active.id));
+  const onDragEnd = (e: DragEndEvent) => {
+    setDraggingId(null);
+    const pid = String(e.active.id);
+    const over = e.over?.id;
+    if (over == null) return;
+    movePlayer(pid, over === POOL ? null : Number(String(over).replace("team-", "")));
   };
 
   const save = useMutation({
@@ -243,41 +256,42 @@ function TeamBuilder({ sessionId, onBack }: { sessionId: string; onBack: () => v
   if (isLoading || !data) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
   const players = data.players as any[];
+  const byId = new Map(players.map((p) => [p.id as string, p]));
   const coaches = data.coaches as any[];
   const coachName = new Map(coaches.map((c) => [c.id, c.coach_name as string]));
   const teamOf = new Map<string, number>();
-  for (const n of teamNumbers) for (const pid of teams[n].player_ids) teamOf.set(pid, n);
-  const unassignedCount = players.filter((p) => !teamOf.has(p.id)).length;
-
-  const groupingCount = (n: number, g: string) =>
-    teams[n].player_ids.filter((pid) => {
-      const p = players.find((x) => x.id === pid);
-      return (p?.player_grouping ?? NO_GROUPING) === g;
-    }).length;
+  for (const n of teamNumbers) for (const pid of teams[n]?.player_ids ?? []) teamOf.set(pid, n);
 
   const q = search.trim().toLowerCase();
-  const visible = players.filter(
-    (p) =>
-      (filter === "all" || !teamOf.has(p.id)) &&
-      (!q || String(p.player_name).toLowerCase().includes(q)),
+  const pool = players.filter(
+    (p) => !teamOf.has(p.id) && (!q || String(p.player_name).toLowerCase().includes(q)),
   );
-  const sections = [
+  const poolSections = [
     ...GROUPINGS.map((g) => ({ key: g.value as string, label: `${g.value} · ${g.note}` })),
     { key: NO_GROUPING, label: "No grouping" },
   ]
     .map((sec) => ({
       ...sec,
-      players: visible.filter((p) => (p.player_grouping ?? NO_GROUPING) === sec.key),
+      players: pool.filter((p) => (p.player_grouping ?? NO_GROUPING) === sec.key),
     }))
     .filter((sec) => sec.players.length > 0);
 
-  const teamLabel = (n: number) => {
-    const names = teams[n].coach_ids.map((id) => coachName.get(id)).filter(Boolean);
-    return names.length ? names.join(" / ") : "No coaches";
+  const rank = (pid: string) => {
+    const g = byId.get(pid)?.player_grouping;
+    const i = GROUPINGS.findIndex((x) => x.value === g);
+    return i === -1 ? 99 : i;
   };
 
+  const unassignedCount = players.filter((p) => !teamOf.has(p.id)).length;
+  const draggingPlayer = draggingId ? byId.get(draggingId) : null;
+
   return (
-    <>
+    <DndContext
+      sensors={sensors}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragCancel={() => setDraggingId(null)}
+    >
       <header className="mb-4">
         <button onClick={handleBack} className="text-xs text-muted-foreground hover:underline">
           <ChevronLeft className="inline h-3 w-3" /> Matches
@@ -291,207 +305,238 @@ function TeamBuilder({ sessionId, onBack }: { sessionId: string; onBack: () => v
         </p>
       </header>
 
-      {/* Teams: tap one to make it the active team */}
-      <section className="mb-4">
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Teams · tap one, then tap players
-          </h2>
-          {teamNumbers.length < 5 && (
+      {/* How many teams */}
+      <div className="mb-4 flex items-center gap-3">
+        <span className="text-sm font-semibold">Teams</span>
+        <div className="flex gap-1">
+          {Array.from({ length: MAX_TEAMS }, (_, i) => i + 1).map((n) => (
             <button
-              onClick={addTeam}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-primary"
+              key={n}
+              onClick={() => changeTeamCount(n)}
+              className={cn(
+                "h-9 w-9 rounded-md border text-sm font-bold",
+                teamCount === n
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "bg-background hover:border-primary/50",
+              )}
             >
-              <Plus className="h-3.5 w-3.5" /> Add team
+              {n}
             </button>
-          )}
+          ))}
         </div>
-        {teamNumbers.length === 0 ? (
-          <button
-            onClick={addTeam}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed p-6 text-sm text-muted-foreground hover:border-primary hover:text-primary"
-          >
-            <Plus className="h-4 w-4" /> Add the first team
-          </button>
-        ) : (
-          <div className="space-y-2">
-            {teamNumbers.map((n) => {
-              const active = activeTeam === n;
-              return (
-                <div
-                  key={n}
-                  className={cn(
-                    "rounded-lg border bg-card transition",
-                    active ? "border-primary ring-2 ring-primary/30" : "",
-                  )}
-                >
-                  <button
-                    onClick={() => setActiveTeam(n)}
-                    className="flex w-full items-center justify-between gap-2 px-3 pt-3 text-left"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-primary">
-                        Team {n}{" "}
-                        <span className="font-normal text-muted-foreground">
-                          · {teams[n].player_ids.length} players
-                        </span>
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground">{teamLabel(n)}</p>
+      </div>
+
+      {teamCount === 0 ? (
+        <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+          Choose how many teams you need.
+        </p>
+      ) : (
+        <>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Drag players into a team, or tap a player and choose a team.
+          </p>
+          <div className="grid gap-4 pb-24 lg:grid-cols-[minmax(260px,340px)_1fr]">
+            {/* Squad pool */}
+            <PoolDrop selected={selected} onTap={() => selected && movePlayer(selected, null)}>
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-primary">Squad · {unassignedCount} left</h2>
+              </div>
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search players"
+                className="mb-3 w-full rounded-md border bg-background px-3 py-2 text-sm"
+              />
+              {poolSections.length === 0 && (
+                <p className="py-4 text-center text-xs text-muted-foreground">
+                  {q ? "No players match." : "Everyone is on a team."}
+                </p>
+              )}
+              <div className="max-h-[60vh] overflow-y-auto pr-1 lg:max-h-[calc(100vh-260px)]">
+                {poolSections.map((sec) => (
+                  <div key={sec.key} className="mb-3">
+                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {sec.label}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {sec.players.map((p) => (
+                        <PlayerChip
+                          key={p.id}
+                          id={p.id}
+                          name={p.player_name}
+                          grouping={p.player_grouping}
+                          selected={selected === p.id}
+                          onTap={() => setSelected(selected === p.id ? null : p.id)}
+                        />
+                      ))}
                     </div>
-                    {active && (
-                      <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase text-primary-foreground">
-                        Picking
-                      </span>
-                    )}
-                  </button>
-                  {/* Grouping balance strip */}
-                  <div className="grid grid-cols-7 gap-1 px-3 pt-2">
-                    {GROUPINGS.map((g) => {
-                      const c = groupingCount(n, g.value);
-                      return (
-                        <div
-                          key={g.value}
+                  </div>
+                ))}
+              </div>
+            </PoolDrop>
+
+            {/* Team buckets */}
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {teamNumbers.map((n) => {
+                const t = teams[n];
+                const names = t.coach_ids.map((id) => coachName.get(id)).filter(Boolean);
+                const sorted = [...t.player_ids].sort((a, b) => rank(a) - rank(b));
+                return (
+                  <TeamDrop
+                    key={n}
+                    n={n}
+                    selected={selected}
+                    onTap={() => selected && movePlayer(selected, n)}
+                  >
+                    <div className="mb-2 flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-primary">
+                          Team {n}{" "}
+                          <span className="font-normal text-muted-foreground">
+                            · {t.player_ids.length}
+                          </span>
+                        </p>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingCoaches(editingCoaches === n ? null : n);
+                          }}
                           className={cn(
-                            "rounded py-1 text-center text-[10px] tabular-nums",
-                            c
-                              ? "bg-secondary font-semibold text-foreground"
-                              : "bg-muted/50 text-muted-foreground/60",
+                            "truncate text-left text-xs",
+                            names.length ? "text-foreground" : "font-semibold text-amber-600",
                           )}
                         >
-                          <div className="font-bold">{g.value}</div>
-                          <div>{c}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="flex items-center justify-between px-3 py-2">
-                    <button
-                      onClick={() => setEditingCoaches(editingCoaches === n ? null : n)}
-                      className="text-xs font-medium text-primary"
-                    >
-                      {editingCoaches === n ? "Done" : "Coaches"}
-                    </button>
-                    <button
-                      onClick={() => removeTeam(n)}
-                      className="text-xs text-muted-foreground hover:text-destructive"
-                    >
-                      Remove team
-                    </button>
-                  </div>
-                  {editingCoaches === n && (
-                    <div className="flex flex-wrap gap-1 border-t px-3 py-2">
-                      {coaches.map((c) => {
-                        const on = teams[n].coach_ids.includes(c.id);
+                          {names.length ? names.join(" / ") : "Add coaches"}{" "}
+                          <span className="text-primary">
+                            {editingCoaches === n ? "· done" : "· edit"}
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                    {editingCoaches === n && (
+                      <div
+                        className="mb-2 flex flex-wrap gap-1 rounded-md border bg-background p-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {coaches.map((c) => {
+                          const on = t.coach_ids.includes(c.id);
+                          return (
+                            <button
+                              key={c.id}
+                              onClick={() => toggleCoach(n, c.id)}
+                              className={cn(
+                                "rounded-full border px-2.5 py-1 text-xs font-medium",
+                                on
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "bg-background text-muted-foreground",
+                              )}
+                            >
+                              {on ? "✓ " : ""}
+                              {c.coach_name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {/* Grouping balance */}
+                    <div className="mb-2 grid grid-cols-7 gap-0.5">
+                      {GROUPINGS.map((g) => {
+                        const c = t.player_ids.filter(
+                          (pid) => byId.get(pid)?.player_grouping === g.value,
+                        ).length;
                         return (
-                          <button
-                            key={c.id}
-                            onClick={() => toggleCoach(n, c.id)}
+                          <div
+                            key={g.value}
                             className={cn(
-                              "rounded-full border px-2.5 py-1 text-xs font-medium",
-                              on
-                                ? "border-primary bg-primary text-primary-foreground"
-                                : "bg-background text-muted-foreground",
+                              "rounded py-0.5 text-center text-[10px] leading-tight tabular-nums",
+                              c
+                                ? "bg-secondary font-semibold text-foreground"
+                                : "bg-muted/50 text-muted-foreground/60",
                             )}
                           >
-                            {c.coach_name}
-                          </button>
+                            <div className="font-bold">{g.value}</div>
+                            <div>{c}</div>
+                          </div>
                         );
                       })}
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                    <div className="flex min-h-[3rem] flex-wrap content-start gap-1.5">
+                      {sorted.length === 0 && (
+                        <p className="w-full py-3 text-center text-xs text-muted-foreground">
+                          Drop players here
+                        </p>
+                      )}
+                      {sorted.map((pid) => {
+                        const p = byId.get(pid);
+                        if (!p) return null;
+                        return (
+                          <PlayerChip
+                            key={pid}
+                            id={pid}
+                            name={p.player_name}
+                            grouping={p.player_grouping}
+                            selected={selected === pid}
+                            onTap={() => setSelected(selected === pid ? null : pid)}
+                            onRemove={() => movePlayer(pid, null)}
+                          />
+                        );
+                      })}
+                    </div>
+                  </TeamDrop>
+                );
+              })}
+            </div>
           </div>
-        )}
-      </section>
+        </>
+      )}
 
-      {/* Squad */}
-      <section className="pb-24">
-        <div className="sticky top-0 z-10 -mx-5 mb-2 space-y-2 bg-background/95 px-5 py-2 backdrop-blur">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search players"
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-          />
-          <div className="flex gap-1.5">
-            {(
-              [
-                ["all", `All ${players.length}`],
-                ["unassigned", `Not on a team ${unassignedCount}`],
-              ] as const
-            ).map(([k, label]) => (
+      <DragOverlay>
+        {draggingPlayer ? (
+          <span className="inline-flex items-center gap-1 rounded-full border border-primary bg-card px-2.5 py-1 text-xs font-medium shadow-lg">
+            {draggingPlayer.player_name}
+            <GroupingBadge value={draggingPlayer.player_grouping} />
+          </span>
+        ) : null}
+      </DragOverlay>
+
+      {/* Sticky save bar above the bottom nav, with quick-move buttons when a player is selected */}
+      <div className="fixed inset-x-0 bottom-16 z-20 border-t bg-card/95 backdrop-blur">
+        {selected && byId.get(selected) && (
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-1.5 border-b px-5 py-2">
+            <span className="mr-1 text-xs font-semibold">
+              Move {byId.get(selected).player_name} to
+            </span>
+            {teamNumbers.map((n) => (
               <button
-                key={k}
-                onClick={() => setFilter(k)}
+                key={n}
+                onClick={() => movePlayer(selected, n)}
                 className={cn(
-                  "rounded-full border px-3 py-1 text-xs tabular-nums",
-                  filter === k
+                  "h-8 min-w-8 rounded-md border px-2 text-xs font-bold",
+                  teamOf.get(selected) === n
                     ? "border-primary bg-primary text-primary-foreground"
                     : "bg-background",
                 )}
               >
-                {label}
+                {n}
               </button>
             ))}
+            {teamOf.has(selected) && (
+              <button
+                onClick={() => movePlayer(selected, null)}
+                className="h-8 rounded-md border bg-background px-2 text-xs"
+              >
+                Squad
+              </button>
+            )}
+            <button
+              onClick={() => setSelected(null)}
+              className="ml-auto text-xs text-muted-foreground"
+            >
+              Cancel
+            </button>
           </div>
-        </div>
-
-        {sections.length === 0 && (
-          <p className="text-sm text-muted-foreground">No players match.</p>
         )}
-        {sections.map((sec) => (
-          <div key={sec.key} className="mb-4">
-            <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {sec.label}
-            </p>
-            <ul className="space-y-1">
-              {sec.players.map((p) => {
-                const on = teamOf.get(p.id);
-                const onActive = on != null && on === activeTeam;
-                return (
-                  <li key={p.id}>
-                    <button
-                      onClick={() => tapPlayer(p.id)}
-                      className={cn(
-                        "flex w-full items-center justify-between gap-2 rounded-md border px-3 py-2.5 text-left transition",
-                        onActive
-                          ? "border-primary bg-primary/10"
-                          : on != null
-                            ? "bg-muted/40 text-muted-foreground"
-                            : "bg-card hover:border-primary/50",
-                      )}
-                    >
-                      <span className="truncate text-sm font-medium">{p.player_name}</span>
-                      {on != null ? (
-                        <span
-                          className={cn(
-                            "shrink-0 rounded-md px-2 py-0.5 text-xs font-bold",
-                            onActive
-                              ? "bg-primary text-primary-foreground"
-                              : "border bg-background text-muted-foreground",
-                          )}
-                        >
-                          Team {on}
-                        </span>
-                      ) : (
-                        <span className="shrink-0 text-xs text-muted-foreground">
-                          {activeTeam != null ? `+ Team ${activeTeam}` : ""}
-                        </span>
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
-      </section>
-
-      {/* Sticky save bar above the bottom nav */}
-      <div className="fixed inset-x-0 bottom-16 z-20 border-t bg-card/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-5 py-2.5">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-2.5">
           <p className="text-xs text-muted-foreground">
             {dirty ? (
               <span className="font-semibold text-amber-600">Unsaved changes</span>
@@ -507,6 +552,110 @@ function TeamBuilder({ sessionId, onBack }: { sessionId: string; onBack: () => v
         </div>
       </div>
       {confirmDialog}
-    </>
+    </DndContext>
+  );
+}
+
+function PoolDrop({
+  selected,
+  onTap,
+  children,
+}: {
+  selected: string | null;
+  onTap: () => void;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: POOL });
+  return (
+    <section
+      ref={setNodeRef}
+      onClick={onTap}
+      className={cn(
+        "self-start rounded-lg border bg-card p-3 transition lg:sticky lg:top-4",
+        isOver && "border-primary ring-2 ring-primary/30",
+        selected && "cursor-pointer",
+      )}
+    >
+      {children}
+    </section>
+  );
+}
+
+function TeamDrop({
+  n,
+  selected,
+  onTap,
+  children,
+}: {
+  n: number;
+  selected: string | null;
+  onTap: () => void;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: `team-${n}` });
+  return (
+    <div
+      ref={setNodeRef}
+      onClick={onTap}
+      className={cn(
+        "rounded-lg border bg-card p-3 transition",
+        isOver && "border-primary bg-primary/5 ring-2 ring-primary/30",
+        selected && "cursor-pointer border-dashed border-primary/60",
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+function PlayerChip({
+  id,
+  name,
+  grouping,
+  selected,
+  onTap,
+  onRemove,
+}: {
+  id: string;
+  name: string;
+  grouping: string | null;
+  selected: boolean;
+  onTap: () => void;
+  onRemove?: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id });
+  return (
+    <span
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      onClick={(e) => {
+        e.stopPropagation();
+        onTap();
+      }}
+      className={cn(
+        "inline-flex touch-none select-none items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition",
+        selected
+          ? "border-primary bg-primary text-primary-foreground"
+          : "bg-background hover:border-primary/50",
+        isDragging && "opacity-30",
+      )}
+    >
+      {name}
+      <GroupingBadge value={grouping} className={selected ? "text-foreground" : ""} />
+      {onRemove && (
+        <button
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+          aria-label={`Remove ${name}`}
+          className="-mr-1 ml-0.5 rounded-full px-1 text-muted-foreground hover:text-destructive"
+        >
+          ×
+        </button>
+      )}
+    </span>
   );
 }
