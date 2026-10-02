@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { computeQuartileMap } from "@/lib/quartile";
+import { GROUPING_VALUES } from "@/lib/groupings";
 
 export const listPlayers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -154,7 +155,6 @@ export const updatePlayerAttribute = createServerFn({ method: "POST" })
         "tackling",
         "rucking",
         "kicking",
-        "catching",
         "iq",
       ]),
       value: z.number().int().min(1).max(5),
@@ -212,13 +212,13 @@ export const listAuditLog = createServerFn({ method: "GET" })
     return rows ?? [];
   });
 
-/** Admin-only: assign a player to a training tier (Developing/Intermediate/Advanced). */
-export const updatePlayerTier = createServerFn({ method: "POST" })
+/** Admin-only: set a player's Grouping (1+, 1, 2+, 2, 3+, 3, 4). All coaches can see it. */
+export const updatePlayerGrouping = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     z.object({
       id: z.string().uuid(),
-      tier: z.enum(["developing", "intermediate", "advanced"]).nullable(),
+      player_grouping: z.enum(GROUPING_VALUES).nullable(),
     }),
   )
   .handler(async ({ context, data }) => {
@@ -229,7 +229,7 @@ export const updatePlayerTier = createServerFn({ method: "POST" })
     if (!isAdmin) throw new Error("Forbidden");
     const { error } = await context.supabase
       .from("players")
-      .update({ tier: data.tier })
+      .update({ player_grouping: data.player_grouping })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

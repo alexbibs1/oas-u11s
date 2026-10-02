@@ -6,7 +6,6 @@ export const SKILLS = [
   { key: "tackling", label: "Tackling", short: "Tac" },
   { key: "rucking", label: "Rucking", short: "Ruc" },
   { key: "kicking", label: "Kicking", short: "Kic" },
-  { key: "catching", label: "Catching", short: "Cat" },
   { key: "iq", label: "Game Sense", short: "GS" },
 ] as const;
 

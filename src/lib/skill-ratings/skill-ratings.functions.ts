@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const SKILL_FIELDS = "carrying, handling, tackling, rucking, kicking, catching, iq";
+const SKILL_FIELDS = "carrying, handling, tackling, rucking, kicking, iq";
 
 /** Player history of match ratings — most recent first. */
 export const listPlayerSkillRatings = createServerFn({ method: "GET" })

@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { GroupingBadge } from "@/components/grouping-badge";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { listSquadWithQuartile } from "@/lib/players/players.functions";
 import { useMyRole } from "@/lib/auth/view-as";
@@ -60,11 +61,7 @@ function SquadPage() {
                   >
                     Q{p.quartile ?? "—"}
                   </span>
-                  {me?.isAdmin && p.tier && (
-                    <span className="ml-1 rounded bg-muted px-1 py-0.5 text-[9px] font-semibold uppercase text-muted-foreground">
-                      {p.tier}
-                    </span>
-                  )}
+                  <GroupingBadge value={p.player_grouping} />
                 </p>
                 <div className="mt-1">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">

@@ -272,7 +272,6 @@ export type Database = {
       players: {
         Row: {
           carrying: number
-          catching: number
           created_at: string
           handling: number
           id: string
@@ -285,11 +284,10 @@ export type Database = {
           speed: number
           strength: number
           tackling: number
-          tier: string | null
+          player_grouping: string | null
         }
         Insert: {
           carrying?: number
-          catching?: number
           created_at?: string
           handling?: number
           id?: string
@@ -302,11 +300,10 @@ export type Database = {
           speed?: number
           strength?: number
           tackling?: number
-          tier?: string | null
+          player_grouping?: string | null
         }
         Update: {
           carrying?: number
-          catching?: number
           created_at?: string
           handling?: number
           id?: string
@@ -319,7 +316,7 @@ export type Database = {
           speed?: number
           strength?: number
           tackling?: number
-          tier?: string | null
+          player_grouping?: string | null
         }
         Relationships: []
       }
@@ -444,7 +441,6 @@ export type Database = {
       skill_ratings: {
         Row: {
           carrying: number
-          catching: number
           coach_names: string[]
           created_at: string
           entered_by: string | null
@@ -464,7 +460,6 @@ export type Database = {
         }
         Insert: {
           carrying: number
-          catching: number
           coach_names?: string[]
           created_at?: string
           entered_by?: string | null
@@ -484,7 +479,6 @@ export type Database = {
         }
         Update: {
           carrying?: number
-          catching?: number
           coach_names?: string[]
           created_at?: string
           entered_by?: string | null

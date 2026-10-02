@@ -1,7 +1,6 @@
-// Shared squad-wide quartile ranking. This is the only ranking regular
-// coaches ever see — tiers (Developing/Intermediate/Advanced) are a
-// separate, admin-only concept and never feed into this calculation's
-// visibility, only its input data.
+// Shared squad-wide quartile ranking. Quartile is the ranking regular
+// coaches see as a computed rank. Grouping (1+ to 4) is a separate,
+// admin-set label and does not feed into this calculation.
 import { SKILL_KEYS, ATTRIBUTE_KEYS } from "@/lib/skills";
 
 export function computeQuartileMap(
