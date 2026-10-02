@@ -21,7 +21,7 @@ import {
 } from "@dnd-kit/core";
 import { GroupingBadge } from "@/components/grouping-badge";
 import { useConfirm } from "@/components/confirm-dialog";
-import { GROUPINGS } from "@/lib/groupings";
+import { GROUPINGS, groupingInfo } from "@/lib/groupings";
 import { cn } from "@/lib/utils";
 import { formatDateLong } from "@/lib/dates";
 import { qk } from "@/lib/query-keys";
@@ -375,116 +375,129 @@ export function TeamBuilder({ sessionId, onBack }: { sessionId: string; onBack: 
               </div>
             </PoolDrop>
 
-            {/* Team buckets */}
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {teamNumbers.map((n) => {
-                const t = teams[n];
-                const names = t.coach_ids.map((id) => coachName.get(id)).filter(Boolean);
-                const sorted = [...t.player_ids].sort((a, b) => rank(a) - rank(b));
-                return (
-                  <TeamDrop
-                    key={n}
-                    n={n}
-                    selected={selected}
-                    onTap={() => selected && movePlayer(selected, n)}
-                  >
-                    <div className="mb-2 flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-primary">
-                          Team {n}{" "}
-                          <span className="font-normal text-muted-foreground">
-                            · {t.player_ids.length}
-                          </span>
-                        </p>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingCoaches(editingCoaches === n ? null : n);
-                          }}
-                          className={cn(
-                            "truncate text-left text-xs",
-                            names.length ? "text-foreground" : "font-semibold text-amber-600",
-                          )}
-                        >
-                          {names.length ? names.join(" / ") : "Add coaches"}{" "}
-                          <span className="text-primary">
-                            {editingCoaches === n ? "· done" : "· edit"}
-                          </span>
-                        </button>
+            <div className="space-y-3">
+              <BalanceTable
+                teamNumbers={teamNumbers}
+                teams={teams}
+                groupOf={(pid) => groupingInfo(byId.get(pid)?.player_grouping)?.group ?? null}
+                coachLabel={(n) =>
+                  teams[n].coach_ids
+                    .map((id) => coachName.get(id))
+                    .filter(Boolean)
+                    .join(" / ")
+                }
+              />
+              {/* Team buckets */}
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {teamNumbers.map((n) => {
+                  const t = teams[n];
+                  const names = t.coach_ids.map((id) => coachName.get(id)).filter(Boolean);
+                  const sorted = [...t.player_ids].sort((a, b) => rank(a) - rank(b));
+                  return (
+                    <TeamDrop
+                      key={n}
+                      n={n}
+                      selected={selected}
+                      onTap={() => selected && movePlayer(selected, n)}
+                    >
+                      <div className="mb-2 flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-primary">
+                            Team {n}{" "}
+                            <span className="font-normal text-muted-foreground">
+                              · {t.player_ids.length}
+                            </span>
+                          </p>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingCoaches(editingCoaches === n ? null : n);
+                            }}
+                            className={cn(
+                              "truncate text-left text-xs",
+                              names.length ? "text-foreground" : "font-semibold text-amber-600",
+                            )}
+                          >
+                            {names.length ? names.join(" / ") : "Add coaches"}{" "}
+                            <span className="text-primary">
+                              {editingCoaches === n ? "· done" : "· edit"}
+                            </span>
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    {editingCoaches === n && (
-                      <div
-                        className="mb-2 flex flex-wrap gap-1 rounded-md border bg-background p-2"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {coaches.map((c) => {
-                          const on = t.coach_ids.includes(c.id);
+                      {editingCoaches === n && (
+                        <div
+                          className="mb-2 flex flex-wrap gap-1 rounded-md border bg-background p-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {coaches.map((c) => {
+                            const on = t.coach_ids.includes(c.id);
+                            return (
+                              <button
+                                key={c.id}
+                                onClick={() => toggleCoach(n, c.id)}
+                                className={cn(
+                                  "rounded-full border px-2.5 py-1 text-xs font-medium",
+                                  on
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "bg-background text-muted-foreground",
+                                )}
+                              >
+                                {on ? "✓ " : ""}
+                                {c.coach_name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {/* Grouping balance */}
+                      <div className="mb-2 grid grid-cols-7 gap-0.5">
+                        {GROUPINGS.map((g) => {
+                          const c = t.player_ids.filter(
+                            (pid) => byId.get(pid)?.player_grouping === g.value,
+                          ).length;
                           return (
-                            <button
-                              key={c.id}
-                              onClick={() => toggleCoach(n, c.id)}
+                            <div
+                              key={g.value}
                               className={cn(
-                                "rounded-full border px-2.5 py-1 text-xs font-medium",
-                                on
-                                  ? "border-primary bg-primary text-primary-foreground"
-                                  : "bg-background text-muted-foreground",
+                                "rounded py-0.5 text-center text-[10px] leading-tight tabular-nums",
+                                c
+                                  ? "bg-secondary font-semibold text-foreground"
+                                  : "bg-muted/50 text-muted-foreground/60",
                               )}
                             >
-                              {on ? "✓ " : ""}
-                              {c.coach_name}
-                            </button>
+                              <div className="font-bold">{g.value}</div>
+                              <div>{c}</div>
+                            </div>
                           );
                         })}
                       </div>
-                    )}
-                    {/* Grouping balance */}
-                    <div className="mb-2 grid grid-cols-7 gap-0.5">
-                      {GROUPINGS.map((g) => {
-                        const c = t.player_ids.filter(
-                          (pid) => byId.get(pid)?.player_grouping === g.value,
-                        ).length;
-                        return (
-                          <div
-                            key={g.value}
-                            className={cn(
-                              "rounded py-0.5 text-center text-[10px] leading-tight tabular-nums",
-                              c
-                                ? "bg-secondary font-semibold text-foreground"
-                                : "bg-muted/50 text-muted-foreground/60",
-                            )}
-                          >
-                            <div className="font-bold">{g.value}</div>
-                            <div>{c}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="flex min-h-[3rem] flex-wrap content-start gap-1.5">
-                      {sorted.length === 0 && (
-                        <p className="w-full py-3 text-center text-xs text-muted-foreground">
-                          Drop players here
-                        </p>
-                      )}
-                      {sorted.map((pid) => {
-                        const p = byId.get(pid);
-                        if (!p) return null;
-                        return (
-                          <PlayerChip
-                            key={pid}
-                            id={pid}
-                            name={p.player_name}
-                            grouping={p.player_grouping}
-                            selected={selected === pid}
-                            onTap={() => setSelected(selected === pid ? null : pid)}
-                            onRemove={() => movePlayer(pid, null)}
-                          />
-                        );
-                      })}
-                    </div>
-                  </TeamDrop>
-                );
-              })}
+                      <div className="flex min-h-[3rem] flex-wrap content-start gap-1.5">
+                        {sorted.length === 0 && (
+                          <p className="w-full py-3 text-center text-xs text-muted-foreground">
+                            Drop players here
+                          </p>
+                        )}
+                        {sorted.map((pid) => {
+                          const p = byId.get(pid);
+                          if (!p) return null;
+                          return (
+                            <PlayerChip
+                              key={pid}
+                              id={pid}
+                              name={p.player_name}
+                              grouping={p.player_grouping}
+                              selected={selected === pid}
+                              onTap={() => setSelected(selected === pid ? null : pid)}
+                              onRemove={() => movePlayer(pid, null)}
+                            />
+                          );
+                        })}
+                      </div>
+                    </TeamDrop>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </>
@@ -657,5 +670,126 @@ function PlayerChip({
         </button>
       )}
     </span>
+  );
+}
+
+const BALANCE_GROUPS = ["Gp 1", "Gp 2", "Gp 3", "Gp 4"] as const;
+
+/**
+ * Each team's count per group vs its fair share (group total on teams / number of teams).
+ * Green: within one of fair share. Orange: too many. Blue: too few.
+ */
+function BalanceTable({
+  teamNumbers,
+  teams,
+  groupOf,
+  coachLabel,
+}: {
+  teamNumbers: number[];
+  teams: Record<number, TeamState>;
+  groupOf: (playerId: string) => string | null;
+  coachLabel: (n: number) => string;
+}) {
+  const placed = teamNumbers.reduce((acc, n) => acc + (teams[n]?.player_ids.length ?? 0), 0);
+  if (teamNumbers.length < 2 || placed === 0) return null;
+
+  const counts = new Map<number, Record<string, number>>();
+  for (const n of teamNumbers) {
+    const c: Record<string, number> = {};
+    for (const g of BALANCE_GROUPS) c[g] = 0;
+    for (const pid of teams[n]?.player_ids ?? []) {
+      const g = groupOf(pid);
+      if (g && g in c) c[g] += 1;
+    }
+    counts.set(n, c);
+  }
+  const fair: Record<string, number> = {};
+  for (const g of BALANCE_GROUPS) {
+    const total = teamNumbers.reduce((acc, n) => acc + counts.get(n)![g], 0);
+    fair[g] = total / teamNumbers.length;
+  }
+  const status = (count: number, g: string) => {
+    const diff = count - fair[g];
+    return diff > 1 ? "over" : diff < -1 ? "under" : "ok";
+  };
+  let toFix = 0;
+  for (const n of teamNumbers)
+    for (const g of BALANCE_GROUPS) if (status(counts.get(n)![g], g) !== "ok") toFix += 1;
+
+  const fairLabel = (v: number) => {
+    const lo = Math.floor(v);
+    const hi = Math.ceil(v);
+    return lo === hi ? String(lo) : `${lo}-${hi}`;
+  };
+  const cell = {
+    ok: "bg-emerald-100 text-emerald-900",
+    over: "bg-orange-200 text-orange-950",
+    under: "bg-sky-200 text-sky-950",
+  } as const;
+
+  return (
+    <section className="rounded-lg border bg-card p-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-bold text-primary">Balance</h2>
+        <span
+          className={cn(
+            "rounded-full px-2 py-0.5 text-xs font-semibold",
+            toFix === 0 ? "bg-emerald-100 text-emerald-900" : "bg-orange-100 text-orange-900",
+          )}
+        >
+          {toFix === 0 ? "Balanced" : `${toFix} to fix`}
+        </span>
+      </div>
+      <table className="w-full table-fixed border-separate border-spacing-1 text-center text-xs tabular-nums">
+        <thead>
+          <tr className="text-muted-foreground">
+            <th className="w-2/5 text-left font-medium" />
+            {BALANCE_GROUPS.map((g) => (
+              <th key={g} className="font-semibold">
+                {g}
+              </th>
+            ))}
+          </tr>
+          <tr className="text-muted-foreground">
+            <td className="text-left text-[11px]">Fair share</td>
+            {BALANCE_GROUPS.map((g) => (
+              <td key={g} className="text-[11px]">
+                {fairLabel(fair[g])}
+              </td>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {teamNumbers.map((n) => (
+            <tr key={n}>
+              <td className="truncate text-left">
+                <span className="font-semibold">Team {n}</span>
+                {coachLabel(n) && <span className="text-muted-foreground"> · {coachLabel(n)}</span>}
+              </td>
+              {BALANCE_GROUPS.map((g) => {
+                const c = counts.get(n)![g];
+                return (
+                  <td key={g} className={cn("rounded py-1.5 font-bold", cell[status(c, g)])}>
+                    {c}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1">
+          <span className="h-2.5 w-2.5 rounded-sm bg-emerald-100 ring-1 ring-emerald-300" /> About
+          right
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="h-2.5 w-2.5 rounded-sm bg-orange-200" /> Too many
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="h-2.5 w-2.5 rounded-sm bg-sky-200" /> Too few
+        </span>
+      </div>
+    </section>
   );
 }
