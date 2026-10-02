@@ -41,7 +41,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trash2, Pencil, UserX, RotateCcw, ListPlus, X, ChevronDown, ChevronRight, ChevronsUpDown } from "lucide-react";
+import {
+  Trash2,
+  Pencil,
+  UserX,
+  RotateCcw,
+  ListPlus,
+  X,
+  ChevronDown,
+  ChevronRight,
+  ChevronsUpDown,
+} from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { qk } from "@/lib/query-keys";
@@ -78,9 +88,7 @@ function AdminPage() {
         <div className="mt-3 flex items-center justify-between rounded-lg border bg-card px-4 py-3">
           <div>
             <p className="text-sm font-semibold">View as coach</p>
-            <p className="text-xs text-muted-foreground">
-              Preview the app without admin tools
-            </p>
+            <p className="text-xs text-muted-foreground">Preview the app without admin tools</p>
           </div>
           <Switch
             checked={!!viewAsCoach}
@@ -101,19 +109,6 @@ function AdminPage() {
       <section className="mb-8">
         <SectionHeading label="2 · Structure" title="Structure" />
         <div className="space-y-3">
-          <Link
-            to="/match-teams"
-            search={{ sessionId: undefined }}
-            className="flex items-center justify-between rounded-lg border bg-card p-4 hover:bg-secondary"
-          >
-            <div>
-              <p className="text-sm font-semibold">Match Teams</p>
-              <p className="text-xs text-muted-foreground">
-                Pick up to 5 teams for a fixture
-              </p>
-            </div>
-            <span className="text-xs text-muted-foreground">Open →</span>
-          </Link>
           <GroupingSection />
         </div>
       </section>
@@ -250,7 +245,8 @@ function GroupingSection() {
         1+ to 4. Visible to all coaches, never to parents or players.
       </p>
       <div className="mb-3 flex flex-wrap gap-1.5">
-        {[{ value: "all", label: `All ${players.length}` },
+        {[
+          { value: "all", label: `All ${players.length}` },
           ...GROUPINGS.map((g) => ({ value: g.value, label: `${g.value} · ${countFor(g.value)}` })),
           { value: "unassigned", label: `Unassigned · ${countFor(null)}` },
         ].map((chip) => (
@@ -259,7 +255,9 @@ function GroupingSection() {
             type="button"
             onClick={() => setFilter(chip.value)}
             className={`rounded-full border px-2.5 py-1 text-xs tabular-nums ${
-              filter === chip.value ? "border-primary bg-primary text-primary-foreground" : "bg-background"
+              filter === chip.value
+                ? "border-primary bg-primary text-primary-foreground"
+                : "bg-background"
             }`}
           >
             {chip.label}
@@ -273,7 +271,10 @@ function GroupingSection() {
           {visible.map((p) => {
             const info = groupingInfo(p.player_grouping);
             return (
-              <li key={p.id} className="flex items-center justify-between gap-2 rounded-md border bg-background px-3 py-2">
+              <li
+                key={p.id}
+                className="flex items-center justify-between gap-2 rounded-md border bg-background px-3 py-2"
+              >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{p.player_name}</p>
                   {info && (
@@ -284,7 +285,9 @@ function GroupingSection() {
                 </div>
                 <GroupingSelect
                   value={p.player_grouping}
-                  onChange={(v) => update.mutate({ id: p.id, player_grouping: v as GroupingValue | null })}
+                  onChange={(v) =>
+                    update.mutate({ id: p.id, player_grouping: v as GroupingValue | null })
+                  }
                 />
               </li>
             );
@@ -296,7 +299,10 @@ function GroupingSection() {
 }
 
 function InviteSection() {
-  const { data: coaches = [] } = useQuery({ queryKey: qk.coaches.all, queryFn: () => listCoaches() });
+  const { data: coaches = [] } = useQuery({
+    queryKey: qk.coaches.all,
+    queryFn: () => listCoaches(),
+  });
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"block_builder" | "coach">("coach");
   const [coachId, setCoachId] = useState<string>("");
@@ -365,7 +371,11 @@ function InviteSection() {
             </div>
           )}
         </div>
-        <Button type="submit" disabled={m.isPending || (role === "coach" && !coachId)} className="w-full">
+        <Button
+          type="submit"
+          disabled={m.isPending || (role === "coach" && !coachId)}
+          className="w-full"
+        >
           {m.isPending ? "Sending…" : "Send invite"}
         </Button>
       </form>
@@ -374,7 +384,10 @@ function InviteSection() {
 }
 
 function CoachAccountsSection() {
-  const { data: coaches = [] } = useQuery({ queryKey: qk.coaches.all, queryFn: () => listCoaches() });
+  const { data: coaches = [] } = useQuery({
+    queryKey: qk.coaches.all,
+    queryFn: () => listCoaches(),
+  });
   const [linkCoachId, setLinkCoachId] = useState("");
   const [linkEmail, setLinkEmail] = useState("");
   const [resetEmail, setResetEmail] = useState("");
@@ -500,7 +513,12 @@ function CoachAccountsSection() {
 function PlayersSection() {
   const qc = useQueryClient();
   const { confirm, dialog: confirmDialog } = useConfirm();
-  const { data: players = [], isLoading, isError, refetch } = useQuery({ queryKey: qk.players.all, queryFn: () => listPlayers() });
+  const {
+    data: players = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({ queryKey: qk.players.all, queryFn: () => listPlayers() });
   const [name, setName] = useState("");
   const [search, setSearch] = useState("");
   const [showInactive, setShowInactive] = useState(false);
@@ -529,7 +547,9 @@ function PlayersSection() {
     onError: (e: any) => {
       const msg = String(e?.message ?? "");
       if (/foreign key|violates/i.test(msg)) {
-        toast.error("This player has ratings history — deactivate them instead to keep records intact.");
+        toast.error(
+          "This player has ratings history — deactivate them instead to keep records intact.",
+        );
       } else {
         toast.error(msg || "Failed to remove player");
       }
@@ -559,8 +579,7 @@ function PlayersSection() {
     onError: (e: any) => toast.error(e.message),
   });
   const rename = useMutation({
-    mutationFn: (v: { id: string; player_name: string }) =>
-      renamePlayer({ data: v }),
+    mutationFn: (v: { id: string; player_name: string }) => renamePlayer({ data: v }),
     onSuccess: () => {
       setEditingId(null);
       invalidate();
@@ -591,9 +610,7 @@ function PlayersSection() {
   const filtered = players
     .filter((p: any) => (showInactive ? !isActive(p) : isActive(p)))
     .filter((p: any) =>
-      search.trim()
-        ? p.player_name.toLowerCase().includes(search.trim().toLowerCase())
-        : true,
+      search.trim() ? p.player_name.toLowerCase().includes(search.trim().toLowerCase()) : true,
     );
 
   const bulkNames = bulkText
@@ -616,9 +633,10 @@ function PlayersSection() {
     const making = isActive(p) ? "deactivat" : "reactivat";
     const ok = await confirm({
       title: `${making === "deactivat" ? "Deactivate" : "Reactivate"} ${p.player_name}?`,
-      description: making === "deactivat"
-        ? "Deactivating keeps all their ratings and history but hides them from squad lists and team assignment."
-        : "Reactivating makes the player visible in squad lists and available for team assignment again.",
+      description:
+        making === "deactivat"
+          ? "Deactivating keeps all their ratings and history but hides them from squad lists and team assignment."
+          : "Reactivating makes the player visible in squad lists and available for team assignment again.",
       confirmLabel: making === "deactivat" ? "Deactivate" : "Reactivate",
       destructive: making === "deactivat",
     });
@@ -655,7 +673,8 @@ function PlayersSection() {
           />
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">
-              {bulkNames.length} name{bulkNames.length === 1 ? "" : "s"} ready (duplicates are skipped)
+              {bulkNames.length} name{bulkNames.length === 1 ? "" : "s"} ready (duplicates are
+              skipped)
             </p>
             <div className="flex gap-2">
               <Button
@@ -675,7 +694,9 @@ function PlayersSection() {
                 disabled={bulkAdd.isPending || bulkNames.length === 0}
                 onClick={() => bulkAdd.mutate(bulkNames)}
               >
-                {bulkAdd.isPending ? "Adding…" : `Add ${bulkNames.length || ""} player${bulkNames.length === 1 ? "" : "s"}`}
+                {bulkAdd.isPending
+                  ? "Adding…"
+                  : `Add ${bulkNames.length || ""} player${bulkNames.length === 1 ? "" : "s"}`}
               </Button>
             </div>
           </div>
@@ -725,7 +746,11 @@ function PlayersSection() {
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          {search.trim() ? "No players match your search." : showInactive ? "No inactive players." : "No active players."}
+          {search.trim()
+            ? "No players match your search."
+            : showInactive
+              ? "No inactive players."
+              : "No active players."}
         </p>
       ) : (
         <ul className="max-h-72 space-y-1 overflow-auto">
@@ -786,7 +811,9 @@ function PlayersSection() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label={isActive(p) ? `Deactivate ${p.player_name}` : `Reactivate ${p.player_name}`}
+                      aria-label={
+                        isActive(p) ? `Deactivate ${p.player_name}` : `Reactivate ${p.player_name}`
+                      }
                       onClick={() => handleToggle(p)}
                     >
                       {isActive(p) ? (
@@ -818,7 +845,10 @@ function PlayersSection() {
 function CoachesSection() {
   const qc = useQueryClient();
   const { confirm, dialog: confirmDialog } = useConfirm();
-  const { data: coaches = [] } = useQuery({ queryKey: qk.coaches.all, queryFn: () => listCoaches() });
+  const { data: coaches = [] } = useQuery({
+    queryKey: qk.coaches.all,
+    queryFn: () => listCoaches(),
+  });
   const [name, setName] = useState("");
 
   const add = useMutation({
@@ -866,7 +896,12 @@ function CoachesSection() {
               variant="ghost"
               size="icon"
               onClick={async () => {
-                const ok = await confirm({ title: `Remove ${c.coach_name}?`, description: "This coach will be removed.", confirmLabel: "Remove", destructive: true });
+                const ok = await confirm({
+                  title: `Remove ${c.coach_name}?`,
+                  description: "This coach will be removed.",
+                  confirmLabel: "Remove",
+                  destructive: true,
+                });
                 if (ok) remove.mutate(c.id);
               }}
             >
@@ -917,13 +952,10 @@ function AttributesSection() {
   });
 
   const toggleExpanded = (id: string) => {
-    setExpandedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+    setExpandedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
-  const pendingCountFor = (id: string) =>
-    pendingChanges.filter((c) => c.playerId === id).length;
+  const pendingCountFor = (id: string) => pendingChanges.filter((c) => c.playerId === id).length;
 
   const renderRow = (p: any, def: { key: string; label: string }) => {
     const current = (p[def.key] as number | undefined) ?? 0;
@@ -1003,12 +1035,11 @@ function AttributesSection() {
   };
 
   const filteredPlayers = search.trim()
-    ? players.filter((p: any) =>
-        p.player_name.toLowerCase().includes(search.trim().toLowerCase()),
-      )
+    ? players.filter((p: any) => p.player_name.toLowerCase().includes(search.trim().toLowerCase()))
     : players;
 
-  const allExpanded = filteredPlayers.length > 0 && filteredPlayers.every((p: any) => expandedIds.includes(p.id));
+  const allExpanded =
+    filteredPlayers.length > 0 && filteredPlayers.every((p: any) => expandedIds.includes(p.id));
 
   return (
     <div className="rounded-lg border bg-card p-5">
@@ -1019,7 +1050,8 @@ function AttributesSection() {
         </span>
       </div>
       <p className="mb-4 text-xs text-muted-foreground">
-        Tap a player to edit their baseline skills and attributes. Review and confirm all changes at once — every saved change is audited.
+        Tap a player to edit their baseline skills and attributes. Review and confirm all changes at
+        once — every saved change is audited.
       </p>
 
       <div className="mb-3 flex items-center gap-2">
@@ -1033,9 +1065,7 @@ function AttributesSection() {
           type="button"
           variant="outline"
           size="sm"
-          onClick={() =>
-            setExpandedIds(allExpanded ? [] : filteredPlayers.map((p: any) => p.id))
-          }
+          onClick={() => setExpandedIds(allExpanded ? [] : filteredPlayers.map((p: any) => p.id))}
         >
           <ChevronsUpDown className="h-3.5 w-3.5" />
           {allExpanded ? "Collapse all" : "Expand all"}
@@ -1150,9 +1180,12 @@ function AttributesSection() {
   );
 }
 
-
 function CompletionTrackerSection() {
-  const { data: matches, isError: matchesError, refetch: refetchMatches } = useQuery({
+  const {
+    data: matches,
+    isError: matchesError,
+    refetch: refetchMatches,
+  } = useQuery({
     queryKey: qk.sessions.matchList,
     queryFn: () => listMatchSessions(),
   });
@@ -1166,9 +1199,7 @@ function CompletionTrackerSection() {
   return (
     <div className="rounded-lg border bg-card p-5">
       <h3 className="mb-1 text-sm font-semibold">Match rating completion</h3>
-      <p className="mb-3 text-xs text-muted-foreground">
-        Per-team status for a selected match.
-      </p>
+      <p className="mb-3 text-xs text-muted-foreground">Per-team status for a selected match.</p>
       {matchesError ? (
         <QueryError message="Couldn't load matches" onRetry={() => refetchMatches()} />
       ) : matches?.length ? (
@@ -1203,10 +1234,7 @@ function CompletionTrackerSection() {
                   ? `Partial (${t.rated}/${t.expected})`
                   : "Not started";
             return (
-              <li
-                key={t.team_id}
-                className="rounded-md border bg-background p-3"
-              >
+              <li key={t.team_id} className="rounded-md border bg-background p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold">Team {t.team_number}</p>
@@ -1239,7 +1267,11 @@ function CompletionTrackerSection() {
 }
 
 function AuditLogSection() {
-  const { data: rows = [], isError: logError, refetch: refetchLog } = useQuery({
+  const {
+    data: rows = [],
+    isError: logError,
+    refetch: refetchLog,
+  } = useQuery({
     queryKey: qk.auditLog,
     queryFn: () => listAuditLog({ data: { limit: 50 } }),
   });
@@ -1270,9 +1302,7 @@ function AuditLogSection() {
                       ? ` · Week ${r.metadata?.week_number ?? "?"} · Group ${r.metadata?.group_number ?? "?"}`
                       : ` · ${attr ?? r.operation}`}
                   </span>
-                  <span className="text-muted-foreground">
-                    {formatUKDateTime(r.created_at)}
-                  </span>
+                  <span className="text-muted-foreground">{formatUKDateTime(r.created_at)}</span>
                 </div>
                 {isSkillRatings && changed ? (
                   <ul className="mt-0.5 space-y-0.5 text-muted-foreground">

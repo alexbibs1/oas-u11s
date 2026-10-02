@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Home, Users, Shield, ClipboardCheck, Calendar, Newspaper } from "lucide-react";
+import { Home, Users, Shield, ClipboardCheck, Calendar, Newspaper, Shirt } from "lucide-react";
 import { useMyRole } from "@/lib/auth/view-as";
 
 export function BottomNav() {
@@ -10,6 +10,8 @@ export function BottomNav() {
     { to: "/feed", label: "Feed", Icon: Newspaper },
     { to: "/calendar", label: "Calendar", Icon: Calendar },
     { to: "/match-day", label: "Match Day", Icon: ClipboardCheck },
+    // Team Picker: admins only (Alex, Carli, Kieron, Grant).
+    ...(me?.isAdmin ? [{ to: "/match-teams", label: "Teams", Icon: Shirt }] : []),
     { to: "/squad", label: "Squad", Icon: Users },
     ...(me?.isAdmin || (realIsAdmin && viewAsCoach)
       ? [{ to: "/admin", label: "Admin", Icon: Shield }]
@@ -24,6 +26,7 @@ export function BottomNav() {
             <li key={to} className="flex-1">
               <Link
                 to={to}
+                search={to === "/match-teams" ? { sessionId: undefined } : undefined}
                 replace
                 activeProps={{ className: "text-primary" }}
                 inactiveProps={{ className: "text-muted-foreground" }}

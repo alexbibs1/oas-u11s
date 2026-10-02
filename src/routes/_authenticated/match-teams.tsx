@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, Link } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -61,11 +61,8 @@ function MatchList({ onPick }: { onPick: (id: string) => void }) {
   return (
     <>
       <header className="mb-6">
-        <Link to="/admin" className="text-xs text-muted-foreground hover:underline">
-          <ChevronLeft className="inline h-3 w-3" /> Admin
-        </Link>
-        <h1 className="mt-1 text-2xl font-bold text-primary">Match Teams</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Pick up to 5 teams for a fixture.</p>
+        <h1 className="text-2xl font-bold text-primary">Team Picker</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Choose a match to pick its teams.</p>
       </header>
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
