@@ -712,9 +712,6 @@ function BalanceTable({
     const diff = count - fair[g];
     return diff > 1 ? "over" : diff < -1 ? "under" : "ok";
   };
-  let toFix = 0;
-  for (const n of teamNumbers)
-    for (const g of BALANCE_GROUPS) if (status(counts.get(n)![g], g) !== "ok") toFix += 1;
 
   const fairLabel = (v: number) => {
     const lo = Math.floor(v);
@@ -731,14 +728,6 @@ function BalanceTable({
     <section className="rounded-lg border bg-card p-3">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-bold text-primary">Balance</h2>
-        <span
-          className={cn(
-            "rounded-full px-2 py-0.5 text-xs font-semibold",
-            toFix === 0 ? "bg-emerald-100 text-emerald-900" : "bg-orange-100 text-orange-900",
-          )}
-        >
-          {toFix === 0 ? "Balanced" : `${toFix} to fix`}
-        </span>
       </div>
       <table className="w-full table-fixed border-separate border-spacing-1 text-center text-xs tabular-nums">
         <thead>
