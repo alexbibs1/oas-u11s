@@ -676,8 +676,8 @@ function PlayerChip({
 const BALANCE_GROUPS = ["Gp 1", "Gp 2", "Gp 3", "Gp 4"] as const;
 
 /**
- * Each team's count per group vs its fair share (group total on teams / number of teams).
- * Green: within one of fair share. Orange: too many. Blue: too few.
+ * Each team's count per group vs its target (group total on teams / number of teams).
+ * Green: within one of target. Orange: too many. Blue: too few.
  */
 function BalanceTable({
   teamNumbers,
@@ -751,7 +751,7 @@ function BalanceTable({
             ))}
           </tr>
           <tr className="text-muted-foreground">
-            <td className="text-left text-[11px]">Fair share</td>
+            <td className="text-left text-[11px]">Target per team</td>
             {BALANCE_GROUPS.map((g) => (
               <td key={g} className="text-[11px]">
                 {fairLabel(fair[g])}
