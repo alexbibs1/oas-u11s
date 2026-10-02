@@ -128,9 +128,7 @@ export const saveMatchTeams = createServerFn({ method: "POST" })
       .from("match_teams")
       .select("id, team_number")
       .eq("session_id", data.session_id);
-    const toDelete = (existingTeams ?? []).filter(
-      (t: any) => !keepNumbers.includes(t.team_number),
-    );
+    const toDelete = (existingTeams ?? []).filter((t: any) => !keepNumbers.includes(t.team_number));
     for (const t of toDelete) {
       await sb.from("match_team_players").delete().eq("match_team_id", t.id);
       await sb.from("match_team_coaches").delete().eq("match_team_id", t.id);
@@ -281,6 +279,8 @@ export const saveRegister = createServerFn({ method: "POST" })
       .from("user_roles")
       .select("coach_id")
       .eq("user_id", context.userId)
+      .not("coach_id", "is", null)
+      .limit(1)
       .maybeSingle();
     const myCoachId = (myRole as any)?.coach_id as string | null | undefined;
     const isAssignedCoach = !!myCoachId && coachIds.includes(myCoachId);
@@ -336,7 +336,7 @@ export const saveRegister = createServerFn({ method: "POST" })
       if (insErr) throw new Error(insErr.message);
     }
 
-    await supabase.from("session_registrations").upsert(
+    const { error: regErr } = await supabase.from("session_registrations").upsert(
       {
         session_id: data.session_id,
         match_team_id: data.team_id,
@@ -345,6 +345,7 @@ export const saveRegister = createServerFn({ method: "POST" })
       },
       { onConflict: "session_id,match_team_id" },
     );
+    if (regErr) throw new Error(regErr.message);
 
     return { ok: true };
   });
@@ -405,6 +406,8 @@ export const submitRatings = createServerFn({ method: "POST" })
       .from("user_roles")
       .select("coach_id, coaches:coach_id ( coach_name )")
       .eq("user_id", context.userId)
+      .not("coach_id", "is", null)
+      .limit(1)
       .maybeSingle();
     const myCoachId = (myRole as any)?.coach_id as string | null | undefined;
     const isAssignedCoach = !!myCoachId && coachIds.includes(myCoachId);
@@ -601,7 +604,9 @@ export const getMatchCompletion = createServerFn({ method: "GET" })
       .select("player_id, override_team_id")
       .eq("session_id", data.session_id);
     const absent = new Set(
-      (overrides ?? []).filter((o: any) => o.override_team_id === null).map((o: any) => o.player_id),
+      (overrides ?? [])
+        .filter((o: any) => o.override_team_id === null)
+        .map((o: any) => o.player_id),
     );
     const movedTo = new Map<string, string>();
     (overrides ?? []).forEach((o: any) => {
