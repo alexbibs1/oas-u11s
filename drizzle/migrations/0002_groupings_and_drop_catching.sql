@@ -3,7 +3,8 @@
 --    Grouping (1+, 1, 2+, 2, 3+, 3, 4). Old tier values are discarded.
 -- 2. Drop Catching everywhere, including all historical ratings.
 -- 3. Default every skill/attribute score to 3.
--- 4. Load the head coach's grouping sheet, adding any missing players.
+-- 4. Delete players who have left.
+-- 5. Load the head coach's grouping sheet, adding any missing players.
 -- ============================================================
 
 -- 1. Grouping column ------------------------------------------------
@@ -33,7 +34,20 @@ UPDATE public.players SET
   carrying = 3, handling = 3, tackling = 3, rucking = 3, kicking = 3, iq = 3,
   speed = 3, strength = 3, repeatability = 3;
 
--- 4. Grouping sheet ---------------------------------------------------
+-- 4. Players who have left: delete them and every record linked to them.
+--    Ratings, notes, feed posts, overrides and team picks cascade from players;
+--    audit log entries are removed explicitly.
+DELETE FROM public.audit_log
+ WHERE table_name = 'players'
+   AND record_id::text IN (
+     SELECT id::text FROM public.players
+      WHERE lower(trim(player_name)) IN
+        ('alex shepherd','aj sumner','felix middleton','felix terrell','oscar whitley','ronnie haslar'));
+DELETE FROM public.players
+ WHERE lower(trim(player_name)) IN
+   ('alex shepherd','aj sumner','felix middleton','felix terrell','oscar whitley','ronnie haslar');
+
+-- 5. Grouping sheet ---------------------------------------------------
 -- aliases: other spellings the same player may already be stored under.
 CREATE TEMP TABLE _grouping_sheet (name text, grp text, aliases text[]);
 INSERT INTO _grouping_sheet (name, grp, aliases) VALUES
@@ -76,7 +90,7 @@ INSERT INTO _grouping_sheet (name, grp, aliases) VALUES
   ('Louis Dawson','3+','{}'),
   ('Ryan Bajraktari','3+','{}'),
   ('Coby Rosen','3+','{}'),
-  ('Alexandre','3','{"Alex S","Alex Shepherd","Alexandre Shepherd"}'),
+  ('Alexandre','3','{}'),
   ('Alfie Haller','3','{}'),
   ('Charlie Lundie-Hill','3','{}'),
   ('Connor F','3','{}'),
