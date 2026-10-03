@@ -4,6 +4,9 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 // Kept so old links and bookmarks still land in the right place.
 export const Route = createFileRoute("/_authenticated/ratings")({
   beforeLoad: () => {
-    throw redirect({ to: "/match-day", search: { sessionId: undefined, teamId: undefined } });
+    throw redirect({
+      to: "/match-day",
+      search: { sessionId: undefined, teamId: undefined, step: undefined },
+    });
   },
 });
