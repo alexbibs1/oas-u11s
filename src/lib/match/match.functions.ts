@@ -490,6 +490,14 @@ export const getMatchSummary = createServerFn({ method: "GET" })
       )
       .eq("session_id", data.session_id);
 
+    const { data: registrations } = await sb
+      .from("session_registrations")
+      .select("match_team_id")
+      .eq("session_id", data.session_id);
+    const registeredTeams = new Set(
+      (registrations ?? []).map((r: any) => r.match_team_id as string | null),
+    );
+
     const playerIds = new Set<string>();
     (teams ?? []).forEach((t: any) =>
       (t.match_team_players ?? []).forEach((tp: any) => playerIds.add(tp.player_id)),
@@ -546,6 +554,12 @@ export const getMatchSummary = createServerFn({ method: "GET" })
         absent,
         movedIn,
         hasOverrides: defaultIds.some((pid) => oMap.has(pid)) || movedIn.length > 0,
+        // A register counts as submitted once it's been confirmed, even if everyone was present.
+        registered:
+          registeredTeams.has(t.id) ||
+          defaultIds.some((pid) => oMap.has(pid)) ||
+          movedIn.length > 0 ||
+          teamRatings.length > 0,
         ratings: present.map((p) => ({
           player_id: p.id,
           name: p.name,

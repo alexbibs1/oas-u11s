@@ -92,7 +92,7 @@ function MatchSummaryPage() {
                 </div>
               </div>
             )}
-            {!t.hasOverrides ? (
+            {!t.registered ? (
               <div className="rounded-md border border-dashed p-4 text-center">
                 <p className="text-sm text-muted-foreground">No register submitted.</p>
                 <Button asChild variant="outline" size="sm" className="mt-3">
