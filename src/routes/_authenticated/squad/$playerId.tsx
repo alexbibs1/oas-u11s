@@ -48,7 +48,7 @@ export const Route = createFileRoute("/_authenticated/squad/$playerId")({
   component: PlayerProfile,
 });
 
-import { SKILLS, ATTRIBUTES } from "@/lib/skills";
+import { SKILLS, ATTRIBUTES, REPEATABILITY_DESCRIPTORS } from "@/lib/skills";
 import { qk } from "@/lib/query-keys";
 import { useConfirm } from "@/components/confirm-dialog";
 import { QueryError } from "@/components/query-error";
@@ -261,6 +261,11 @@ function PlayerProfile() {
                   {value}
                   <span className="ml-1 text-[10px] font-normal text-muted-foreground">/ 5</span>
                 </p>
+                {a.key === "repeatability" && REPEATABILITY_DESCRIPTORS[value] && (
+                  <p className="mt-1 text-[11px] leading-tight text-muted-foreground">
+                    {REPEATABILITY_DESCRIPTORS[value]}
+                  </p>
+                )}
               </div>
             );
           })}

@@ -71,12 +71,3 @@ export function formatUKDateTime(input: string | Date): string {
   const mi = String(d.getMinutes()).padStart(2, "0");
   return `${formatUK(d)}, ${hh}:${mi}`;
 }
-
-/** "23/11/2026 → 04/12/2026" — UK date range. */
-export function formatDateRangeUK(
-  start: string | Date | null | undefined,
-  end: string | Date | null | undefined,
-): string {
-  if (!start && !end) return "—";
-  return `${start ? formatUK(start) : "—"} → ${end ? formatUK(end) : "—"}`;
-}

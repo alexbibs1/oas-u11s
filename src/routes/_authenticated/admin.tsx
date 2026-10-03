@@ -19,7 +19,7 @@ import { createSession, listMatchSessions } from "@/lib/sessions/sessions.functi
 import { updatePlayerGrouping, listSquad } from "@/lib/players/players.functions";
 import { GROUPINGS, groupingInfo, groupingRank, type GroupingValue } from "@/lib/groupings";
 import { GroupingSelect } from "@/components/grouping-select";
-import { ATTRIBUTES, SKILLS } from "@/lib/skills";
+import { ATTRIBUTES, SKILLS, REPEATABILITY_DESCRIPTORS } from "@/lib/skills";
 import { getMatchCompletion } from "@/lib/match/match.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -962,48 +962,55 @@ function AttributesSection() {
     );
     const displayValue = pendingChange?.newValue ?? current;
     const isChanged = !!pendingChange;
+    const descriptor =
+      def.key === "repeatability" ? REPEATABILITY_DESCRIPTORS[displayValue] : undefined;
     return (
-      <div key={def.key} className="flex items-center justify-between gap-2">
-        <span className="w-24 text-xs text-muted-foreground">{def.label}</span>
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((n) => {
-            const active = displayValue === n;
-            return (
-              <button
-                key={n}
-                type="button"
-                onClick={() => {
-                  setPendingChanges((prev) => {
-                    const filtered = prev.filter(
-                      (c) => !(c.playerId === p.id && c.attribute === (def.key as AttrKey)),
-                    );
-                    if (current === n) return filtered;
-                    return [
-                      ...filtered,
-                      {
-                        playerId: p.id,
-                        playerName: p.player_name,
-                        attribute: def.key as AttrKey,
-                        attributeLabel: def.label,
-                        oldValue: current,
-                        newValue: n,
-                      },
-                    ];
-                  });
-                }}
-                className={`h-7 w-7 rounded-md border text-xs font-semibold transition ${
-                  active
-                    ? isChanged
-                      ? "border-amber-500 bg-amber-500 text-white"
-                      : "border-primary bg-primary text-primary-foreground"
-                    : "bg-background hover:border-primary/50"
-                }`}
-              >
-                {n}
-              </button>
-            );
-          })}
+      <div key={def.key}>
+        <div className="flex items-center justify-between gap-2">
+          <span className="w-24 text-xs text-muted-foreground">{def.label}</span>
+          <div className="flex gap-1">
+            {[1, 2, 3, 4, 5].map((n) => {
+              const active = displayValue === n;
+              return (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => {
+                    setPendingChanges((prev) => {
+                      const filtered = prev.filter(
+                        (c) => !(c.playerId === p.id && c.attribute === (def.key as AttrKey)),
+                      );
+                      if (current === n) return filtered;
+                      return [
+                        ...filtered,
+                        {
+                          playerId: p.id,
+                          playerName: p.player_name,
+                          attribute: def.key as AttrKey,
+                          attributeLabel: def.label,
+                          oldValue: current,
+                          newValue: n,
+                        },
+                      ];
+                    });
+                  }}
+                  className={`h-7 w-7 rounded-md border text-xs font-semibold transition ${
+                    active
+                      ? isChanged
+                        ? "border-amber-500 bg-amber-500 text-white"
+                        : "border-primary bg-primary text-primary-foreground"
+                      : "bg-background hover:border-primary/50"
+                  }`}
+                >
+                  {n}
+                </button>
+              );
+            })}
+          </div>
         </div>
+        {descriptor && (
+          <p className="mt-0.5 text-right text-[11px] italic text-muted-foreground">{descriptor}</p>
+        )}
       </div>
     );
   };
