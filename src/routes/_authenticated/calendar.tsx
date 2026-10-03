@@ -347,7 +347,10 @@ function SessionDialog({
                 onClick={async () => {
                   const ok = await confirm({
                     title: "Delete session?",
-                    description: "This session will be permanently removed.",
+                    description:
+                      session?.session_type === "match"
+                        ? "This match and its picked teams will be permanently removed. Matches with registers or scores can't be deleted."
+                        : "This session will be permanently removed.",
                     confirmLabel: "Delete",
                     destructive: true,
                   });

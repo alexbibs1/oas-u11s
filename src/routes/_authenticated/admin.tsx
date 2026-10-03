@@ -546,13 +546,11 @@ function PlayersSection() {
     },
     onError: (e: any) => {
       const msg = String(e?.message ?? "");
-      if (/foreign key|violates/i.test(msg)) {
-        toast.error(
-          "This player has ratings history — deactivate them instead to keep records intact.",
-        );
-      } else {
-        toast.error(msg || "Failed to remove player");
-      }
+      toast.error(
+        /foreign key|violates/i.test(msg)
+          ? "This player has match scores or coach notes, so they can't be removed. Deactivate them instead to keep their history."
+          : msg || "Failed to remove player",
+      );
     },
   });
   const bulkAdd = useMutation({

@@ -21,6 +21,7 @@ import {
 } from "@dnd-kit/core";
 import { GroupingBadge } from "@/components/grouping-badge";
 import { useConfirm } from "@/components/confirm-dialog";
+import { QueryError } from "@/components/query-error";
 import { GROUPINGS, groupingInfo } from "@/lib/groupings";
 import { cn } from "@/lib/utils";
 import { formatDateLong } from "@/lib/dates";
@@ -53,10 +54,16 @@ function MatchTeamsPage() {
 }
 
 function MatchList({ onPick }: { onPick: (id: string) => void }) {
-  const { data = [], isLoading } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: qk.sessions.matchList,
     queryFn: () => listMatchSessions(),
   });
+  if (isError) return <QueryError onRetry={() => refetch()} />;
 
   return (
     <>
@@ -102,10 +109,15 @@ const MAX_TEAMS = 5;
 export function TeamBuilder({ sessionId, onBack }: { sessionId: string; onBack: () => void }) {
   const qc = useQueryClient();
   const { confirm, dialog: confirmDialog } = useConfirm();
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: qk.match.builderData(sessionId),
     queryFn: () => getMatchTeamBuilderData({ data: { session_id: sessionId } }),
   });
+  // Teams with a register, scores or moved players can't be removed.
+  const lockedUpTo = Math.max(
+    0,
+    ...((data?.teams as any[] | undefined) ?? []).filter((t) => t.locked).map((t) => t.team_number),
+  );
 
   const [teamCount, setTeamCount] = useState(0);
   const [teams, setTeams] = useState<Record<number, TeamState>>({});
@@ -145,9 +157,16 @@ export function TeamBuilder({ sessionId, onBack }: { sessionId: string; onBack: 
   }, [dirty]);
 
   const teamNumbers = Array.from({ length: teamCount }, (_, i) => i + 1);
+  const lockedTeams = new Set<number>(
+    ((data?.teams as any[] | undefined) ?? []).filter((t) => t.locked).map((t) => t.team_number),
+  );
 
   const changeTeamCount = async (n: number) => {
     if (n === teamCount) return;
+    if (n < lockedUpTo) {
+      toast.error(`Team ${lockedUpTo} already has a register or scores, so it can't be removed`);
+      return;
+    }
     if (n < teamCount) {
       const losing = teamNumbers
         .filter((t) => t > n)
@@ -250,6 +269,8 @@ export function TeamBuilder({ sessionId, onBack }: { sessionId: string; onBack: 
     onBack();
   };
 
+  // Never show an editable picker if loading failed: saving it would wipe the real teams.
+  if (isError) return <QueryError onRetry={() => refetch()} />;
   if (isLoading || !data) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
   const players = data.players as any[];
@@ -310,8 +331,10 @@ export function TeamBuilder({ sessionId, onBack }: { sessionId: string; onBack: 
             <button
               key={n}
               onClick={() => changeTeamCount(n)}
+              disabled={n < lockedUpTo}
+              title={n < lockedUpTo ? `Team ${lockedUpTo} has a register or scores` : undefined}
               className={cn(
-                "h-9 w-9 rounded-md border text-sm font-bold",
+                "h-9 w-9 rounded-md border text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40",
                 teamCount === n
                   ? "border-primary bg-primary text-primary-foreground"
                   : "bg-background hover:border-primary/50",
@@ -404,6 +427,11 @@ export function TeamBuilder({ sessionId, onBack }: { sessionId: string; onBack: 
                             <span className="font-normal text-muted-foreground">
                               · {t.player_ids.length}
                             </span>
+                            {lockedTeams.has(n) && (
+                              <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-900">
+                                Register in
+                              </span>
+                            )}
                           </p>
                           <button
                             onClick={(e) => {

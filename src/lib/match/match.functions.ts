@@ -27,26 +27,49 @@ export const getMatchTeamBuilderData = createServerFn({ method: "GET" })
       .single();
     if (sErr) throw new Error(sErr.message);
 
-    const { data: players } = await sb
+    // Every read is checked: a failed load must never look like "no teams yet",
+    // because saving from that screen would wipe the real teams.
+    const { data: players, error: pErr } = await sb
       .from("players")
       .select(
         "id, player_name, tackling, rucking, carrying, handling, kicking, iq, speed, strength, repeatability, player_grouping",
       )
       .eq("is_active", true)
       .order("player_name", { ascending: true });
+    if (pErr) throw new Error(pErr.message);
 
-    const { data: coaches } = await sb
+    const { data: coaches, error: cErr } = await sb
       .from("coaches")
       .select("id, coach_name")
       .order("coach_name", { ascending: true });
+    if (cErr) throw new Error(cErr.message);
 
-    const { data: teams } = await sb
+    const { data: teams, error: tErr } = await sb
       .from("match_teams")
       .select(
         "id, team_number, match_team_coaches:match_team_coaches ( coach_id ), match_team_players:match_team_players ( player_id )",
       )
       .eq("session_id", data.session_id)
       .order("team_number", { ascending: true });
+    if (tErr) throw new Error(tErr.message);
+
+    // A team is locked (can't be removed) once it has a register, scores or moved-in players.
+    const teamIds = (teams ?? []).map((t: any) => t.id);
+    const locked = new Set<string>();
+    if (teamIds.length) {
+      const [regs, rats, ovs] = await Promise.all([
+        sb.from("session_registrations").select("match_team_id").in("match_team_id", teamIds),
+        sb.from("skill_ratings").select("match_team_id").in("match_team_id", teamIds),
+        sb
+          .from("session_player_overrides")
+          .select("override_team_id")
+          .in("override_team_id", teamIds),
+      ]);
+      for (const r of [regs, rats, ovs]) if (r.error) throw new Error(r.error.message);
+      (regs.data ?? []).forEach((r: any) => locked.add(r.match_team_id));
+      (rats.data ?? []).forEach((r: any) => locked.add(r.match_team_id));
+      (ovs.data ?? []).forEach((r: any) => locked.add(r.override_team_id));
+    }
 
     return {
       session,
@@ -55,6 +78,7 @@ export const getMatchTeamBuilderData = createServerFn({ method: "GET" })
       teams: (teams ?? []).map((t: any) => ({
         id: t.id,
         team_number: t.team_number,
+        locked: locked.has(t.id),
         coach_ids: (t.match_team_coaches ?? []).map((c: any) => c.coach_id),
         player_ids: (t.match_team_players ?? []).map((p: any) => p.player_id),
       })),
@@ -67,58 +91,17 @@ const teamInput = z.object({
   player_ids: z.array(z.string().uuid()),
 });
 
+/** Saves every team for a match in one database transaction (all or nothing). */
 export const saveMatchTeams = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ session_id: z.string().uuid(), teams: z.array(teamInput).max(5) }))
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
-    const sb = context.supabase;
-
-    for (const t of data.teams) {
-      const { data: existing } = await sb
-        .from("match_teams")
-        .select("id")
-        .eq("session_id", data.session_id)
-        .eq("team_number", t.team_number)
-        .maybeSingle();
-      let teamId = (existing as any)?.id;
-      if (!teamId) {
-        const { data: newT, error } = await sb
-          .from("match_teams")
-          .insert({ session_id: data.session_id, team_number: t.team_number })
-          .select("id")
-          .single();
-        if (error) throw new Error(error.message);
-        teamId = newT.id;
-      }
-      await sb.from("match_team_players").delete().eq("match_team_id", teamId);
-      await sb.from("match_team_coaches").delete().eq("match_team_id", teamId);
-      if (t.player_ids.length) {
-        const { error } = await sb
-          .from("match_team_players")
-          .insert(t.player_ids.map((pid) => ({ match_team_id: teamId, player_id: pid })));
-        if (error) throw new Error(error.message);
-      }
-      if (t.coach_ids.length) {
-        const { error } = await sb
-          .from("match_team_coaches")
-          .insert(t.coach_ids.map((cid) => ({ match_team_id: teamId, coach_id: cid })));
-        if (error) throw new Error(error.message);
-      }
-    }
-
-    const keepNumbers = data.teams.map((t) => t.team_number);
-    const { data: existingTeams } = await sb
-      .from("match_teams")
-      .select("id, team_number")
-      .eq("session_id", data.session_id);
-    const toDelete = (existingTeams ?? []).filter((t: any) => !keepNumbers.includes(t.team_number));
-    for (const t of toDelete) {
-      await sb.from("match_team_players").delete().eq("match_team_id", t.id);
-      await sb.from("match_team_coaches").delete().eq("match_team_id", t.id);
-      await sb.from("match_teams").delete().eq("id", t.id);
-    }
-
+    const { error } = await context.supabase.rpc("save_match_teams" as any, {
+      _session_id: data.session_id,
+      _teams: data.teams,
+    });
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
 
@@ -198,12 +181,13 @@ export const getMatchDayContext = createServerFn({ method: "GET" })
       .eq("match_team_id", data.team_id);
     if (e4) throw new Error(e4.message);
 
-    const { data: reg } = await sb
+    const { data: reg, error: regReadErr } = await sb
       .from("session_registrations")
       .select("id")
       .eq("session_id", data.session_id)
       .eq("match_team_id", data.team_id)
       .maybeSingle();
+    if (regReadErr) throw new Error(regReadErr.message);
 
     return {
       registered: !!reg,
@@ -336,12 +320,13 @@ export const submitRatings = createServerFn({ method: "POST" })
     const { coachNames, myName } = await assertCanManageTeam(context, data.team_id);
     const sb = context.supabase;
 
-    const { data: reg } = await sb
+    const { data: reg, error: regReadErr } = await sb
       .from("session_registrations")
       .select("id")
       .eq("session_id", data.session_id)
       .eq("match_team_id", data.team_id)
       .maybeSingle();
+    if (regReadErr) throw new Error(regReadErr.message);
     if (!reg) throw new Error("Confirm the register before entering scores");
 
     const roster = await teamRoster(sb, data.session_id, data.team_id);
@@ -409,27 +394,30 @@ export const getMatchSummary = createServerFn({ method: "GET" })
       .single();
     if (sErr) throw new Error(sErr.message);
 
-    const { data: teams } = await sb
+    const { data: teams, error: tErr } = await sb
       .from("match_teams")
       .select(
         "id, team_number, match_team_coaches:match_team_coaches ( coaches:coach_id ( coach_name ) )",
       )
       .eq("session_id", data.session_id)
       .order("team_number", { ascending: true });
+    if (tErr) throw new Error(tErr.message);
     const teamNumber = new Map<string, number>(
       (teams ?? []).map((t: any) => [t.id, t.team_number]),
     );
 
-    const { data: ratings } = await sb
+    const { data: ratings, error: rErr } = await sb
       .from("skill_ratings")
       .select(
         "player_id, match_team_id, tackling, rucking, carrying, handling, kicking, iq, player_of_the_day",
       )
       .eq("session_id", data.session_id);
-    const { data: registrations } = await sb
+    if (rErr) throw new Error(rErr.message);
+    const { data: registrations, error: gErr } = await sb
       .from("session_registrations")
       .select("match_team_id")
       .eq("session_id", data.session_id);
+    if (gErr) throw new Error(gErr.message);
     const registeredTeams = new Set((registrations ?? []).map((r: any) => r.match_team_id));
 
     const slim = (p: any) => ({ id: p.id as string, name: p.player_name as string });
@@ -484,17 +472,19 @@ export const getMatchCompletion = createServerFn({ method: "GET" })
   .inputValidator(z.object({ session_id: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const sb = context.supabase;
-    const { data: teams } = await sb
+    const { data: teams, error: tErr } = await sb
       .from("match_teams")
       .select(
         "id, team_number, match_team_coaches:match_team_coaches ( coaches:coach_id ( coach_name ) )",
       )
       .eq("session_id", data.session_id)
       .order("team_number", { ascending: true });
-    const { data: ratings } = await sb
+    if (tErr) throw new Error(tErr.message);
+    const { data: ratings, error: rErr } = await sb
       .from("skill_ratings")
       .select("player_id, match_team_id")
       .eq("session_id", data.session_id);
+    if (rErr) throw new Error(rErr.message);
 
     const result = [];
     for (const t of teams ?? []) {

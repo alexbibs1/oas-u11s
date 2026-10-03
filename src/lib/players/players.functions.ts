@@ -127,7 +127,28 @@ export const removePlayer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase.from("players").delete().eq("id", data.id);
+    const sb = context.supabase;
+    const { data: isAdmin } = await sb.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "block_builder",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+    // Players with scores or coach notes are kept: deactivate them instead.
+    const [ratings, notes] = await Promise.all([
+      sb
+        .from("skill_ratings")
+        .select("id", { count: "exact", head: true })
+        .eq("player_id", data.id),
+      sb.from("player_notes").select("id", { count: "exact", head: true }).eq("player_id", data.id),
+    ]);
+    if (ratings.error) throw new Error(ratings.error.message);
+    if (notes.error) throw new Error(notes.error.message);
+    if ((ratings.count ?? 0) + (notes.count ?? 0) > 0) {
+      throw new Error(
+        "This player has match scores or coach notes, so they can't be removed. Deactivate them instead to keep their history.",
+      );
+    }
+    const { error } = await sb.from("players").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
