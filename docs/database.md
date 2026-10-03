@@ -21,7 +21,8 @@ Supabase (Lovable Cloud) project `qgscvxbbrurfbtwelfnx`. RLS is on for every tab
 ## Protections
 - Deleting a player with scores or notes, or a match with scores, is blocked (`ON DELETE RESTRICT`).
 - `save_match_teams(_session_id, _teams jsonb)` saves all teams in one transaction, admin only, rejects a player on two teams, and refuses to remove a team with a register, scores or moved players.
-- Register and score writes are checked server-side (`src/lib/match/match.functions.ts`) then written with the service client.
+- Registers, moves and scores: coaches cannot write these tables directly. The server functions in `src/lib/match/match.functions.ts` check the coach is assigned to that team in that match, then write with the service client. Admins keep direct write access.
+- No first-admin setup route: new users are added by an admin (sign-up is disabled in Lovable Cloud).
 
 ## Roster logic
 `src/lib/match/roster.ts` is the single source for who plays for which team; register, scoring, summary and completion all use it. Tests: `npm test`.
