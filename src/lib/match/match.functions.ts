@@ -97,7 +97,7 @@ export const saveMatchTeams = createServerFn({ method: "POST" })
   .inputValidator(z.object({ session_id: z.string().uuid(), teams: z.array(teamInput).max(5) }))
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
-    const { error } = await context.supabase.rpc("save_match_teams" as any, {
+    const { error } = await context.supabase.rpc("save_match_teams", {
       _session_id: data.session_id,
       _teams: data.teams,
     });
