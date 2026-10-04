@@ -212,15 +212,13 @@ export const getHomeSummary = createServerFn({ method: "GET" })
     const today = new Date().toISOString().slice(0, 10);
 
     const [nextSessRes, feedRes] = await Promise.all([
-      sb
-        .from("sessions")
+      sb.from("sessions")
         .select("id, session_date, session_type, opponent, venue")
         .gte("session_date", today)
         .order("session_date", { ascending: true })
         .limit(1)
         .maybeSingle(),
-      sb
-        .from("feed_posts")
+      sb.from("feed_posts")
         .select(
           "id, content, coach_name, player_id, is_player_note, created_at, players:player_id ( player_name )",
         )

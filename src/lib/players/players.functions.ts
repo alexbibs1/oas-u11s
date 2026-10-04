@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { computeQuartileMap } from "@/lib/quartile";
 import { GROUPING_VALUES } from "@/lib/groupings";
 
 export const listPlayers = createServerFn({ method: "GET" })
@@ -42,7 +43,9 @@ export const addPlayer = createServerFn({ method: "POST" })
 
 export const bulkAddPlayers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ names: z.array(z.string().min(1).max(120)).min(1).max(100) }))
+  .inputValidator(
+    z.object({ names: z.array(z.string().min(1).max(120)).min(1).max(100) }),
+  )
   .handler(async ({ context, data }) => {
     const { data: isAdmin } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
@@ -52,8 +55,12 @@ export const bulkAddPlayers = createServerFn({ method: "POST" })
     // Dedupe within the paste, trim whitespace, drop empties
     const cleaned = [...new Set(data.names.map((n) => n.trim()).filter(Boolean))];
     // Skip names that already exist (case-insensitive)
-    const { data: existing } = await context.supabase.from("players").select("player_name");
-    const existingNames = new Set((existing ?? []).map((p: any) => p.player_name.toLowerCase()));
+    const { data: existing } = await context.supabase
+      .from("players")
+      .select("player_name");
+    const existingNames = new Set(
+      (existing ?? []).map((p: any) => p.player_name.toLowerCase()),
+    );
     const toInsert = cleaned.filter((n) => !existingNames.has(n.toLowerCase()));
     const skipped = cleaned.length - toInsert.length;
     if (!toInsert.length) return { added: 0, skipped };
@@ -93,7 +100,9 @@ export const deactivatePlayer = createServerFn({ method: "POST" })
 
 export const renamePlayer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ id: z.string().uuid(), player_name: z.string().min(1).max(120) }))
+  .inputValidator(
+    z.object({ id: z.string().uuid(), player_name: z.string().min(1).max(120) }),
+  )
   .handler(async ({ context, data }) => {
     const { data: isAdmin } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
@@ -127,28 +136,7 @@ export const removePlayer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ context, data }) => {
-    const sb = context.supabase;
-    const { data: isAdmin } = await sb.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "block_builder",
-    });
-    if (!isAdmin) throw new Error("Forbidden");
-    // Players with scores or coach notes are kept: deactivate them instead.
-    const [ratings, notes] = await Promise.all([
-      sb
-        .from("skill_ratings")
-        .select("id", { count: "exact", head: true })
-        .eq("player_id", data.id),
-      sb.from("player_notes").select("id", { count: "exact", head: true }).eq("player_id", data.id),
-    ]);
-    if (ratings.error) throw new Error(ratings.error.message);
-    if (notes.error) throw new Error(notes.error.message);
-    if ((ratings.count ?? 0) + (notes.count ?? 0) > 0) {
-      throw new Error(
-        "This player has match scores or coach notes, so they can't be removed. Deactivate them instead to keep their history.",
-      );
-    }
-    const { error } = await sb.from("players").delete().eq("id", data.id);
+    const { error } = await context.supabase.from("players").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -247,8 +235,8 @@ export const updatePlayerGrouping = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Active squad, alphabetical. */
-export const listSquad = createServerFn({ method: "GET" })
+/** Active squad with quartile rank computed — the only ranking regular coaches see. */
+export const listSquadWithQuartile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data: players, error } = await context.supabase
@@ -257,7 +245,11 @@ export const listSquad = createServerFn({ method: "GET" })
       .eq("is_active", true)
       .order("player_name", { ascending: true });
     if (error) throw new Error(error.message);
-    return players ?? [];
+    const quartileMap = computeQuartileMap(players ?? []);
+    return (players ?? []).map((p: any) => ({
+      ...p,
+      quartile: quartileMap.get(p.id) ?? null,
+    }));
   });
 
 export const getPlayerPotdCount = createServerFn({ method: "GET" })

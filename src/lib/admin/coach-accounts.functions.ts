@@ -37,12 +37,10 @@ export const linkCoachToUser = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const user = await findUserByEmail(supabaseAdmin, data.email);
     if (!user) throw new Error("No account with that email — send them an invite first.");
-    const { error } = await supabaseAdmin
-      .from("user_roles")
-      .upsert(
-        { user_id: user.id, role: "coach", coach_id: data.coach_id },
-        { onConflict: "user_id,role" },
-      );
+    const { error } = await supabaseAdmin.from("user_roles").upsert(
+      { user_id: user.id, role: "coach", coach_id: data.coach_id },
+      { onConflict: "user_id,role" },
+    );
     if (error) throw new Error(error.message);
     return { ok: true, userId: user.id };
   });

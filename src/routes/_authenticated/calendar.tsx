@@ -97,12 +97,7 @@ function CalendarPage() {
             ) : (
               <ul className="space-y-2">
                 {upcoming.map((s) => (
-                  <SessionRowItem
-                    key={s.id}
-                    session={s}
-                    canEdit={!!me?.isAdmin}
-                    onEdit={setEditing}
-                  />
+                  <SessionRowItem key={s.id} session={s} canEdit={!!me?.isAdmin} onEdit={setEditing} />
                 ))}
               </ul>
             )}
@@ -113,12 +108,7 @@ function CalendarPage() {
               <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Past</h2>
               <ul className="space-y-2">
                 {past.map((s) => (
-                  <SessionRowItem
-                    key={s.id}
-                    session={s}
-                    canEdit={!!me?.isAdmin}
-                    onEdit={setEditing}
-                  />
+                  <SessionRowItem key={s.id} session={s} canEdit={!!me?.isAdmin} onEdit={setEditing} />
                 ))}
               </ul>
             </section>
@@ -126,9 +116,7 @@ function CalendarPage() {
         </div>
       )}
 
-      {creating && (
-        <SessionDialog open={creating} onClose={() => setCreating(false)} session={null} />
-      )}
+      {creating && <SessionDialog open={creating} onClose={() => setCreating(false)} session={null} />}
       {editing && (
         <SessionDialog open={!!editing} onClose={() => setEditing(null)} session={editing} />
       )}
@@ -155,10 +143,7 @@ function SessionRowItem({
       if (isPast) {
         navigate({ to: "/match-summary/$sessionId", params: { sessionId: session.id } });
       } else {
-        navigate({
-          to: "/match-day",
-          search: { sessionId: session.id, teamId: undefined, step: undefined },
-        });
+        navigate({ to: "/match-day", search: { sessionId: session.id, teamId: undefined } });
       }
     } else {
       navigate({ to: "/session-info/$sessionId", params: { sessionId: session.id } });
@@ -347,10 +332,7 @@ function SessionDialog({
                 onClick={async () => {
                   const ok = await confirm({
                     title: "Delete session?",
-                    description:
-                      session?.session_type === "match"
-                        ? "This match and its picked teams will be permanently removed. Matches with registers or scores can't be deleted."
-                        : "This session will be permanently removed.",
+                    description: "This session will be permanently removed.",
                     confirmLabel: "Delete",
                     destructive: true,
                   });

@@ -88,26 +88,7 @@ export const deleteSession = createServerFn({ method: "POST" })
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
-    const sb = context.supabase;
-    // A match with a register or scores is part of the season's record and is kept.
-    const [ratings, regs] = await Promise.all([
-      sb
-        .from("skill_ratings")
-        .select("id", { count: "exact", head: true })
-        .eq("session_id", data.id),
-      sb
-        .from("session_registrations")
-        .select("id", { count: "exact", head: true })
-        .eq("session_id", data.id),
-    ]);
-    if (ratings.error) throw new Error(ratings.error.message);
-    if (regs.error) throw new Error(regs.error.message);
-    if ((ratings.count ?? 0) + (regs.count ?? 0) > 0) {
-      throw new Error(
-        "This match already has registers or scores, so it can't be deleted. Change its date or details instead.",
-      );
-    }
-    const { error } = await sb.from("sessions").delete().eq("id", data.id);
+    const { error } = await context.supabase.from("sessions").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

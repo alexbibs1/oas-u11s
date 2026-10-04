@@ -18,7 +18,6 @@ export const Route = createFileRoute("/_authenticated/match-day")({
   validateSearch: (s: Record<string, unknown>) => ({
     sessionId: typeof s.sessionId === "string" ? s.sessionId : undefined,
     teamId: typeof s.teamId === "string" ? s.teamId : undefined,
-    step: s.step === "register" ? ("register" as const) : undefined,
   }),
   component: MatchDayPage,
 });
@@ -31,17 +30,11 @@ import { useConfirm } from "@/components/confirm-dialog";
 import { QueryError } from "@/components/query-error";
 
 function MatchDayPage() {
-  const {
-    sessionId: preselectId,
-    teamId: preselectTeamId,
-    step: preselectStep,
-  } = Route.useSearch();
+  const { sessionId: preselectId, teamId: preselectTeamId } = Route.useSearch();
   const router = useRouter();
   const [step, setStep] = useState<Step>("session");
   const [session, setSession] = useState<any | null>(null);
   const [team, setTeam] = useState<any | null>(null);
-  // When true, stay on the register even if it's already been confirmed.
-  const [editRegister, setEditRegister] = useState(preselectStep === "register");
 
   const { data: preselectSessions } = useQuery({
     queryKey: qk.sessions.matchList,
@@ -139,32 +132,15 @@ function MatchDayPage() {
           sessionId={session.id}
           onPick={(t) => {
             setTeam(t);
-            setEditRegister(false);
             setStep("register");
           }}
         />
       )}
       {step === "register" && session && team && (
-        <RegisterStep
-          session={session}
-          team={team}
-          skipIfConfirmed={!editRegister}
-          onProceed={() => {
-            setEditRegister(false);
-            setStep("rate");
-          }}
-        />
+        <RegisterStep session={session} team={team} onProceed={() => setStep("rate")} />
       )}
       {step === "rate" && session && team && (
-        <RateStep
-          session={session}
-          team={team}
-          onDone={() => setStep("done")}
-          onEditRegister={() => {
-            setEditRegister(true);
-            setStep("register");
-          }}
-        />
+        <RateStep session={session} team={team} onDone={() => setStep("done")} />
       )}
       {step === "done" && session && (
         <div className="rounded-lg border bg-card p-6 text-center">
@@ -187,12 +163,7 @@ function MatchDayPage() {
 }
 
 function SessionStep({ onPick }: { onPick: (s: any) => void }) {
-  const {
-    data: sessions = [],
-    isLoading,
-    isError,
-    refetch,
-  } = useQuery({
+  const { data: sessions = [], isLoading, isError, refetch } = useQuery({
     queryKey: qk.sessions.matchList,
     queryFn: () => listMatchSessions(),
   });
@@ -227,12 +198,7 @@ function SessionStep({ onPick }: { onPick: (s: any) => void }) {
 }
 
 function TeamStep({ sessionId, onPick }: { sessionId: string; onPick: (t: any) => void }) {
-  const {
-    data: teams = [],
-    isLoading,
-    isError,
-    refetch,
-  } = useQuery({
+  const { data: teams = [], isLoading, isError, refetch } = useQuery({
     queryKey: qk.match.teamsForSession(sessionId),
     queryFn: () => getMatchTeamsForSession({ data: { session_id: sessionId } }),
   });
@@ -241,7 +207,8 @@ function TeamStep({ sessionId, onPick }: { sessionId: string; onPick: (t: any) =
   if (!teams.length)
     return (
       <p className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">
-        No teams picked for this match yet. An admin needs to pick teams from the Admin page first.
+        No teams picked for this match yet. An admin needs to pick teams from the Admin page
+        first.
       </p>
     );
   return (
@@ -269,21 +236,14 @@ function RegisterStep({
   session,
   team,
   onProceed,
-  skipIfConfirmed,
 }: {
   session: any;
   team: any;
   onProceed: () => void;
-  skipIfConfirmed: boolean;
 }) {
   const qc = useQueryClient();
   const { confirm, dialog: confirmDialog } = useConfirm();
-  const {
-    data: ctx,
-    isLoading,
-    isError,
-    refetch,
-  } = useQuery({
+  const { data: ctx, isLoading, isError, refetch } = useQuery({
     queryKey: qk.match.context(session.id, team.id),
     queryFn: () => getMatchDayContext({ data: { session_id: session.id, team_id: team.id } }),
     staleTime: 0,
@@ -315,11 +275,6 @@ function RegisterStep({
     }
     setState(init);
   }, [ctx, team.id]);
-
-  // Register already confirmed: go straight to scoring (coach can come back via "Edit register").
-  useEffect(() => {
-    if (ctx?.registered && skipIfConfirmed) onProceed();
-  }, [ctx?.registered, skipIfConfirmed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = async () => {
     const ok = await confirm({
@@ -357,9 +312,6 @@ function RegisterStep({
   if (isLoading || !ctx) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
   const otherTeams = (allTeams as any[]).filter((t) => t.id !== team.id);
-  if (ctx.registered && skipIfConfirmed) {
-    return <p className="text-sm text-muted-foreground">Loading…</p>;
-  }
 
   return (
     <div className="space-y-3">
@@ -489,30 +441,24 @@ function PillBtn({
   );
 }
 
-function RateStep({
-  session,
-  team,
-  onDone,
-  onEditRegister,
-}: {
-  session: any;
-  team: any;
-  onDone: () => void;
-  onEditRegister: () => void;
-}) {
+function RateStep({ session, team, onDone }: { session: any; team: any; onDone: () => void }) {
   const { confirm, dialog: confirmDialog } = useConfirm();
-  const {
-    data: ctx,
-    isLoading,
-    isError,
-    refetch,
-  } = useQuery({
+  const { data: ctx, isLoading, isError, refetch } = useQuery({
     queryKey: qk.match.context(session.id, team.id),
     queryFn: () => getMatchDayContext({ data: { session_id: session.id, team_id: team.id } }),
     staleTime: 0,
   });
 
-  const presentPlayers = useMemo(() => (ctx ? (ctx.playing as any[]) : ([] as any[])), [ctx]);
+  const presentPlayers = useMemo(() => {
+    if (!ctx) return [] as any[];
+    const overrideById = new Map((ctx.overrides as any[]).map((o) => [o.player_id, o]));
+    const here = (ctx.defaultRoster as any[]).filter((p) => {
+      const ov = overrideById.get(p.id);
+      if (!ov) return true;
+      return ov.override_team_id === team.id;
+    });
+    return [...here, ...(ctx.movedInPlayers as any[])];
+  }, [ctx, team.id]);
 
   const [scores, setScores] = useState<Record<string, any>>({});
   const [activeDescriptor, setActiveDescriptor] = useState<string | null>(null);
@@ -572,29 +518,15 @@ function RateStep({
 
   if (isError) return <QueryError onRetry={() => refetch()} />;
   if (isLoading || !ctx) return <p className="text-sm text-muted-foreground">Loading…</p>;
-  const editBar = (
-    <div className="flex items-center justify-between rounded-lg border bg-card px-4 py-2.5">
-      <p className="text-xs text-muted-foreground">
-        Register confirmed · {presentPlayers.length} playing
-      </p>
-      <Button variant="outline" size="sm" onClick={onEditRegister}>
-        Edit register
-      </Button>
-    </div>
-  );
   if (!presentPlayers.length)
     return (
-      <div className="space-y-3">
-        {editBar}
-        <p className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">
-          No players marked present.
-        </p>
-      </div>
+      <p className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">
+        No players marked present.
+      </p>
     );
 
   return (
     <div className="space-y-3">
-      {editBar}
       <ul className="space-y-3">
         {presentPlayers.map((p) => (
           <li key={p.id} className="rounded-lg border bg-card p-4">
@@ -646,7 +578,9 @@ function RateStep({
         ))}
       </ul>
       <div className="rounded-lg border bg-card p-4">
-        <label className="mb-2 block text-sm font-semibold text-primary">Player of the Day</label>
+        <label className="mb-2 block text-sm font-semibold text-primary">
+          Player of the Day
+        </label>
         <select
           value={potdId ?? ""}
           onChange={(e) => setPotdId(e.target.value || null)}

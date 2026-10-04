@@ -26,11 +26,7 @@ function fmtDateUK(d: string | null | undefined) {
 function HomePage() {
   const navigate = useNavigate();
   const { data: me } = useMyRole();
-  const {
-    data: summary,
-    isError,
-    refetch,
-  } = useQuery({
+  const { data: summary, isError, refetch } = useQuery({
     queryKey: qk.feed.homeSummary,
     queryFn: () => getHomeSummary(),
   });
@@ -84,6 +80,8 @@ function HomePage() {
             </Link>
           </div>
         </div>
+
+
 
         {next ? (
           <Link

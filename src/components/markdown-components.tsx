@@ -10,9 +10,7 @@ export const markdownComponents: Components = {
   h3: ({ children }) => (
     <h3 className="mb-2 mt-4 text-base font-semibold text-primary">{children}</h3>
   ),
-  p: ({ children }) => (
-    <p className="mb-3 text-sm leading-relaxed text-muted-foreground">{children}</p>
-  ),
+  p: ({ children }) => <p className="mb-3 text-sm leading-relaxed text-muted-foreground">{children}</p>,
   ul: ({ children }) => (
     <ul className="mb-3 ml-5 list-disc space-y-1 text-sm text-muted-foreground">{children}</ul>
   ),
@@ -23,12 +21,7 @@ export const markdownComponents: Components = {
   strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
   em: ({ children }) => <em className="italic">{children}</em>,
   a: ({ href, children }) => (
-    <a
-      href={href}
-      className="text-accent underline hover:no-underline"
-      target="_blank"
-      rel="noreferrer"
-    >
+    <a href={href} className="text-accent underline hover:no-underline" target="_blank" rel="noreferrer">
       {children}
     </a>
   ),
@@ -43,9 +36,7 @@ export const markdownComponents: Components = {
     </div>
   ),
   th: ({ children }) => (
-    <th className="border-b bg-secondary px-3 py-2 text-left font-semibold text-primary">
-      {children}
-    </th>
+    <th className="border-b bg-secondary px-3 py-2 text-left font-semibold text-primary">{children}</th>
   ),
   td: ({ children }) => <td className="border-b px-3 py-2 text-muted-foreground">{children}</td>,
   code: ({ children }) => (
