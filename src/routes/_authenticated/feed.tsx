@@ -29,7 +29,12 @@ function FeedPage() {
   const updateFn = useServerFn(updateFeedPost);
   const deleteFn = useServerFn(deleteFeedPost);
 
-  const { data: posts = [], isLoading, isError, refetch } = useQuery({
+  const {
+    data: posts = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: qk.feed.all,
     queryFn: () => listFn({ data: {} }),
   });
@@ -130,9 +135,7 @@ function FeedPage() {
                 <UserCircle2 className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-semibold text-primary">{p.coach_name ?? "Coach"}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatUKDateTime(p.created_at)}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{formatUKDateTime(p.created_at)}</p>
                 </div>
               </div>
               {p.canEdit && editingId !== p.id && (
@@ -151,7 +154,12 @@ function FeedPage() {
                     size="icon"
                     variant="ghost"
                     onClick={async () => {
-                      const ok = await confirm({ title: "Delete post?", description: "This post will be removed from the feed.", confirmLabel: "Delete", destructive: true });
+                      const ok = await confirm({
+                        title: "Delete post?",
+                        description: "This post will be removed from the feed.",
+                        confirmLabel: "Delete",
+                        destructive: true,
+                      });
                       if (ok) deleteM.mutate(p.id);
                     }}
                   >

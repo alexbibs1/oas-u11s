@@ -92,11 +92,14 @@ function MatchSummaryPage() {
                 </div>
               </div>
             )}
-            {!t.hasOverrides ? (
+            {!t.registered ? (
               <div className="rounded-md border border-dashed p-4 text-center">
                 <p className="text-sm text-muted-foreground">No register submitted.</p>
                 <Button asChild variant="outline" size="sm" className="mt-3">
-                  <Link to="/match-day" search={{ sessionId: data.session.id, teamId: t.id }}>
+                  <Link
+                    to="/match-day"
+                    search={{ sessionId: data.session.id, teamId: t.id, step: "register" }}
+                  >
                     Submit register
                   </Link>
                 </Button>
@@ -104,8 +107,16 @@ function MatchSummaryPage() {
             ) : (
               <div className="space-y-3">
                 <PlayerList label="Present" items={t.present} />
+                <PlayerList label="Moved in" items={t.movedIn} />
                 <PlayerList label="Absent" items={t.absent} muted />
-                {t.movedIn.length > 0 && <PlayerList label="Moved in" items={t.movedIn} />}
+                <PlayerList
+                  label="Moved out"
+                  items={t.movedOut.map((p: any) => ({
+                    id: p.id,
+                    name: p.toTeam ? `${p.name} (to Team ${p.toTeam})` : p.name,
+                  }))}
+                  muted
+                />
 
                 <div className="mt-4 border-t pt-3">
                   <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -115,13 +126,30 @@ function MatchSummaryPage() {
                     <div className="rounded-md border border-dashed p-3 text-center">
                       <p className="text-xs text-muted-foreground">Ratings not yet submitted.</p>
                       <Button asChild variant="outline" size="sm" className="mt-2">
-                        <Link to="/match-day" search={{ sessionId: data.session.id, teamId: t.id }}>
+                        <Link
+                          to="/match-day"
+                          search={{ sessionId: data.session.id, teamId: t.id, step: undefined }}
+                        >
                           Submit ratings
                         </Link>
                       </Button>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
+                      {t.ratedCount < t.playingCount && (
+                        <div className="mb-2 flex items-center justify-between rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs">
+                          <span>
+                            {t.ratedCount} of {t.playingCount} players scored
+                          </span>
+                          <Link
+                            to="/match-day"
+                            search={{ sessionId: data.session.id, teamId: t.id, step: undefined }}
+                            className="font-semibold text-primary"
+                          >
+                            Score the rest
+                          </Link>
+                        </div>
+                      )}
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="text-muted-foreground/70">

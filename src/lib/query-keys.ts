@@ -3,7 +3,7 @@ export const qk = {
   players: {
     all: ["players"] as const,
     list: ["players"] as const,
-    squad: ["squad-with-quartile"] as const,
+    squad: ["squad"] as const,
     detail: (id: string) => ["player", id] as const,
     notes: (playerId: string) => ["player-notes", playerId] as const,
     skillRatings: (playerId: string) => ["player-skill-ratings", playerId] as const,

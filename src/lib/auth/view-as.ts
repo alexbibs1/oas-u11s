@@ -35,7 +35,9 @@ export function setViewAsCoach(on: boolean) {
     if (on) window.localStorage.setItem(KEY, "1");
     else window.localStorage.removeItem(KEY);
     window.dispatchEvent(new Event(EVENT));
-  } catch {}
+  } catch {
+    // Storage can be unavailable (private browsing); the toggle just won't persist.
+  }
 }
 
 export function useMyRole() {
